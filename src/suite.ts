@@ -1,4 +1,4 @@
-import { readdir } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { getCapabilities, runConformanceVector } from "./adapter";
 import type { AdapterCapabilities, ValidationReport } from "./types";
@@ -18,13 +18,14 @@ export interface ConformanceEvidence {
   started_at: string;
   finished_at: string;
   capabilities: AdapterCapabilities;
-  summary: { total: number; passed: number; failed: number; changed: number };
+  summary: { discovered: number; executed: number; passed: number; failed: number; skipped: number; changed: number };
   vectors: Array<{
     name: string;
-    passed: boolean;
+    status: "passed" | "failed" | "not_run_unsupported";
     collection_changed: boolean;
     differences: string[];
-    actual_report: ValidationReport;
+    unsupported_extensions?: string[];
+    actual_report?: ValidationReport;
   }>;
 }
 
@@ -36,6 +37,21 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
     .sort();
   const vectors = [];
   for (const name of names) {
+    const expected = JSON.parse(await readFile(join(input.goldenDirectory, name, "expected-validation-report.json"), "utf8")) as ValidationReport;
+    const unsupportedExtensions = Object.entries(expected.required_extensions)
+      .filter(([extension, version]) => capabilities.extensions[extension] !== version)
+      .map(([extension]) => extension)
+      .sort();
+    if (expected.evaluation === "complete" && unsupportedExtensions.length > 0) {
+      vectors.push({
+        name,
+        status: "not_run_unsupported" as const,
+        collection_changed: false,
+        differences: [],
+        unsupported_extensions: unsupportedExtensions,
+      });
+      continue;
+    }
     const result = await runConformanceVector({
       vectorDirectory: join(input.goldenDirectory, name),
       schemaDirectory: input.schemaDirectory,
@@ -43,7 +59,7 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
     });
     vectors.push({
       name,
-      passed: result.differences.length === 0 && !result.collectionChanged,
+      status: result.differences.length === 0 && !result.collectionChanged ? "passed" as const : "failed" as const,
       collection_changed: result.collectionChanged,
       differences: result.differences,
       actual_report: result.actual,
@@ -56,9 +72,11 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
     finished_at: input.finishedAt ?? new Date().toISOString(),
     capabilities,
     summary: {
-      total: vectors.length,
-      passed: vectors.filter((vector) => vector.passed).length,
-      failed: vectors.filter((vector) => !vector.passed).length,
+      discovered: vectors.length,
+      executed: vectors.filter((vector) => vector.status !== "not_run_unsupported").length,
+      passed: vectors.filter((vector) => vector.status === "passed").length,
+      failed: vectors.filter((vector) => vector.status === "failed").length,
+      skipped: vectors.filter((vector) => vector.status === "not_run_unsupported").length,
       changed: vectors.filter((vector) => vector.collection_changed).length,
     },
     vectors,

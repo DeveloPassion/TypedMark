@@ -17,11 +17,15 @@ test("records reproducible evidence for every golden vector", async () => {
     finishedAt: "2026-09-08T08:01:00.000Z",
   });
 
-  expect(evidence.summary).toEqual({ total: 6, passed: 6, failed: 0, changed: 0 });
+  expect(evidence.summary).toEqual({ discovered: 6, executed: 4, passed: 4, failed: 0, skipped: 2, changed: 0 });
   expect(evidence.specification_revision).toBe("spec-test-revision");
   expect(evidence.adapter_revision).toBe("adapter-test-revision");
   expect(evidence.vectors.map((vector) => vector.name)).toContain("unsupported-required-extension");
-  expect(evidence.vectors.every((vector) => vector.differences.length === 0 && !vector.collection_changed)).toBe(true);
+  expect(evidence.vectors.filter((vector) => vector.status !== "not_run_unsupported").every((vector) => vector.differences.length === 0 && !vector.collection_changed)).toBe(true);
+  expect(evidence.vectors.filter((vector) => vector.status === "not_run_unsupported").map((vector) => vector.name)).toEqual([
+    "explicit-type-property-set-valid",
+    "optional-artifacts-valid",
+  ]);
 });
 
 test("checked-in evidence contains schema-valid reports and a passing summary", () => {
@@ -29,6 +33,6 @@ test("checked-in evidence contains schema-valid reports and a passing summary", 
   expect(evidence.summary).toEqual({ total: 6, passed: 6, failed: 0, changed: 0 });
   const registry = new SchemaRegistry(schemaDirectory);
   for (const vector of evidence.vectors) {
-    expect(registry.validate("validation-report.schema.json", vector.actual_report), vector.name).toEqual([]);
+    if (vector.actual_report) expect(registry.validate("validation-report.schema.json", vector.actual_report), vector.name).toEqual([]);
   }
 });

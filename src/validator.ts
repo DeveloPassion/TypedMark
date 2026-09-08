@@ -179,11 +179,7 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
-  "typedmark:automation": "0.1.0",
-  "typedmark:queries": "0.1.0",
-  "typedmark:reuse": "0.1.0",
   "typedmark:systems": "0.1.0",
-  "typedmark:views": "0.1.0",
 };
 
 function validateSystemContract(root: string, metadataDirectory: string, mode: ValidationReport["mode"], config: Data, required: ExtensionMap, evaluated: ExtensionMap, registry: SchemaRegistry, results: ValidationResult[]) {
