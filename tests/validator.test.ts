@@ -104,3 +104,11 @@ test("exercises a subset of the checked-in semantic vectors", () => {
     }
   }
 });
+
+test("orders findings by Unicode code point rather than UTF-16 code unit", () => {
+  const root = collection();
+  writeFileSync(join(root, "\uE000.md"), "---\nnote_type: note\ntitle: \uE000\nextra: true\n---\n");
+  writeFileSync(join(root, "\u{10000}.md"), "---\nnote_type: note\ntitle: \u{10000}\nextra: true\n---\n");
+  const paths = run(root).results.filter((result) => result.code === "unknown_field").map((result) => result.path);
+  expect(paths).toEqual(["\uE000.md", "\u{10000}.md"]);
+});

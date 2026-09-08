@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { parseMarkdown } from "../src/frontmatter";
@@ -42,6 +42,24 @@ test("refuses automatic migration classification when source history is absent",
     status: "manual_resolution_required",
     reasons: ["The target system has no history.md for classifying the 0.1.0 to 0.2.0 update."],
   });
+});
+
+test("rejects symbolic links in an imported system before copying", async () => {
+  const source = systemFixture();
+  const outside = mkdtempSync(join(tmpdir(), "typedmark-outside-"));
+  roots.push(outside);
+  writeFileSync(join(outside, "secret.md"), "outside");
+  symlinkSync(outside, join(source, ".typedmark", "linked"), "junction");
+  const target = join(mkdtempSync(join(tmpdir(), "typedmark-target-parent-")), "instance");
+  roots.push(resolve(target, ".."));
+
+  await expect(instantiateSystem({
+    sourceRoot: source,
+    targetRoot: target,
+    collectionName: "working-notes",
+    schemaDirectory,
+  })).rejects.toThrow("symbolic link");
+  expect(existsSync(target)).toBe(false);
 });
 
 function systemFixture(version = "0.1.0"): string {

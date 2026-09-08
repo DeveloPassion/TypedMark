@@ -1,7 +1,8 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import { parseMarkdown, FrontmatterError } from "./frontmatter";
+import { parseMarkdown } from "./frontmatter";
+import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import type {
   ExtensionMap,
@@ -84,7 +85,7 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
     }
   }
 
-  const metadataDirectory = typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark";
+  const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
   validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results);
   const schemaArtifacts = loadArtifacts(join(root, metadataDirectory, "schemas"), root, "invalid_note_type_schema", "CM-538", results, config);
   const propertySets = evaluatedExtensions["typedmark:reuse"]
@@ -260,6 +261,10 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
   const path = join(root, metadataDirectory, "templates", templateName);
   if (!existsSync(path)) {
     if (explicit) add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-73", `Explicit template ${templateName} is missing`);
+    return;
+  }
+  if (lstatSync(path).isSymbolicLink()) {
+    add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-73", `Template ${templateName} must not be a symbolic link`);
     return;
   }
   try {
@@ -511,7 +516,7 @@ function sortResults(results: ValidationResult[]) {
     for (const key of RESULT_ORDER) {
       const leftValue = String(left[key] ?? "");
       const rightValue = String(right[key] ?? "");
-      const compared = leftValue < rightValue ? -1 : leftValue > rightValue ? 1 : 0;
+      const compared = compareUnicodeCodePoints(leftValue, rightValue);
       if (compared !== 0) return compared;
     }
     return 0;
@@ -584,6 +589,10 @@ function isExcluded(path: string, globs: string[]) {
 
 function sameCompatibilityLine(left: string, right: string) {
   return left.split(".").slice(0, 2).join(".") === right.split(".").slice(0, 2).join(".");
+}
+
+function safeMetadataDirectory(value: unknown): string {
+  return typeof value === "string" && value !== "." && value !== ".." && /^[^/\\]+$/.test(value) ? value : ".typedmark";
 }
 
 function stringMap(value: Data): ExtensionMap {

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { SchemaRegistry } from "./schema-registry";
+import { compareUnicodeCodePoints } from "./order";
 import { STANDARD_EXTENSIONS, validateCollection } from "./validator";
 import type { AdapterCapabilities, ExtensionMap, ValidationReport } from "./types";
 
@@ -76,7 +77,7 @@ async function snapshot(root: string): Promise<Array<{ path: string; size: numbe
     }
   }
   await visit(root);
-  return files.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
+  return files.sort((left, right) => compareUnicodeCodePoints(left.path, right.path));
 }
 
 function stableReport(report: ValidationReport): unknown {
@@ -92,5 +93,5 @@ function stableReport(report: ValidationReport): unknown {
 }
 
 function orderedObject(value: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(value).sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0));
+  return Object.fromEntries(Object.entries(value).sort(([left], [right]) => compareUnicodeCodePoints(left, right)));
 }

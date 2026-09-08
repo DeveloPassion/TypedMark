@@ -1,5 +1,5 @@
 import { cp, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { stringify } from "yaml";
 import { getCapabilities } from "./adapter";
@@ -32,18 +32,22 @@ export async function instantiateSystem(input: InstantiateSystemInput): Promise<
   const targetRoot = resolve(input.targetRoot);
   if (existsSync(targetRoot)) throw new Error(`Target already exists: ${targetRoot}`);
 
+  const sourceConfigPath = join(sourceRoot, "typedmark.md");
+  assertNoSymbolicLinks(sourceConfigPath);
+  const sourceDocument = parseMarkdown(readFileSync(sourceConfigPath, "utf8"));
+  const sourceConfig = sourceDocument.data;
+  const metadataDirectory = safeMetadataDirectory(sourceConfig.metadata_directory);
+  const sourceMetadata = join(sourceRoot, metadataDirectory);
+  if (existsSync(sourceMetadata)) assertNoSymbolicLinks(sourceMetadata);
+
   const capabilities = getCapabilities().extensions;
   const sourceReport = validateCollection({ collectionRoot: sourceRoot, schemaDirectory: input.schemaDirectory, mode: "system_definition", supportedExtensions: capabilities });
   if (!sourceReport.valid) throw new Error(`Source system is not conforming: ${JSON.stringify(sourceReport.results)}`);
-  const sourceDocument = parseMarkdown(readFileSync(join(sourceRoot, "typedmark.md"), "utf8"));
-  const sourceConfig = sourceDocument.data;
   if (typeof sourceConfig.name !== "string" || typeof sourceConfig.version !== "string" || !isRecord(sourceConfig.scaffold)) throw new Error("Source is not a versioned system definition");
 
   await mkdir(dirname(targetRoot), { recursive: true });
   const stagingRoot = await mkdtemp(join(dirname(targetRoot), ".typedmark-instantiate-"));
   try {
-    const metadataDirectory = typeof sourceConfig.metadata_directory === "string" ? sourceConfig.metadata_directory : ".typedmark";
-    const sourceMetadata = join(sourceRoot, metadataDirectory);
     if (existsSync(sourceMetadata)) await cp(sourceMetadata, join(stagingRoot, metadataDirectory), { recursive: true });
 
     const targetConfig = structuredClone(sourceConfig);
@@ -93,7 +97,7 @@ export function checkMigrationReadiness(input: { systemRoot: string; fromVersion
   const config = parseMarkdown(readFileSync(join(root, "typedmark.md"), "utf8")).data;
   const targetVersion = String(config.version ?? "");
   if (targetVersion === input.fromVersion) return { status: "ready", reasons: [] };
-  const metadataDirectory = typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark";
+  const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
   const historyPath = join(root, metadataDirectory, "history.md");
   if (!existsSync(historyPath)) return {
     status: "manual_resolution_required",
@@ -133,3 +137,14 @@ function isRecord(value: unknown): value is Record<string, any> {
 }
 
 function normalized(path: string): string { return path.replaceAll("\\", "/"); }
+
+function safeMetadataDirectory(value: unknown): string {
+  return typeof value === "string" && value !== "." && value !== ".." && /^[^/\\]+$/.test(value) ? value : ".typedmark";
+}
+
+function assertNoSymbolicLinks(path: string): void {
+  const details = lstatSync(path);
+  if (details.isSymbolicLink()) throw new Error(`System import refuses symbolic link: ${path}`);
+  if (!details.isDirectory()) return;
+  for (const entry of readdirSync(path)) assertNoSymbolicLinks(join(path, entry));
+}
