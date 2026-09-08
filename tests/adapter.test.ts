@@ -54,13 +54,11 @@ test("report comparison ignores messages but not machine fields or duplicates", 
 
 test("runs every checked-in golden vector without modifying its collection", async () => {
   const supportedExtensions = getCapabilities().extensions;
-  for (const name of [
-    "core-valid",
-    "core-invalid-field-value",
-    "mandatory-tags-missing",
-    "explicit-type-property-set-valid",
-    "optional-artifacts-valid",
-  ]) {
+  const names = (await readdir(goldenDirectory, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  for (const name of names) {
     const vectorDirectory = join(goldenDirectory, name);
     const result = await runConformanceVector({
       vectorDirectory,
