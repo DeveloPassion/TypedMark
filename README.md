@@ -47,3 +47,6 @@ separate writer capability. System instantiation is the narrow exception defined
 by the system contract: it stages a new target, preserves the metadata artifacts,
 removes the source's publishing identity, records composition provenance, and
 validates the materialized collection before publishing the target directory.
+
+The checked-in [0.1.0 evidence](evidence/0.1.0/README.md) records the exact
+specification and adapter revisions used for the current conformance run.
