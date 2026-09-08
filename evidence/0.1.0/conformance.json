@@ -1,23 +1,24 @@
 {
-  "specification_revision": "8317a067b2feb7eba609bd551289f88397ec8568",
-  "adapter_revision": "d4b907cc1d7f3d24ddcf890da469de097da91246",
-  "started_at": "2026-09-08T07:52:34.653Z",
-  "finished_at": "2026-09-08T07:52:36.823Z",
+  "specification_revision": "155d668d46c2912244d345fa5ff417a71bac07ac",
+  "adapter_revision": "d109e4f45a09984c8f509e7f9019eacea02093c4",
+  "started_at": "2026-09-08T08:04:20.476Z",
+  "finished_at": "2026-09-08T08:04:21.912Z",
   "capabilities": {
     "core": { "0.1": "0.1.0" },
-    "extensions": {
-      "typedmark:automation": "0.1.0",
-      "typedmark:queries": "0.1.0",
-      "typedmark:reuse": "0.1.0",
-      "typedmark:systems": "0.1.0",
-      "typedmark:views": "0.1.0"
-    }
+    "extensions": { "typedmark:systems": "0.1.0" }
   },
-  "summary": { "total": 6, "passed": 6, "failed": 0, "changed": 0 },
+  "summary": {
+    "discovered": 6,
+    "executed": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 2,
+    "changed": 0
+  },
   "vectors": [
     {
       "name": "core-invalid-field-value",
-      "passed": true,
+      "status": "passed",
       "collection_changed": false,
       "differences": [],
       "actual_report": {
@@ -40,7 +41,7 @@
     },
     {
       "name": "core-valid",
-      "passed": true,
+      "status": "passed",
       "collection_changed": false,
       "differences": [],
       "actual_report": {
@@ -55,30 +56,18 @@
     },
     {
       "name": "explicit-type-property-set-valid",
-      "passed": true,
+      "status": "not_run_unsupported",
       "collection_changed": false,
       "differences": [],
-      "actual_report": {
-        "specification_version": "0.1.0",
-        "mode": "instantiated_collection",
-        "evaluation": "complete",
-        "required_extensions": {
-          "typedmark:reuse": "0.1.0",
-          "typedmark:views": "0.1.0",
-          "typedmark:queries": "0.1.0"
-        },
-        "evaluated_extensions": {
-          "typedmark:queries": "0.1.0",
-          "typedmark:reuse": "0.1.0",
-          "typedmark:views": "0.1.0"
-        },
-        "valid": true,
-        "results": []
-      }
+      "unsupported_extensions": [
+        "typedmark:queries",
+        "typedmark:reuse",
+        "typedmark:views"
+      ]
     },
     {
       "name": "mandatory-tags-missing",
-      "passed": true,
+      "status": "passed",
       "collection_changed": false,
       "differences": [],
       "actual_report": {
@@ -101,30 +90,18 @@
     },
     {
       "name": "optional-artifacts-valid",
-      "passed": true,
+      "status": "not_run_unsupported",
       "collection_changed": false,
       "differences": [],
-      "actual_report": {
-        "specification_version": "0.1.0",
-        "mode": "instantiated_collection",
-        "evaluation": "complete",
-        "required_extensions": {
-          "typedmark:automation": "0.1.0",
-          "typedmark:views": "0.1.0",
-          "typedmark:queries": "0.1.0"
-        },
-        "evaluated_extensions": {
-          "typedmark:automation": "0.1.0",
-          "typedmark:queries": "0.1.0",
-          "typedmark:views": "0.1.0"
-        },
-        "valid": true,
-        "results": []
-      }
+      "unsupported_extensions": [
+        "typedmark:automation",
+        "typedmark:queries",
+        "typedmark:views"
+      ]
     },
     {
       "name": "unsupported-required-extension",
-      "passed": true,
+      "status": "passed",
       "collection_changed": false,
       "differences": [],
       "actual_report": {

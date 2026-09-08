@@ -1,17 +1,19 @@
 # TypedMark 0.1.0 conformance evidence
 
 This record covers the six golden vectors checked into TypedMarkSpecification at
-`8317a067b2feb7eba609bd551289f88397ec8568`. They were executed by adapter commit
-`d4b907cc1d7f3d24ddcf890da469de097da91246` on 2026-09-08.
+`155d668d46c2912244d345fa5ff417a71bac07ac`. They were selected by adapter commit
+`d109e4f45a09984c8f509e7f9019eacea02093c4` on 2026-09-08.
 
 Results:
 
-- six vectors executed and matched every expected machine-stable report field;
+- four eligible vectors executed and matched every expected machine-stable report field;
 - zero vector failures;
 - zero collection path or byte changes during validation;
 - Core-only valid and invalid cases passed;
-- the supported Reuse/Queries/Views and Automation pilots passed; and
-- the unsupported `example:review@1.2.0` pilot remained incomplete and invalid.
+- the unsupported `example:review@1.2.0` negotiation pilot remained incomplete
+  and invalid; and
+- two normal vectors were not run because their required Reuse, Queries, Views,
+  and Automation contracts are not advertised by this adapter slice.
 
 Run the evidence suite from this repository with:
 
