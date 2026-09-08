@@ -21,6 +21,7 @@ test("advertises the exact contracts the adapter evaluates", () => {
       "typedmark:automation": "0.1.0",
       "typedmark:queries": "0.1.0",
       "typedmark:reuse": "0.1.0",
+      "typedmark:systems": "0.1.0",
       "typedmark:views": "0.1.0",
     },
   });

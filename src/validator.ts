@@ -85,6 +85,7 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
   }
 
   const metadataDirectory = typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark";
+  validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results);
   const schemaArtifacts = loadArtifacts(join(root, metadataDirectory, "schemas"), root, "invalid_note_type_schema", "CM-538", results, config);
   const propertySets = evaluatedExtensions["typedmark:reuse"]
     ? loadNamedArtifacts(join(root, metadataDirectory, "property-sets"), root, "property_set", "property-set.schema.json", registry, "invalid_property_set", "CM-533", results, config)
@@ -177,8 +178,39 @@ const STANDARD_EXTENSIONS: ExtensionMap = {
   "typedmark:automation": "0.1.0",
   "typedmark:queries": "0.1.0",
   "typedmark:reuse": "0.1.0",
+  "typedmark:systems": "0.1.0",
   "typedmark:views": "0.1.0",
 };
+
+function validateSystemContract(root: string, metadataDirectory: string, mode: ValidationReport["mode"], config: Data, required: ExtensionMap, evaluated: ExtensionMap, registry: SchemaRegistry, results: ValidationResult[]) {
+  const historyPath = join(root, metadataDirectory, "history.md");
+  const usesSystems = config.version !== undefined || config.scaffold !== undefined || config.composition !== undefined || existsSync(historyPath);
+  if (usesSystems && !required["typedmark:systems"]) {
+    add(results, config, "invalid_extension_declaration", "typedmark.md", "EXT-16", "System fields, composition, and history require typedmark:systems", { extension: "typedmark:systems" });
+  }
+  if ((mode === "system_definition" || mode === "both") && (typeof config.version !== "string" || !isRecord(config.scaffold))) {
+    add(results, config, "invalid_system", "typedmark.md", "SCE-7", "A system definition requires version and scaffold");
+  }
+  if (!evaluated["typedmark:systems"]) return;
+  if (isRecord(config.composition) && Array.isArray(config.composition.sources)) {
+    const names = new Set<string>();
+    for (const source of config.composition.sources) {
+      if (!isRecord(source) || typeof source.name !== "string") continue;
+      if (source.name === config.name || names.has(source.name)) add(results, config, "invalid_composition", "typedmark.md", "SCE-50", `Invalid or duplicate composition source ${source.name}`);
+      names.add(source.name);
+    }
+  }
+  if (!existsSync(historyPath)) return;
+  try {
+    const history = parseMarkdown(readFileSync(historyPath, "utf8")).data;
+    const errors = registry.validate("history.schema.json", history);
+    if (errors.length > 0) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-95", schemaError(errors));
+    const entries = Array.isArray(history.history) ? history.history : [];
+    if (typeof config.version === "string" && entries.at(-1)?.version !== config.version) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-100", "The last history version must equal the system version");
+  } catch (error) {
+    add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-95", errorMessage(error));
+  }
+}
 
 function loadArtifacts(directory: string, root: string, code: string, rule: string, results: ValidationResult[], config: Data) {
   if (!existsSync(directory)) return [];

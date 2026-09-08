@@ -22,6 +22,12 @@ bun run validate validate <collection-directory> --schemas <specification-schema
 
 # Compare one checked-in conformance vector with its expected report
 bun run validate run-vector <vector-directory> --schemas <specification-schema-directory>
+
+# Instantiate a system as a self-contained working collection
+bun run validate instantiate <system-directory> <target-directory> --name <collection-name> --schemas <specification-schema-directory>
+
+# Refuse an automatic update when source history cannot classify it
+bun run validate migration-readiness <system-directory> --from <installed-version> --schemas <specification-schema-directory>
 ```
 
 Validation emits one portable report to standard output. A collection with an
@@ -37,4 +43,7 @@ contracts with `getCapabilities`, and compare or run vectors through
 empty validation report.
 
 Writer operations are intentionally out of scope until TypedMark defines a
-separate writer capability.
+separate writer capability. System instantiation is the narrow exception defined
+by the system contract: it stages a new target, preserves the metadata artifacts,
+removes the source's publishing identity, records composition provenance, and
+validates the materialized collection before publishing the target directory.
