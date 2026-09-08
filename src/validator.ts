@@ -62,7 +62,10 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
     ? config.specification_version
     : input.referenceEdition ?? IMPLEMENTED_CORE;
   const requiredExtensions = isRecord(config.extensions) ? stringMap(config.extensions) : {};
-  const supportedExtensions = input.supportedExtensions ?? STANDARD_EXTENSIONS;
+  const requestedExtensions = input.supportedExtensions ?? STANDARD_EXTENSIONS;
+  const supportedExtensions = Object.fromEntries(
+    Object.entries(STANDARD_EXTENSIONS).filter(([extension, version]) => requestedExtensions[extension] === version),
+  );
   const evaluatedExtensions: ExtensionMap = {};
   let evaluation: "complete" | "incomplete" = "complete";
 

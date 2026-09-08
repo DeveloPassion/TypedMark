@@ -45,6 +45,18 @@ test("reports unsupported exact extensions as incomplete", () => {
   expect(run(root)).toMatchObject({ evaluation: "incomplete", valid: false, evaluated_extensions: {} });
 });
 
+test("does not let a caller claim support for an unimplemented extension", () => {
+  const root = collection();
+  const file = join(root, "typedmark.md");
+  writeFileSync(file, readFileSync(file, "utf8").replace("name: test", "extensions: {example:review: 1.2.0}\nname: test"));
+  const report = validateCollection({
+    collectionRoot: root,
+    schemaDirectory,
+    supportedExtensions: { "example:review": "1.2.0" },
+  });
+  expect(report).toMatchObject({ evaluation: "incomplete", valid: false, evaluated_extensions: {} });
+});
+
 test("suppression cannot turn unsupported evaluation into conformance", () => {
   const root = collection();
   const file = join(root, "typedmark.md");
