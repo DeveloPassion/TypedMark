@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "conformance": "bun scripts/run-conformance.ts",
     "test": "bun test ./tests",
     "typecheck": "tsc --noEmit",
     "validate": "bun src/cli.ts"
