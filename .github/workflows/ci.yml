@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tooling
+        uses: actions/checkout@v4
+        with:
+          path: TypedMark
+
+      - name: Check out specification evidence baseline
+        uses: actions/checkout@v4
+        with:
+          repository: DeveloPassion/TypedMarkSpecification
+          ref: 155d668d46c2912244d345fa5ff417a71bac07ac
+          path: TypedMarkSpecification
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install locked dependencies
+        working-directory: TypedMark
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        working-directory: TypedMark
+        run: bun run typecheck
+
+      - name: Test
+        working-directory: TypedMark
+        run: bun test
+
+      - name: Audit dependencies
+        working-directory: TypedMark
+        run: bun audit
+
+      - name: Run conformance vectors
+        working-directory: TypedMark
+        run: bun run conformance --spec ../TypedMarkSpecification
