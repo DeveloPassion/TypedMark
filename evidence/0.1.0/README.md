@@ -1,8 +1,8 @@
 # TypedMark 0.1.0 conformance evidence
 
 This record covers the six golden vectors checked into TypedMarkSpecification at
-`155d668d46c2912244d345fa5ff417a71bac07ac`. They were selected by adapter commit
-`d109e4f45a09984c8f509e7f9019eacea02093c4` on 2026-09-08.
+`9d8b828c4b4895818983f3077e4fc981275d8bb2`. They were selected by adapter commit
+`026d61346ec7682994744ae6d25b92942d55e38d` on 2026-09-08.
 
 Results:
 
