@@ -1,21 +1,71 @@
 {
-  "specification_revision": "9d8b828c4b4895818983f3077e4fc981275d8bb2",
-  "adapter_revision": "026d61346ec7682994744ae6d25b92942d55e38d",
-  "started_at": "2026-09-08T13:15:26.533Z",
-  "finished_at": "2026-09-08T13:15:28.951Z",
+  "specification_revision": "a57d6e7d66b19870a6805e324f5a3e3661cab990",
+  "adapter_revision": "5d8c583a4eaf68911f150a2bf7a51221f88d2139",
+  "started_at": "2026-09-10T10:01:04.913Z",
+  "finished_at": "2026-09-10T10:01:14.373Z",
   "capabilities": {
-    "core": { "0.1": "0.1.0" },
-    "extensions": { "typedmark:systems": "0.1.0" }
+    "core": {
+      "0.1": "0.1.0"
+    },
+    "extensions": {
+      "typedmark:systems": "0.1.0"
+    }
   },
   "summary": {
-    "discovered": 6,
-    "executed": 4,
-    "passed": 4,
+    "discovered": 12,
+    "executed": 10,
+    "passed": 10,
     "failed": 0,
     "skipped": 2,
     "changed": 0
   },
   "vectors": [
+    {
+      "name": "conflicting-extension-dependency",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0+other",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_extension_declaration",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-15",
+            "message": "typedmark:views at 0.1.0 requires typedmark:queries at 0.1.0",
+            "extension": "typedmark:views"
+          },
+          {
+            "code": "unsupported_extension",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-19",
+            "message": "typedmark:queries at 0.1.0+other is required but unsupported",
+            "extension": "typedmark:queries"
+          },
+          {
+            "code": "unsupported_extension",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-19",
+            "message": "typedmark:views at 0.1.0 is required but unsupported",
+            "extension": "typedmark:views"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
+      }
+    },
     {
       "name": "core-invalid-field-value",
       "status": "passed",
@@ -28,15 +78,20 @@
         "required_extensions": {},
         "evaluated_extensions": {},
         "valid": false,
-        "results": [{
-          "code": "invalid_field_value",
-          "severity": "error",
-          "path": "Meetings/tomorrow - Kickoff.md",
-          "rule_id": "FDR-13",
-          "message": "meeting_date must satisfy the date value contract",
-          "note_type": "meeting",
-          "field": "meeting_date"
-        }]
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Meetings/tomorrow - Kickoff.md",
+            "rule_id": "FDR-13",
+            "message": "meeting_date must satisfy the date value contract",
+            "note_type": "meeting",
+            "field": "meeting_date"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
       }
     },
     {
@@ -52,6 +107,9 @@
         "evaluated_extensions": {},
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
       }
     },
     {
@@ -63,7 +121,35 @@
         "typedmark:queries",
         "typedmark:reuse",
         "typedmark:views"
-      ]
+      ],
+      "skip_reason": "A required extension is unavailable outside an explicit negotiation case"
+    },
+    {
+      "name": "limited-required-extension",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "unsupported_extension",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-19",
+            "message": "typedmark:systems at 0.1.0 is required but unsupported",
+            "extension": "typedmark:systems"
+          }
+        ]
+      },
+      "requested_extensions": {}
     },
     {
       "name": "mandatory-tags-missing",
@@ -77,15 +163,57 @@
         "required_extensions": {},
         "evaluated_extensions": {},
         "valid": false,
-        "results": [{
-          "code": "invalid_field_value",
-          "severity": "error",
-          "path": "Projects/Launch.md",
-          "rule_id": "MN-128",
-          "message": "tags is missing the effective mandatory tag project",
-          "note_type": "project",
-          "field": "tags"
-        }]
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Projects/Launch.md",
+            "rule_id": "MN-128",
+            "message": "tags is missing the effective mandatory tag project",
+            "note_type": "project",
+            "field": "tags"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "missing-extension-dependency",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_extension_declaration",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-14",
+            "message": "typedmark:views at 0.1.0 requires typedmark:queries at 0.1.0",
+            "extension": "typedmark:views"
+          },
+          {
+            "code": "unsupported_extension",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-19",
+            "message": "typedmark:views at 0.1.0 is required but unsupported",
+            "extension": "typedmark:views"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
       }
     },
     {
@@ -97,7 +225,86 @@
         "typedmark:automation",
         "typedmark:queries",
         "typedmark:views"
-      ]
+      ],
+      "skip_reason": "A required extension is unavailable outside an explicit negotiation case"
+    },
+    {
+      "name": "supported-required-extension",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "undeclared-reuse",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_extension_declaration",
+            "severity": "error",
+            "path": ".typedmark/schemas/note.md",
+            "rule_id": "EXT-16",
+            "message": "This construct requires typedmark:reuse",
+            "extension": "typedmark:reuse"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "unsupported-extension-version",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0+other"
+        },
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "unsupported_extension",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-19",
+            "message": "typedmark:systems at 0.1.0+other is required but unsupported",
+            "extension": "typedmark:systems"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "unsupported-required-extension",
@@ -108,17 +315,24 @@
         "specification_version": "0.1.0",
         "mode": "instantiated_collection",
         "evaluation": "incomplete",
-        "required_extensions": { "example:review": "1.2.0" },
+        "required_extensions": {
+          "example:review": "1.2.0"
+        },
         "evaluated_extensions": {},
         "valid": false,
-        "results": [{
-          "code": "unsupported_extension",
-          "severity": "error",
-          "path": "typedmark.md",
-          "rule_id": "EXT-19",
-          "message": "example:review at 1.2.0 is required but unsupported",
-          "extension": "example:review"
-        }]
+        "results": [
+          {
+            "code": "unsupported_extension",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-19",
+            "message": "example:review at 1.2.0 is required but unsupported",
+            "extension": "example:review"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
       }
     }
   ]
