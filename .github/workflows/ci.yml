@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: DeveloPassion/TypedMarkSpecification
-          ref: 5e26ccc132aeea084ef3265f5b5e2623721422a5
+          ref: 0a33553000e0b20d4c3bf62ce2adf2f41c9d6bfd
           path: TypedMarkSpecification
 
       - uses: oven-sh/setup-bun@v2
@@ -38,7 +38,7 @@ jobs:
 
       - name: Test
         working-directory: TypedMark
-        run: bun test
+        run: bun run test
 
       - name: Audit dependencies
         working-directory: TypedMark

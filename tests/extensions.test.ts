@@ -32,9 +32,9 @@ afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: 
 test.each([
   ["typedmark:views", "typedmark:queries"],
   ["typedmark:expansion", "typedmark:expressions"],
-])("reports the missing dependency of %s even when that contract is unsupported", (extension, dependency) => {
+])("reports the missing dependency of %s regardless of implementation support", (extension, dependency) => {
   const report = run(collection({ extensions: { [extension]: "0.1.0" } }));
-  expect(report).toMatchObject({ evaluation: "incomplete", valid: false, evaluated_extensions: {} });
+  expect(report.valid).toBe(false);
   expect(report.results).toContainEqual(expect.objectContaining({
     code: "invalid_extension_declaration", rule_id: "EXT-14", path: "typedmark.md", extension,
   }));

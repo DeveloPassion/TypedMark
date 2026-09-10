@@ -18,6 +18,8 @@ test("advertises the exact contracts the adapter evaluates", () => {
   expect(getCapabilities()).toEqual({
     core: { "0.1": "0.1.0" },
     extensions: {
+      "typedmark:queries": "0.1.0",
+      "typedmark:views": "0.1.0",
       "typedmark:systems": "0.1.0",
     },
     operations: { "typedmark:queries": "0.1.0" },
@@ -52,8 +54,9 @@ test("report comparison ignores messages but not machine fields or duplicates", 
 
 test.each([
   "core-valid", "core-invalid-field-value", "mandatory-tags-missing", "unsupported-required-extension",
-  "missing-extension-dependency", "conflicting-extension-dependency", "unsupported-extension-version",
+  "unsupported-extension-version",
   "limited-required-extension", "supported-required-extension", "undeclared-reuse",
+  "views-valid", "views-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);
@@ -73,6 +76,10 @@ test("a caller cannot manufacture an unsupported case by hiding an implemented c
   } finally {
     rmSync(vectorDirectory, { recursive: true, force: true });
   }
+});
+
+test.each(["missing-extension-dependency", "conflicting-extension-dependency"])("does not run expired negotiation preconditions for %s", async (name) => {
+  await expect(runConformanceVector({ vectorDirectory: join(goldenDirectory, name), schemaDirectory })).rejects.toThrow("not_run_precondition");
 });
 
 test("caller scope can omit an irrelevant version during exact-version negotiation", async () => {

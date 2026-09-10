@@ -11,7 +11,7 @@ source of truth.
 
 ```powershell
 bun install
-bun test
+bun run test
 bun run typecheck
 
 # Advertise implemented contracts
@@ -48,8 +48,10 @@ The adapter checks the standard Views/Queries and Expansion/Expressions
 dependency declarations and requires Reuse for inheritance, property sets,
 and conditions. Standalone Queries and the bounded Systems adapter are
 implemented. Capability discovery lists standalone query execution under
-`operations` and collection-validation support under `extensions`. Reuse,
-Views, Automation, and embedded-query validation remain unsupported.
+`operations` and collection-validation support under `extensions`. Collection
+validation now also implements Queries and Views for datasets, saved views,
+and their embedded queries over supported note models. Reuse, Expressions,
+Automation, and content-expansion query surfaces remain unsupported.
 
 ## Query pilot
 
@@ -77,8 +79,23 @@ No missing clock or random values are generated, and no source is rewritten.
 The `query-pilot-valid` golden vector runs six cases, comparing normalized
 evaluation, rows, groups, and expected failure rules. Provenance remains in the
 actual evidence and has separate regression coverage. This implements the
-standalone query pilot toward B4 in specification issue #123. Embedded-query
-validation and broader optional-contract coverage remain open.
+standalone query pilot toward B4 in specification issue #123.
+
+## Dataset and view validation
+
+Validation evaluates each dataset query once against the captured collection
+model, checks its common column definitions and row identity, and reuses that
+result for referring views. Saved views also support embedded queries, with
+version, presentation-column, and typed board-value checks. Findings use the
+owning dataset/view path and rule identifiers.
+
+`views-valid` and `views-invalid` exercise complete supported-contract reports
+and semantic failures. Validation stays incomplete when a required query/model
+dependency is unavailable or queries belong to an unsupported body contract;
+it does not turn unavailable interpretation into invalid dataset content.
+Unsupported and deliberately limited contracts remain visible in reports.
+Content-expansion query surfaces and broader optional-contract coverage remain
+open. No validator renders a UI, rewrites artifacts, or edits notes.
 
 ## Adapter boundary
 

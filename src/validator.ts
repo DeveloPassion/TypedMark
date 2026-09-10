@@ -7,6 +7,8 @@ import { SchemaRegistry } from "./schema-registry";
 import { expandObjectDefaults, validateFieldValue, type FieldDefinition } from "./field-values";
 import { CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
 import { isExcluded } from "./paths";
+import { readStableCollection } from "./snapshot";
+import { validateViews } from "./views";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -33,7 +35,7 @@ const RESULT_ORDER = [
 ] as const;
 
 export function validateCollection(input: ValidateCollectionInput): ValidationReport {
-  return readCollectionModel(input).report;
+  return readStableCollection(input.collectionRoot, (root) => readCollectionModel({ ...input, collectionRoot: root })).report;
 }
 
 export function readCollectionModel(input: ValidateCollectionInput): CollectionModel {
@@ -74,7 +76,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 
   if (!sameCompatibilityLine(version, IMPLEMENTED_CORE)) {
     evaluation = "incomplete";
-    add(results, config, "unsupported_specification_version", "typedmark.md", "FND-71", `Unsupported specification version ${version}`);
+    add(results, config, "unsupported_specification_version", "typedmark.md", "FND-92", `Unsupported specification version ${version}`);
   }
 
   const configErrors = registry.validate("typedmark.schema.json", config);
@@ -187,11 +189,20 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 
   validateUniqueness(effectiveNotes, config, results);
   validateCounts(effectiveNotes, schemas, config, results);
+  const views = validateViews(root, metadataDirectory, model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry);
+  results.push(...views.results);
+  if (views.incomplete) evaluation = "incomplete";
+  for (const extension of views.blocked.keys()) {
+    delete evaluatedExtensions[extension];
+    evaluation = "incomplete";
+  }
   sortResults(results);
   return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
+  "typedmark:queries": "0.1.0",
+  "typedmark:views": "0.1.0",
   "typedmark:systems": "0.1.0",
 };
 
@@ -298,9 +309,9 @@ function validateOptionalArtifacts(root: string, metadataDirectory: string, requ
   ] as const;
   for (const [extension, directory, identity, schema, code, rule] of definitions) {
     const path = join(root, metadataDirectory, directory);
-    const hasArtifacts = existsSync(path) && readdirSync(path, { withFileTypes: true }).some((entry) => entry.isFile() && entry.name.endsWith(".md"));
+    const hasArtifacts = existsSync(path) && lstatSync(path).isDirectory() && readdirSync(path, { withFileTypes: true }).some((entry) => entry.isFile() && entry.name.endsWith(".md"));
     if (hasArtifacts && !required[extension]) add(results, config, "invalid_extension_declaration", "typedmark.md", "EXT-16", `${directory} requires ${extension}`, { extension });
-    if (evaluated[extension]) loadNamedArtifacts(path, root, identity, schema, registry, code, rule, results, config);
+    if (evaluated[extension] && extension !== "typedmark:views") loadNamedArtifacts(path, root, identity, schema, registry, code, rule, results, config);
   }
 }
 

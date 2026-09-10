@@ -19,7 +19,7 @@ type Projection =
   | { kind: "note_type"; as: string }
   | { kind: "field"; as: string; field: string }
   | { kind: "mapped_field"; as: string; definition: FieldDefinition; sources: Source[] };
-interface Descriptor {
+export interface Descriptor {
   specification_version: string;
   note_types?: string[];
   include_deleted?: boolean;
@@ -37,17 +37,23 @@ export interface QueryResult {
   provenance: Array<Record<string, Provenance | null>>;
   groups?: Array<{ key: unknown[]; rows: Row[] }>;
 }
-export class QueryError extends Error {
-  constructor(readonly rule_id: string, message: string) { super(`${rule_id}: ${message}`); }
+export interface QueryEvaluation {
+  result: QueryResult;
+  columns: Map<string, FieldDefinition[]>;
+  admittedTypes: string[];
 }
-function fail(rule: string, message: string): never { throw new QueryError(rule, message); }
+export type QueryUnavailability = { extension: string } | { specificationVersion: string; path?: string };
+export class QueryError extends Error {
+  constructor(readonly rule_id: string, message: string, readonly unavailable?: QueryUnavailability) { super(`${rule_id}: ${message}`); }
+}
+function fail(rule: string, message: string, unavailable?: QueryUnavailability): never { throw new QueryError(rule, message, unavailable); }
 export const QUERY_VERSION = "0.1.0";
 
 export function parseQuery(input: unknown, registry: SchemaRegistry): Descriptor {
   const errors = registry.validate("query.schema.json", input);
   if (errors.length) fail("CM-301", errors.map((error) => `${error.instancePath} ${error.message}`).join("; "));
   const query = input as Descriptor;
-  if (!query.specification_version.startsWith("0.1.")) fail("CM-405", "Unsupported query specification compatibility line");
+  if (!query.specification_version.startsWith("0.1.")) fail("CM-405", "Unsupported query specification compatibility line", { specificationVersion: query.specification_version });
   return query;
 }
 
@@ -73,7 +79,7 @@ function lookup(note: ManagedNote, path: string): { definition?: FieldDefinition
   return { definition: declared, present: !!declared && present, stored, effective };
 }
 
-function definitionAt(fields: Record<string, FieldDefinition>, path: string): FieldDefinition | undefined {
+export function definitionAt(fields: Record<string, FieldDefinition>, path: string): FieldDefinition | undefined {
   const segments = path.split(".");
   let definition: FieldDefinition | undefined;
   for (let index = 0; index < segments.length; index++) {
@@ -142,12 +148,25 @@ function checkConversion(source: FieldDefinition, target: FieldDefinition, decla
   if (declared && declared !== conversion) fail("CM-483", "Declared conversion class differs from the actual conversion");
 }
 
+function requireSchemaModel(model: CollectionModel, type: string): void {
+  const schema = model.schemas.get(type);
+  if (!schema) fail("CM-311", `Unknown note type ${type}`);
+  if (!String(schema.specification_version).startsWith("0.1.")) fail("CM-308", `${type} uses an unsupported specification compatibility line`, { specificationVersion: String(schema.specification_version), path: `${model.config.metadata_directory ?? ".typedmark"}/schemas/${type}.md` });
+  const needsReuse = model.config.default_property_sets || schema.abstract || schema.extends || schema.property_sets || schema.exclude_property_sets || schema.frontmatter_remove || schema.conditions;
+  if (needsReuse && !model.report.evaluated_extensions["typedmark:reuse"]) fail("CM-308", `${type} requires Reuse to construct its effective model`, { extension: "typedmark:reuse" });
+  if (Object.values(noteFieldDefinitions(schema)).some((field) => field.computed) && !model.report.evaluated_extensions["typedmark:expressions"]) fail("CM-308", `${type} requires expression evaluation`, { extension: "typedmark:expressions" });
+}
+
 export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryResult {
+  return evaluateQueryWithColumns(model, query).result;
+}
+
+export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor): QueryEvaluation {
   const timezone = model.config.timezone ?? "UTC";
   const invalid = model.report.results.find((result) => result.severity === "error" && result.path === "typedmark.md"
     && ["invalid_collection_configuration", "unsupported_specification_version"].includes(result.code));
-  if (invalid) fail("CM-308", invalid.message);
-  const checkTypes = (types?: string[]) => { for (const type of types ?? []) if (!model.schemas.has(type)) fail("CM-311", `Unknown note type ${type}`); };
+  if (invalid) fail("CM-308", invalid.message, invalid.code === "unsupported_specification_version" ? { specificationVersion: String(model.config.specification_version), path: invalid.path } : undefined);
+  const checkTypes = (types?: string[]) => { for (const type of types ?? []) requireSchemaModel(model, type); };
   const matchesType = (type: string, requested: string): boolean => {
     if (type === requested) return true;
     if (!model.schemas.get(requested)?.abstract) return false;
@@ -175,6 +194,7 @@ export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryR
   if (query.where) checkPredicate(query.where);
   const aliases = new Set<string>();
   const concreteTypes = [...model.schemas].filter(([, schema]) => !schema.abstract).map(([type]) => type).filter((type) => admitted(type, query.note_types));
+  concreteTypes.forEach((type) => requireSchemaModel(model, type));
   const usedTypes = new Set(concreteTypes);
   const typeFields = new Map(concreteTypes.map((type) => [type, noteFieldDefinitions(model.schemas.get(type)!)]));
   const modeledPaths = new Set(model.notes.map((note) => note.path));
@@ -223,11 +243,7 @@ export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryR
   const byPath = new Map(model.notes.map((note) => [note.path, note]));
   const ensureModel = (note: ManagedNote) => {
     usedTypes.add(note.noteType);
-    const schema = model.schemas.get(note.noteType)!;
-    if (!String(schema.specification_version).startsWith("0.1.")) fail("CM-308", `${note.noteType} uses an unsupported specification compatibility line`);
-    const needsReuse = model.config.default_property_sets || schema.extends || schema.property_sets || schema.exclude_property_sets || schema.frontmatter_remove || schema.conditions;
-    if (needsReuse && !model.report.evaluated_extensions["typedmark:reuse"]) fail("CM-308", `${note.path} requires Reuse to construct its effective model`);
-    if (Object.values(note.fields).some((field) => field.computed) && !model.report.evaluated_extensions["typedmark:expressions"]) fail("CM-308", `${note.path} requires expression evaluation`);
+    requireSchemaModel(model, note.noteType);
     if (graph.failures.has(note.path)) fail("CM-307", graph.failures.get(note.path)![0]!.message);
     if (note.problems.some((problem) => ["invalid_field_value", "missing_required_field", "missing_declared_field"].includes(problem.code))) {
       fail("CM-308", `${note.path} has no conforming effective field model`);
@@ -353,5 +369,5 @@ export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryR
     });
     result.groups = groups.map(({ key, rows }) => ({ key, rows }));
   }
-  return result;
+  return { result, columns: columnDefinitions, admittedTypes: concreteTypes };
 }

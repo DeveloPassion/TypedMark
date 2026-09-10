@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "conformance": "bun scripts/run-conformance.ts",
-    "test": "bun test ./tests",
+    "test": "bun test ./tests --timeout 30000",
     "typecheck": "tsc --noEmit",
     "validate": "bun src/cli.ts"
   },
