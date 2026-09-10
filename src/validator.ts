@@ -4,6 +4,7 @@ import { basename, dirname, join, relative } from "node:path";
 import { parseMarkdown } from "./frontmatter";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
+import { expandObjectDefaults, validateFieldValue, type FieldDefinition } from "./field-values";
 import type {
   ExtensionMap,
   Severity,
@@ -13,6 +14,27 @@ import type {
 } from "./types";
 
 type Data = Record<string, any>;
+
+export interface CollectionNote {
+  path: string;
+  stored: Data;
+  body: string;
+  candidates?: string[];
+}
+export interface ManagedNote extends CollectionNote {
+  noteType: string;
+  values: Data;
+  fields: Record<string, FieldDefinition>;
+  problems: ValidationResult[];
+}
+export interface CollectionModel {
+  report: ValidationReport;
+  config: Data;
+  schemas: Map<string, Data>;
+  documents: CollectionNote[];
+  notes: ManagedNote[];
+  assets: Set<string>;
+}
 
 const IMPLEMENTED_CORE = "0.1.0";
 const CORE_FIELDS: Record<string, Data> = {
@@ -24,8 +46,8 @@ const CORE_FIELDS: Record<string, Data> = {
   tags: { type: "tags", nullable: false, default_value: [] },
   title: { type: "text", nullable: true },
   description: { type: "text", nullable: true },
-  created_at: { type: "datetime", nullable: true },
-  updated_at: { type: "datetime", nullable: true },
+  created_at: { type: "datetime", nullable: true, generated: "now" },
+  updated_at: { type: "datetime", nullable: true, generated: "now_on_write" },
 };
 
 const DEFAULT_SEVERITIES: Record<string, "error" | "warn"> = {
@@ -39,23 +61,32 @@ const RESULT_ORDER = [
 ] as const;
 
 export function validateCollection(input: ValidateCollectionInput): ValidationReport {
+  return readCollectionModel(input).report;
+}
+
+export function readCollectionModel(input: ValidateCollectionInput): CollectionModel {
   const root = input.collectionRoot;
   const mode = input.mode ?? "instantiated_collection";
   const registry = new SchemaRegistry(input.schemaDirectory);
   const results: ValidationResult[] = [];
   const configPath = join(root, "typedmark.md");
   let config: Data = {};
+  const schemas = new Map<string, Data>();
+  const documents: CollectionNote[] = [];
+  const effectiveNotes: ManagedNote[] = [];
+  const assets = new Set<string>();
+  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, documents, notes: effectiveNotes, assets });
 
   if (!existsSync(configPath)) {
     add(results, {}, "invalid_collection_configuration", "typedmark.md", "CM-1", "typedmark.md is missing");
-    return report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results);
+    return model(report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results));
   }
 
   try {
     config = parseMarkdown(readFileSync(configPath, "utf8")).data;
   } catch (error) {
     add(results, {}, "invalid_collection_configuration", "typedmark.md", "CM-537", errorMessage(error));
-    return report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results);
+    return model(report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results));
   }
 
   const version = typeof config.specification_version === "string"
@@ -97,7 +128,6 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
   const propertySets = evaluatedExtensions["typedmark:reuse"]
     ? loadNamedArtifacts(join(root, metadataDirectory, "property-sets"), root, "property_set", "property-set.schema.json", registry, "invalid_property_set", "CM-533", results, config)
     : new Map<string, Data>();
-  const schemas = new Map<string, Data>();
 
   for (const artifact of schemaArtifacts) {
     if (artifact.data.abstract === true || ["extends", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"]
@@ -152,17 +182,20 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
     else validateTemplate(root, metadataDirectory, name, schema, registry, results, config);
   }
 
-  const notes = discoverNotes(root, metadataDirectory, arrayOfStrings(config.exclude_paths));
-  const effectiveNotes: Array<{ path: string; noteType: string; values: Data; fields: Data }> = [];
+  const files = discoverFiles(root, metadataDirectory, arrayOfStrings(config.exclude_paths));
+  const notes = files.filter((path) => path.endsWith(".md"));
+  for (const path of files) if (!path.endsWith(".md")) assets.add(path.normalize("NFC"));
   for (const notePath of notes) {
     let document;
     try {
       document = parseMarkdown(readFileSync(join(root, notePath), "utf8"));
     } catch (error) {
       add(results, config, "invalid_note_frontmatter", notePath, "MN-118", errorMessage(error));
+      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: "", candidates: noteTypeCandidates(config, notePath, {}) });
       continue;
     }
     const candidates = noteTypeCandidates(config, notePath, document.data);
+    documents.push({ path: notePath.normalize("NFC"), stored: document.data, body: document.body, candidates });
     if (candidates.length === 0) continue;
     if (candidates.length !== 1 || !schemas.has(candidates[0]!)) {
       add(results, config, "invalid_note_type_mapping", notePath, "MN-120", "The note does not resolve to exactly one known concrete note type");
@@ -176,13 +209,14 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
     }
     const validation = validateNote(notePath, document.data, document.body, noteType, schema, config);
     results.push(...validation.results);
-    effectiveNotes.push({ path: notePath, noteType, values: validation.values, fields: validation.fields });
+    effectiveNotes.push({ path: notePath.normalize("NFC"), noteType, values: validation.values, fields: validation.fields,
+      stored: document.data, body: document.body, problems: validation.results });
   }
 
   validateUniqueness(effectiveNotes, config, results);
   validateCounts(effectiveNotes, schemas, config, results);
   sortResults(results);
-  return report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results);
+  return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
@@ -322,11 +356,16 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
   }
 }
 
-function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data) {
-  const results: ValidationResult[] = [];
-  const fields: Data = {};
+export function noteFieldDefinitions(schema: Data): Record<string, FieldDefinition> {
+  const fields: Record<string, FieldDefinition> = {};
   for (const [name, definition] of Object.entries(CORE_FIELDS)) fields[name] = { ...definition, ...(schema.frontmatter?.[name] ?? {}) };
   for (const [name, definition] of Object.entries(schema.frontmatter ?? {})) fields[name] = { ...(fields[name] ?? {}), ...(definition as Data) };
+  return fields;
+}
+
+function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data) {
+  const results: ValidationResult[] = [];
+  const fields = noteFieldDefinitions(schema);
   const values: Data = {};
 
   for (const [name, definition] of Object.entries(fields)) {
@@ -341,12 +380,13 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
       add(results, config, "missing_declared_field", path, "MN-98", `${name} has no conforming effective value`, { note_type: noteType, field: name }, schema);
       continue;
     }
+    value = expandObjectDefaults(value, definition);
     values[name] = value;
     if (value === null) {
       if (definition.nullable !== true) add(results, config, "missing_required_field", path, "MN-99", `${name} is explicitly null but is not nullable`, { note_type: noteType, field: name }, schema);
       continue;
     }
-    const failure = validateValue(value, definition, config.timezone ?? "UTC");
+    const failure = validateFieldValue(value, definition, config.timezone ?? "UTC", config.vocabularies);
     if (failure) add(results, config, "invalid_field_value", path, failure.rule, `${name} ${failure.message}`, { note_type: noteType, field: name }, schema);
   }
 
@@ -354,6 +394,18 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   for (const field of Object.keys(stored)) {
     if (!declared.has(field)) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, { note_type: noteType, field }, schema);
   }
+  const unknownChildren = (value: unknown, definition: FieldDefinition, prefix: string): void => {
+    if (definition.type === "list" && definition.items && Array.isArray(value)) {
+      value.forEach((item, index) => unknownChildren(item, definition.items!, `${prefix}.${index}`));
+    } else if (definition.type === "object" && isRecord(value)) {
+      for (const [name, child] of Object.entries(value)) {
+        const field = `${prefix}.${name}`;
+        if (!Object.hasOwn(definition.fields ?? {}, name)) add(results, config, "unknown_field", path, "MN-112", `${field} is not declared`, { note_type: noteType, field }, schema);
+        else unknownChildren(child, definition.fields![name]!, field);
+      }
+    }
+  };
+  for (const [name, definition] of Object.entries(fields)) unknownChildren(stored[name], definition, name);
 
   const mandatory = [...arrayOfStrings(config.mandatory_tags), ...arrayOfStrings(schema.mandatory_tags)].filter((value, index, all) => all.indexOf(value) === index);
   const tags = Array.isArray(values.tags) ? values.tags : [];
@@ -366,60 +418,6 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   return { values, fields, results };
 }
 
-function validateValue(value: unknown, definition: Data, timezone: string): { rule: string; message: string } | undefined {
-  const type = definition.type;
-  const typeRules: Record<string, string> = { text: "FDR-8", integer: "FDR-9", number: "FDR-11", checkbox: "FDR-12", date: "FDR-13", time: "FDR-14", datetime: "FDR-15", link: "FDR-19", list: "FDR-20", tags: "FDR-21", object: "FDR-28", any: "FDR-29" };
-  let valid = true;
-  if (type === "text" || type === "link") valid = typeof value === "string";
-  else if (type === "integer") valid = typeof value === "number" && Number.isInteger(value);
-  else if (type === "number") valid = typeof value === "number" && Number.isFinite(value);
-  else if (type === "checkbox") valid = typeof value === "boolean";
-  else if (type === "date") valid = isDate(value);
-  else if (type === "time") valid = isTime(value, definition.format);
-  else if (type === "datetime") valid = isDateTime(value, timezone);
-  else if (type === "list") valid = Array.isArray(value);
-  else if (type === "tags") valid = Array.isArray(value) && value.every((tag) => typeof tag === "string" && /^[\p{L}\p{N}_][\p{L}\p{N}_-]*(?:\/[\p{L}\p{N}_][\p{L}\p{N}_-]*)*$/u.test(tag)) && new Set(value).size === value.length;
-  else if (type === "object") valid = isRecord(value);
-  if (!valid) return { rule: typeRules[type] ?? "FDR-7", message: `must satisfy the ${type} value contract` };
-
-  if (type === "list" && definition.items) {
-    for (const item of value as unknown[]) {
-      const failure = validateValue(item, definition.items, timezone);
-      if (failure) return failure;
-    }
-  }
-  if (type === "object" && definition.fields) {
-    const object = value as Data;
-    for (const [name, child] of Object.entries(definition.fields as Data)) {
-      if (!Object.hasOwn(object, name)) continue;
-      if (object[name] === null) return { rule: "MN-99", message: `contains null for non-nullable ${name}` };
-      const failure = validateValue(object[name], child as Data, timezone);
-      if (failure) return failure;
-    }
-  }
-  if ((type === "text" || type === "link") && definition.not_blank === true && !/\S/u.test(value as string)) return { rule: "FDR-176", message: "must not be blank" };
-  if (type === "object" && definition.not_empty === true && Object.keys(value as Data).length === 0) return { rule: "FDR-171", message: "must not be empty" };
-  if (definition.format === "slug" && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value as string)) return { rule: "FDR-139", message: "must use slug format" };
-  if (definition.format === "uri") {
-    try { if (!(new URL(value as string)).protocol) throw new Error(); } catch { return { rule: "FDR-140", message: "must be an absolute URI" }; }
-  }
-  if (typeof definition.regex === "string" && !(new RegExp(`^(?:${definition.regex})$`, "u")).test(value as string)) return { rule: "FDR-181", message: "does not match the declared regular expression" };
-  const measure: string | number = typeof value === "string"
-    ? (type === "text" || type === "link" ? [...value].length : value)
-    : Array.isArray(value)
-      ? value.length
-      : typeof value === "number"
-        ? value
-        : String(value);
-  if (definition.min !== undefined && measure < definition.min) return { rule: "FDR-187", message: `is less than ${definition.min}` };
-  if (definition.max !== undefined && measure > definition.max) return { rule: "FDR-193", message: `is greater than ${definition.max}` };
-  if (Array.isArray(definition.allowed_values)) {
-    const candidates = type === "list" ? value as unknown[] : [value];
-    if (candidates.some((candidate) => !definition.allowed_values.some((allowed: unknown) => deepEqual(allowed, candidate)))) return { rule: "FDR-198", message: "is not in allowed_values" };
-  }
-  if (Object.hasOwn(definition, "const_value") && !deepEqual(value, definition.const_value)) return { rule: "FDR-213", message: "does not equal const_value" };
-  return undefined;
-}
 
 function validateStorage(path: string, values: Data, fields: Data, schema: Data, noteType: string, config: Data, results: ValidationResult[]) {
   const storage = values.archived === true && schema.storage?.archive ? schema.storage.archive : schema.storage;
@@ -477,7 +475,7 @@ function validateCounts(notes: Array<{ noteType: string }>, schemas: Map<string,
   }
 }
 
-function discoverNotes(root: string, metadataDirectory: string, excludes: string[]): string[] {
+function discoverFiles(root: string, metadataDirectory: string, excludes: string[]): string[] {
   const result: string[] = [];
   const visit = (directory: string, relativeDirectory = "") => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -489,7 +487,7 @@ function discoverNotes(root: string, metadataDirectory: string, excludes: string
       if (entry.isDirectory()) {
         if (existsSync(join(absolute, "typedmark.md"))) continue;
         visit(absolute, relativePath);
-      } else if (entry.isFile() && entry.name.endsWith(".md")) result.push(relativePath);
+      } else if (entry.isFile()) result.push(relativePath);
     }
   };
   visit(root);
@@ -603,27 +601,8 @@ function formatStorageValue(value: unknown, definition: Data | undefined, format
   return "undefined";
 }
 
-function isDate(value: unknown) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  try { return Temporal.PlainDate.from(value).toString() === value; } catch { return false; }
-}
 
-function isTime(value: unknown, format: unknown) {
-  if (typeof value !== "string") return false;
-  const patterns: Record<string, RegExp> = { "hh:mm": /^(?:[01]\d|2[0-3]):[0-5]\d$/, "hh:mm:ss": /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/, "hh:mm:ss.sss": /^(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d\.\d{3}$/ };
-  return typeof format === "string" && Boolean(patterns[format]?.test(value));
-}
-
-function isDateTime(value: unknown, timezone: string) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?$/.test(value)) return false;
-  try {
-    if (/[zZ]|[+-]\d{2}:\d{2}$/.test(value)) Temporal.Instant.from(value);
-    else Temporal.PlainDateTime.from(value).toZonedDateTime(timezone, { disambiguation: "reject" });
-    return true;
-  } catch { return false; }
-}
-
-function isExcluded(path: string, globs: string[]) {
+export function isExcluded(path: string, globs: string[]) {
   return globs.some((glob) => {
     const regex = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\?/g, "[^/]").replace(/\u0000/g, ".*");
     return new RegExp(`^${regex}$`, "u").test(path);
