@@ -1,13 +1,15 @@
 {
-  "specification_revision": "5e26ccc132aeea084ef3265f5b5e2623721422a5",
-  "adapter_revision": "0ebf047eed31870d81763ab689f525e674a6dfc8",
-  "started_at": "2026-09-10T11:40:10.194Z",
-  "finished_at": "2026-09-10T11:40:23.247Z",
+  "specification_revision": "0a33553000e0b20d4c3bf62ce2adf2f41c9d6bfd",
+  "adapter_revision": "4c960e5e867ae5e0b46346e79393a7e92b30f1ea",
+  "started_at": "2026-09-10T13:55:40.961Z",
+  "finished_at": "2026-09-10T13:55:54.610Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
     },
     "extensions": {
+      "typedmark:queries": "0.1.0",
+      "typedmark:views": "0.1.0",
       "typedmark:systems": "0.1.0"
     },
     "operations": {
@@ -15,59 +17,23 @@
     }
   },
   "summary": {
-    "discovered": 13,
+    "discovered": 15,
     "executed": 11,
     "passed": 11,
     "failed": 0,
-    "skipped": 2,
+    "skipped": 4,
     "changed": 0
   },
   "vectors": [
     {
       "name": "conflicting-extension-dependency",
-      "status": "passed",
+      "status": "not_run_precondition",
       "collection_changed": false,
       "differences": [],
-      "actual_report": {
-        "specification_version": "0.1.0",
-        "mode": "instantiated_collection",
-        "evaluation": "incomplete",
-        "required_extensions": {
-          "typedmark:queries": "0.1.0+other",
-          "typedmark:views": "0.1.0"
-        },
-        "evaluated_extensions": {},
-        "valid": false,
-        "results": [
-          {
-            "code": "invalid_extension_declaration",
-            "severity": "error",
-            "path": "typedmark.md",
-            "rule_id": "EXT-15",
-            "message": "typedmark:views at 0.1.0 requires typedmark:queries at 0.1.0",
-            "extension": "typedmark:views"
-          },
-          {
-            "code": "unsupported_extension",
-            "severity": "error",
-            "path": "typedmark.md",
-            "rule_id": "EXT-19",
-            "message": "typedmark:queries at 0.1.0+other is required but unsupported",
-            "extension": "typedmark:queries"
-          },
-          {
-            "code": "unsupported_extension",
-            "severity": "error",
-            "path": "typedmark.md",
-            "rule_id": "EXT-19",
-            "message": "typedmark:views at 0.1.0 is required but unsupported",
-            "extension": "typedmark:views"
-          }
-        ]
-      },
-      "requested_extensions": {
-        "typedmark:systems": "0.1.0"
-      }
+      "precondition_extensions": [
+        "typedmark:views"
+      ],
+      "skip_reason": "Adapter capabilities do not satisfy the explicit negotiation preconditions"
     },
     {
       "name": "core-invalid-field-value",
@@ -94,6 +60,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -112,6 +80,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -121,9 +91,7 @@
       "collection_changed": false,
       "differences": [],
       "unsupported_extensions": [
-        "typedmark:queries",
-        "typedmark:reuse",
-        "typedmark:views"
+        "typedmark:reuse"
       ],
       "skip_reason": "A required extension is unavailable outside an explicit negotiation case"
     },
@@ -152,7 +120,10 @@
           }
         ]
       },
-      "requested_extensions": {}
+      "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0"
+      }
     },
     {
       "name": "mandatory-tags-missing",
@@ -179,45 +150,20 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
     {
       "name": "missing-extension-dependency",
-      "status": "passed",
+      "status": "not_run_precondition",
       "collection_changed": false,
       "differences": [],
-      "actual_report": {
-        "specification_version": "0.1.0",
-        "mode": "instantiated_collection",
-        "evaluation": "incomplete",
-        "required_extensions": {
-          "typedmark:views": "0.1.0"
-        },
-        "evaluated_extensions": {},
-        "valid": false,
-        "results": [
-          {
-            "code": "invalid_extension_declaration",
-            "severity": "error",
-            "path": "typedmark.md",
-            "rule_id": "EXT-14",
-            "message": "typedmark:views at 0.1.0 requires typedmark:queries at 0.1.0",
-            "extension": "typedmark:views"
-          },
-          {
-            "code": "unsupported_extension",
-            "severity": "error",
-            "path": "typedmark.md",
-            "rule_id": "EXT-19",
-            "message": "typedmark:views at 0.1.0 is required but unsupported",
-            "extension": "typedmark:views"
-          }
-        ]
-      },
-      "requested_extensions": {
-        "typedmark:systems": "0.1.0"
-      }
+      "precondition_extensions": [
+        "typedmark:views"
+      ],
+      "skip_reason": "Adapter capabilities do not satisfy the explicit negotiation preconditions"
     },
     {
       "name": "optional-artifacts-valid",
@@ -225,9 +171,7 @@
       "collection_changed": false,
       "differences": [],
       "unsupported_extensions": [
-        "typedmark:automation",
-        "typedmark:queries",
-        "typedmark:views"
+        "typedmark:automation"
       ],
       "skip_reason": "A required extension is unavailable outside an explicit negotiation case"
     },
@@ -246,6 +190,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -432,6 +378,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -459,6 +407,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -488,6 +438,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -517,6 +469,85 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "views-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_dataset",
+            "severity": "error",
+            "path": ".typedmark/datasets/notes.md",
+            "rule_id": "CM-510",
+            "message": "CM-510: Row identity is duplicated",
+            "dataset": "notes"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/columns.md",
+            "rule_id": "CM-425",
+            "message": "CM-425: Unknown presented column missing",
+            "view": "columns"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/missing.md",
+            "rule_id": "CM-520",
+            "message": "CM-520: Referenced dataset does not resolve",
+            "view": "missing"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "views-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     }
