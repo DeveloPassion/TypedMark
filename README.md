@@ -35,6 +35,17 @@ unsupported required extension produces an incomplete report rather than a
 successful Core-only result. Validation runs are read-only; the vector runner
 also hashes every input file before and after evaluation.
 
+Conformance vectors can include the specification repository's non-normative
+`vector.json` negotiation context. Unsupported cases check advertised exact
+capabilities; deliberately disabled cases explicitly record the excluded
+capabilities. Unmet preconditions are reported as not run. Requirements come
+from the collection, and expected findings cannot select evaluation scope.
+
+The adapter checks the standard Views/Queries and Expansion/Expressions
+dependency declarations and requires Reuse for inheritance, property sets,
+and conditions. These declaration checks do not advertise implementation of
+those optional contracts.
+
 ## Adapter boundary
 
 Library callers use `validateCollection` from `src/validator.ts`, discover

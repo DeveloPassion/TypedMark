@@ -5,6 +5,8 @@ import { join, relative } from "node:path";
 import { SchemaRegistry } from "./schema-registry";
 import { compareUnicodeCodePoints } from "./order";
 import { STANDARD_EXTENSIONS, validateCollection } from "./validator";
+import { parseMarkdown } from "./frontmatter";
+import { readVectorContext, selectVectorCapabilities } from "./vector-context";
 import type { AdapterCapabilities, ExtensionMap, ValidationReport } from "./types";
 
 export interface RunVectorInput {
@@ -18,6 +20,7 @@ export interface VectorRunResult {
   expected: ValidationReport;
   differences: string[];
   collectionChanged: boolean;
+  requestedExtensions: ExtensionMap;
 }
 
 export function getCapabilities(): AdapterCapabilities {
@@ -42,19 +45,33 @@ export async function runConformanceVector(input: RunVectorInput): Promise<Vecto
     await cp(join(input.vectorDirectory, "collection"), collectionRoot, { recursive: true });
     const before = await snapshot(collectionRoot);
     const expected = JSON.parse(await readFile(join(input.vectorDirectory, "expected-validation-report.json"), "utf8")) as ValidationReport;
+    const registry = new SchemaRegistry(input.schemaDirectory);
+    const expectedErrors = registry.validate("validation-report.schema.json", expected);
+    if (expectedErrors.length > 0) throw new Error("Expected report violates validation-report.schema.json");
+    const config = parseMarkdown(await readFile(join(collectionRoot, "typedmark.md"), "utf8")).data;
+    const required = (config.extensions ?? {}) as ExtensionMap;
+    const selection = selectVectorCapabilities(required, getCapabilities().extensions, readVectorContext(input.vectorDirectory, registry));
+    if (selection.skip) throw new Error(`${selection.skip.status}: ${selection.skip.reason}: ${selection.skip.extensions.join(", ")}`);
+    if (input.supportedExtensions) {
+      for (const [extension, version] of Object.entries(selection.supportedExtensions)) {
+        if (input.supportedExtensions[extension] === version) continue;
+        if (required[extension] === version) throw new Error(`Declare the deliberate exclusion of ${extension} in vector.json`);
+        delete selection.supportedExtensions[extension];
+      }
+    }
     const actual = validateCollection({
       collectionRoot,
       schemaDirectory: input.schemaDirectory,
       referenceEdition: expected.specification_version,
       mode: expected.mode,
-      supportedExtensions: input.supportedExtensions ?? getCapabilities().extensions,
+      supportedExtensions: selection.supportedExtensions,
     });
     const after = await snapshot(collectionRoot);
-    const reportErrors = new SchemaRegistry(input.schemaDirectory).validate("validation-report.schema.json", actual);
+    const reportErrors = registry.validate("validation-report.schema.json", actual);
     const differences = reportErrors.length > 0
       ? [`Actual report violates validation-report.schema.json: ${reportErrors.map((error) => `${error.instancePath} ${error.message}`).join("; ")}`]
       : compareValidationReports(expected, actual);
-    return { actual, expected, differences, collectionChanged: JSON.stringify(before) !== JSON.stringify(after) };
+    return { actual, expected, differences, collectionChanged: JSON.stringify(before) !== JSON.stringify(after), requestedExtensions: selection.supportedExtensions };
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
