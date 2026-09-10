@@ -88,7 +88,10 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
     }
   }
 
+  validateExtensionDependencies(requiredExtensions, config, results);
+
   const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
+  validateReuseDeclaration(root, metadataDirectory, config, requiredExtensions, results);
   validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results);
   const schemaArtifacts = loadArtifacts(join(root, metadataDirectory, "schemas"), root, "invalid_note_type_schema", "CM-538", results, config);
   const propertySets = evaluatedExtensions["typedmark:reuse"]
@@ -97,6 +100,10 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
   const schemas = new Map<string, Data>();
 
   for (const artifact of schemaArtifacts) {
+    if (artifact.data.abstract === true || ["extends", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"]
+      .some((key) => Object.hasOwn(artifact.data, key))) {
+      requireExtension("typedmark:reuse", artifact.relativePath, requiredExtensions, config, results);
+    }
     const errors = registry.validate("note-type.schema.json", artifact.data);
     const inferredName = basename(artifact.path, ".md");
     const name = typeof artifact.data.note_type === "string" ? artifact.data.note_type : inferredName;
@@ -181,6 +188,43 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
 const STANDARD_EXTENSIONS: ExtensionMap = {
   "typedmark:systems": "0.1.0",
 };
+
+// Knowing a standard contract's declaration requirements does not advertise
+// support for evaluating its semantics (EXT-21).
+function validateExtensionDependencies(required: ExtensionMap, config: Data, results: ValidationResult[]) {
+  const dependencies: Record<string, ExtensionMap> = {
+    "typedmark:views": { "typedmark:queries": "0.1.0" },
+    "typedmark:expansion": { "typedmark:expressions": "0.1.0" },
+  };
+  for (const [extension, needed] of Object.entries(dependencies)) {
+    if (required[extension] !== "0.1.0") continue;
+    for (const [dependency, version] of Object.entries(needed)) {
+      if (required[dependency] === version) continue;
+      const rule = Object.hasOwn(required, dependency) ? "EXT-15" : "EXT-14";
+      add(results, config, "invalid_extension_declaration", "typedmark.md", rule,
+        `${extension} at 0.1.0 requires ${dependency} at ${version}`, { extension });
+    }
+  }
+}
+
+function requireExtension(extension: string, path: string, required: ExtensionMap, config: Data, results: ValidationResult[]) {
+  if (!Object.hasOwn(required, extension)) {
+    add(results, config, "invalid_extension_declaration", path, "EXT-16", `This construct requires ${extension}`, { extension });
+  }
+}
+
+function validateReuseDeclaration(root: string, metadataDirectory: string, config: Data, required: ExtensionMap, results: ValidationResult[]) {
+  if (Object.hasOwn(config, "default_property_sets")) {
+    requireExtension("typedmark:reuse", "typedmark.md", required, config, results);
+  }
+  const directory = join(root, metadataDirectory, "property-sets");
+  if (!existsSync(directory) || !lstatSync(directory).isDirectory()) return;
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (entry.isFile() && entry.name.endsWith(".md")) {
+      requireExtension("typedmark:reuse", `${metadataDirectory}/property-sets/${entry.name}`, required, config, results);
+    }
+  }
+}
 
 function validateSystemContract(root: string, metadataDirectory: string, mode: ValidationReport["mode"], config: Data, required: ExtensionMap, evaluated: ExtensionMap, registry: SchemaRegistry, results: ValidationResult[]) {
   const historyPath = join(root, metadataDirectory, "history.md");

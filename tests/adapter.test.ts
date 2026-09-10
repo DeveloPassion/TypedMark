@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { cp, readdir, readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
@@ -49,18 +49,37 @@ test("report comparison ignores messages but not machine fields or duplicates", 
   expect(compareValidationReports(expected, duplicate)).not.toEqual([]);
 });
 
-test("runs every eligible checked-in golden vector without modifying its collection", async () => {
+test.each([
+  "core-valid", "core-invalid-field-value", "mandatory-tags-missing", "unsupported-required-extension",
+  "missing-extension-dependency", "conflicting-extension-dependency", "unsupported-extension-version",
+  "limited-required-extension", "supported-required-extension", "undeclared-reuse",
+])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
-  for (const name of ["core-valid", "core-invalid-field-value", "mandatory-tags-missing", "unsupported-required-extension"]) {
-    const vectorDirectory = join(goldenDirectory, name);
-    const result = await runConformanceVector({
-      vectorDirectory,
-      schemaDirectory,
-      supportedExtensions,
-    });
-    expect(result.differences, name).toEqual([]);
-    expect(result.collectionChanged, name).toBe(false);
+  const vectorDirectory = join(goldenDirectory, name);
+  const result = await runConformanceVector({ vectorDirectory, schemaDirectory, supportedExtensions });
+  expect(result.differences, name).toEqual([]);
+  expect(result.collectionChanged, name).toBe(false);
+  if (name === "limited-required-extension") expect(result.requestedExtensions).toEqual({});
+});
+
+test("a caller cannot manufacture an unsupported case by hiding an implemented capability", async () => {
+  const vectorDirectory = mkdtempSync(join(tmpdir(), "typedmark-precondition-"));
+  try {
+    await cp(join(goldenDirectory, "limited-required-extension"), vectorDirectory, { recursive: true });
+    writeFileSync(join(vectorDirectory, "vector.json"), '{"unsupported_extensions":["typedmark:systems"]}');
+    await expect(runConformanceVector({ vectorDirectory, schemaDirectory, supportedExtensions: {} }))
+      .rejects.toThrow("not_run_precondition");
+  } finally {
+    rmSync(vectorDirectory, { recursive: true, force: true });
   }
+});
+
+test("caller scope can omit an irrelevant version during exact-version negotiation", async () => {
+  const result = await runConformanceVector({
+    vectorDirectory: join(goldenDirectory, "unsupported-extension-version"), schemaDirectory, supportedExtensions: {},
+  });
+  expect(result.differences).toEqual([]);
+  expect(result.requestedExtensions).toEqual({});
 });
 
 test("runs vectors from isolated temporary copies", async () => {
