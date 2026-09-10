@@ -7,6 +7,8 @@ import { compareUnicodeCodePoints } from "./order";
 import { STANDARD_EXTENSIONS, validateCollection } from "./validator";
 import { parseMarkdown } from "./frontmatter";
 import { readVectorContext, selectVectorCapabilities } from "./vector-context";
+import { runQueryCases, type QueryCaseResult } from "./query-vectors";
+import { QUERY_VERSION } from "./query";
 import type { AdapterCapabilities, ExtensionMap, ValidationReport } from "./types";
 
 export interface RunVectorInput {
@@ -21,12 +23,14 @@ export interface VectorRunResult {
   differences: string[];
   collectionChanged: boolean;
   requestedExtensions: ExtensionMap;
+  queryResults: QueryCaseResult[];
 }
 
 export function getCapabilities(): AdapterCapabilities {
   return {
     core: { "0.1": "0.1.0" },
     extensions: { ...STANDARD_EXTENSIONS },
+    operations: { "typedmark:queries": QUERY_VERSION },
   };
 }
 
@@ -66,12 +70,14 @@ export async function runConformanceVector(input: RunVectorInput): Promise<Vecto
       mode: expected.mode,
       supportedExtensions: selection.supportedExtensions,
     });
+    const queryResults = runQueryCases(input.vectorDirectory, collectionRoot, input.schemaDirectory, getCapabilities().operations, registry);
     const after = await snapshot(collectionRoot);
     const reportErrors = registry.validate("validation-report.schema.json", actual);
     const differences = reportErrors.length > 0
       ? [`Actual report violates validation-report.schema.json: ${reportErrors.map((error) => `${error.instancePath} ${error.message}`).join("; ")}`]
       : compareValidationReports(expected, actual);
-    return { actual, expected, differences, collectionChanged: JSON.stringify(before) !== JSON.stringify(after), requestedExtensions: selection.supportedExtensions };
+    for (const query of queryResults) for (const difference of query.differences) differences.push(`${query.name}: ${difference}`);
+    return { actual, expected, differences, collectionChanged: JSON.stringify(before) !== JSON.stringify(after), requestedExtensions: selection.supportedExtensions, queryResults };
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }

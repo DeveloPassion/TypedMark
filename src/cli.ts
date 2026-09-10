@@ -1,12 +1,27 @@
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import { getCapabilities, runConformanceVector } from "./adapter";
 import { checkMigrationReadiness, instantiateSystem } from "./system";
 import { validateCollection } from "./validator";
+import { queryCollection, QueryError } from "./query";
 
 const [command, target, ...rest] = Bun.argv.slice(2);
 
 if (command === "capabilities") {
   console.log(JSON.stringify(getCapabilities(), null, 2));
+} else if (command === "query" && target) {
+  const schemaDirectory = option(rest, "--schemas");
+  const queryPath = option(rest, "--query");
+  const queryVersion = option(rest, "--query-version");
+  if (!schemaDirectory || !queryPath || !queryVersion) fail("query requires --query <descriptor.json> --query-version <exact-version> --schemas <directory>");
+  try {
+    const result = queryCollection({ collectionRoot: resolve(target), schemaDirectory: resolve(schemaDirectory), queryVersion, query: JSON.parse(readFileSync(queryPath, "utf8")) });
+    console.log(JSON.stringify(result, null, 2));
+  } catch (error) {
+    if (!(error instanceof QueryError)) throw error;
+    console.error(JSON.stringify({ rule_id: error.rule_id, message: error.message }));
+    process.exitCode = 1;
+  }
 } else if (command === "validate" && target) {
   const schemaDirectory = option(rest, "--schemas");
   if (!schemaDirectory) fail("validate requires --schemas <directory>");
@@ -50,7 +65,7 @@ if (command === "capabilities") {
   console.log(JSON.stringify(readiness, null, 2));
   process.exitCode = readiness.status === "ready" ? 0 : 1;
 } else {
-  fail("Usage: bun src/cli.ts capabilities | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory>");
+  fail("Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory>");
 }
 
 function option(args: string[], name: string): string | undefined {

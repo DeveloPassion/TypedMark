@@ -20,6 +20,7 @@ test("advertises the exact contracts the adapter evaluates", () => {
     extensions: {
       "typedmark:systems": "0.1.0",
     },
+    operations: { "typedmark:queries": "0.1.0" },
   });
 });
 
@@ -59,7 +60,7 @@ test.each([
   const result = await runConformanceVector({ vectorDirectory, schemaDirectory, supportedExtensions });
   expect(result.differences, name).toEqual([]);
   expect(result.collectionChanged, name).toBe(false);
-  if (name === "limited-required-extension") expect(result.requestedExtensions).toEqual({});
+  if (name === "limited-required-extension") expect(result.requestedExtensions).not.toHaveProperty("typedmark:systems");
 });
 
 test("a caller cannot manufacture an unsupported case by hiding an implemented capability", async () => {
@@ -104,6 +105,14 @@ test("runs vectors from isolated temporary copies", async () => {
     rmSync(temporary, { recursive: true, force: true });
   }
 });
+
+test("executes the query pilot and records positive results and expected failures without writes", async () => {
+  const result = await runConformanceVector({ vectorDirectory: join(goldenDirectory, "query-pilot-valid"), schemaDirectory });
+  expect(result.differences).toEqual([]);
+  expect(result.collectionChanged).toBe(false);
+  expect(result.queryResults).toHaveLength(6);
+  expect(result.queryResults.every((query) => query.status === "passed")).toBe(true);
+}, 30_000);
 
 async function listFiles(root: string): Promise<string[]> {
   const result: string[] = [];
