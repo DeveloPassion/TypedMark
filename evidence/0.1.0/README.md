@@ -1,45 +1,51 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers the twelve golden vectors checked into TypedMarkSpecification
-at `a57d6e7d66b19870a6805e324f5a3e3661cab990`, using adapter commit
-`5d8c583a4eaf68911f150a2bf7a51221f88d2139` on 2026-09-10.
+This record covers the thirteen golden vectors at TypedMarkSpecification
+`5e26ccc132aeea084ef3265f5b5e2623721422a5`, using adapter
+`0ebf047eed31870d81763ab689f525e674a6dfc8` on 2026-09-10.
 
 Results:
 
-- ten eligible vectors executed and matched every expected machine-stable report field;
-- zero vector failures and zero collection path or byte changes;
-- exact supported requirements and explicitly disabled requirements produced their
-  respective complete and incomplete reports;
-- unknown extensions, unsupported exact versions (including build suffixes),
-  missing and conflicting dependencies, and undeclared Reuse produced the
-  expected diagnostics; and
-- two normal vectors were not run because their Reuse, Queries, Views, and
-  Automation contracts remain unimplemented.
+- eleven eligible collection vectors passed;
+- six standalone query cases passed, including their expected semantic failures;
+- zero collection path or byte changes across validation and query execution;
+- zero unexpected query or validation failures; and
+- two broader collection vectors remain unsupported because Reuse, Views,
+  and Automation are not implemented.
 
-The evidence includes each run's requested extension scope. Negotiation
-preconditions come from `vector.json` and are checked against advertised
-capabilities; expected reports cannot manufacture an unsupported condition.
-The declaration checks do not advertise new extension interpretation.
+Capabilities distinguish collection validation (`extensions`) from standalone
+execution (`operations`). Queries are advertised only as operations at
+`0.1.0`; embedded-query validation is still unsupported. The query pilot's
+collection is Core-only, and each operation supplies its exact query-contract
+version without changing collection declarations.
 
-Run the evidence suite from this repository with:
+The query cases cover effective defaults versus stored presence and projection,
+relationship predicates, ordering, limiting before grouping, logical-deletion
+selection, conditional conversion failure, and invalid boolean children.
+The harness compares evaluation, ordered rows/groups, alias order, and expected
+failure rules. Actual results retain provenance; separate regression tests cover
+its classification and read-only boundaries.
+
+Run the evidence suite with:
 
 ```powershell
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-This follow-up to specification issue #123 closes the tested declaration and
-negotiation gaps in B1/E2. Validation included 55 tooling regressions, type
-checking, and the dependency audit. The specification passed 318 regressions,
-235 fixture expectations, the rule-ID gate, and the 31-page site build.
+Validation included 105 tooling tests, type checking, dependency audit,
+321 specification tests, 238 fixture expectations, the rule-ID gate, and the
+31-page site build. Independent review findings have regression coverage,
+including immutable snapshot reads, heterogeneous grouping, empty-result mapping
+checks, and related-note version interpretation.
 
-The original adapter checkpoint was completed in one working session on
-2026-09-08; this negotiation follow-up was completed in one session on
-2026-09-10. These measurements cover the bounded adapter slices, not a complete
-implementation of every normative rule. B4's supported-query pilot and E2's
-broader optional-contract coverage remain open.
+This continues specification issue #123's standalone pilot work toward B4.
+Embedded-query validation and broader B4/E2 optional-contract coverage remain
+open. The original Core adapter and the subsequent negotiation and query work
+were each bounded working sessions; these results do not establish that every
+normative rule is implemented or measure a complete Core validator against the
+five-working-day target.
 
-The earlier companion system exercise uses TypedMarkExample commit `f2c7f14`
-and records system-definition validation, self-contained instantiation, offline
-validation, publishing-identity removal, provenance recording, and refusal to
-guess an update when `history.md` is absent. It was not rerun as part of this
-negotiation-only evidence refresh.
+The earlier companion system exercise remains at TypedMarkExample commit
+`f2c7f14`. It records instantiation, offline validation, publishing-identity
+removal, provenance, and absent-history behavior. It was not rerun for this query
+evidence refresh.
