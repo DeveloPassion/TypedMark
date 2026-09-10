@@ -1,6 +1,6 @@
 import { posix } from "node:path";
 import { Lexer, Marked } from "marked";
-import type { CollectionModel, ManagedNote } from "./validator";
+import type { CollectionModel, ManagedNote } from "./collection-model";
 
 export interface ParsedNoteLink { form: "wikilink" | "markdown"; target: string; embed: boolean }
 export class NoteLinkError extends Error {

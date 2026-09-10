@@ -3,7 +3,7 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSyn
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { parseMarkdown } from "./frontmatter";
-import { isExcluded } from "./validator";
+import { isExcluded } from "./paths";
 
 export class SnapshotChangedError extends Error {}
 

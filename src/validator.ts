@@ -5,6 +5,11 @@ import { parseMarkdown } from "./frontmatter";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import { expandObjectDefaults, validateFieldValue, type FieldDefinition } from "./field-values";
+import { CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
+import { isExcluded } from "./paths";
+export { noteFieldDefinitions } from "./collection-model";
+export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
+export { isExcluded } from "./paths";
 import type {
   ExtensionMap,
   Severity,
@@ -15,40 +20,7 @@ import type {
 
 type Data = Record<string, any>;
 
-export interface CollectionNote {
-  path: string;
-  stored: Data;
-  body: string;
-  candidates?: string[];
-}
-export interface ManagedNote extends CollectionNote {
-  noteType: string;
-  values: Data;
-  fields: Record<string, FieldDefinition>;
-  problems: ValidationResult[];
-}
-export interface CollectionModel {
-  report: ValidationReport;
-  config: Data;
-  schemas: Map<string, Data>;
-  documents: CollectionNote[];
-  notes: ManagedNote[];
-  assets: Set<string>;
-}
-
 const IMPLEMENTED_CORE = "0.1.0";
-const CORE_FIELDS: Record<string, Data> = {
-  note_type: { type: "text", nullable: false },
-  id: { type: "text", format: "slug", nullable: true },
-  deleted: { type: "checkbox", nullable: false, default_value: false },
-  archived: { type: "checkbox", nullable: false, default_value: false },
-  aliases: { type: "list", items: { type: "text" }, nullable: false, default_value: [] },
-  tags: { type: "tags", nullable: false, default_value: [] },
-  title: { type: "text", nullable: true },
-  description: { type: "text", nullable: true },
-  created_at: { type: "datetime", nullable: true, generated: "now" },
-  updated_at: { type: "datetime", nullable: true, generated: "now_on_write" },
-};
 
 const DEFAULT_SEVERITIES: Record<string, "error" | "warn"> = {
   unknown_field: "warn",
@@ -356,13 +328,6 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
   }
 }
 
-export function noteFieldDefinitions(schema: Data): Record<string, FieldDefinition> {
-  const fields: Record<string, FieldDefinition> = {};
-  for (const [name, definition] of Object.entries(CORE_FIELDS)) fields[name] = { ...definition, ...(schema.frontmatter?.[name] ?? {}) };
-  for (const [name, definition] of Object.entries(schema.frontmatter ?? {})) fields[name] = { ...(fields[name] ?? {}), ...(definition as Data) };
-  return fields;
-}
-
 function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data) {
   const results: ValidationResult[] = [];
   const fields = noteFieldDefinitions(schema);
@@ -601,13 +566,6 @@ function formatStorageValue(value: unknown, definition: Data | undefined, format
   return "undefined";
 }
 
-
-export function isExcluded(path: string, globs: string[]) {
-  return globs.some((glob) => {
-    const regex = glob.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\?/g, "[^/]").replace(/\u0000/g, ".*");
-    return new RegExp(`^${regex}$`, "u").test(path);
-  });
-}
 
 function sameCompatibilityLine(left: string, right: string) {
   return left.split(".").slice(0, 2).join(".") === right.split(".").slice(0, 2).join(".");
