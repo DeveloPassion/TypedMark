@@ -95,7 +95,7 @@ test("does not treat a regular file named property-sets as an artifact directory
 });
 
 test("retains a declared Reuse requirement without claiming its unevaluated semantics", () => {
-  const report = run(collection({ extensions: { "typedmark:reuse": "0.1.0" } }, { extends: "base" }));
+  const report = run(collection({ extensions: { "typedmark:reuse": "0.1.0" } }, { extends: "base" }), {});
   expect(report).toMatchObject({
     evaluation: "incomplete", valid: false, required_extensions: { "typedmark:reuse": "0.1.0" }, evaluated_extensions: {},
   });

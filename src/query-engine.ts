@@ -1,7 +1,9 @@
 import { noteFieldDefinitions, type CollectionModel, type ManagedNote } from "./collection-model";
 import type { SchemaRegistry } from "./schema-registry";
 import { compareUnicodeCodePoints } from "./order";
-import { buildRelationshipGraph } from "./note-links";
+import { buildRelationshipGraph, type NoteLinkError } from "./note-links";
+import { matchesNoteType } from "./reuse";
+import { validateFieldDefinition } from "./field-definitions";
 import { classifyConversion, comparisonDomain, compareFieldValues, equalFieldValues, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
 
 type Row = Record<string, unknown>;
@@ -108,37 +110,12 @@ function equalCells(left: Cell, right: Cell, timezone: string): boolean {
 function checkDefinition(definition: FieldDefinition, model: CollectionModel, target: boolean): void {
   const forbidden = ["validate_exists", "generated", "computed", "unique", "deprecated", "immutable", "default_value", "const_value", "relationship_kind"];
   if (target && forbidden.some((key) => Object.hasOwn(definition, key))) fail("CM-489", "Mapped definitions describe result values, not stored fields");
-  const timezone = model.config.timezone ?? "UTC";
-  if (definition.regex) {
-    try { fullPattern(definition.regex); } catch { fail("FND-31", "Invalid field-definition regular expression"); }
+  const failure = validateFieldDefinition(definition, model.config.timezone ?? "UTC", model.config.vocabularies);
+  if (failure) fail(failure.rule, failure.message);
+  if (target) {
+    if (definition.items) checkDefinition(definition.items, model, true);
+    for (const child of Object.values(definition.fields ?? {})) checkDefinition(child, model, true);
   }
-  if (definition.allowed_values_from && !Object.hasOwn(model.config.vocabularies ?? {}, definition.allowed_values_from)) fail("FDR-205", "Unknown vocabulary in a field definition");
-  const allowed = definition.allowed_values ?? (definition.allowed_values_from ? model.config.vocabularies[definition.allowed_values_from].values as unknown[] : undefined);
-  if (allowed) {
-    const item = definition.type === "list" ? definition.items! : definition;
-    const valueType: FieldDefinition = { type: item.type, format: item.format, nullable: item.nullable };
-    for (const value of allowed) {
-      const invalid = definition.type === "tags" ? validateFieldValue([value], { type: "tags" }, timezone) : validateFieldValue(value, valueType, timezone);
-      if (invalid) fail("FDR-198", "Allowed value is incompatible with the declared field type");
-    }
-    if (allowed.some((value, index) => allowed.slice(0, index).some((earlier) => equalFieldValues(value, earlier, definition.type === "tags" ? { type: "text" } : valueType, timezone)))) {
-      fail("FDR-197", "Allowed values are not unique under field-value equality");
-    }
-  }
-  const sized = ["text", "link", "list", "tags"].includes(definition.type);
-  for (const bound of ["min", "max"] as const) {
-    const value = definition[bound];
-    if (value === undefined) continue;
-    if (validateFieldValue(value, sized ? { type: "integer", min: 0 } : { type: definition.type, format: definition.format }, timezone)) {
-      fail(bound === "min" ? "FDR-187" : "FDR-193", "Field bound does not conform to its type");
-    }
-  }
-  if (definition.min !== undefined && definition.max !== undefined) {
-    const compared = sized ? Number(definition.min) - Number(definition.max) : compareFieldValues(definition.min, definition.max, definition, timezone);
-    if (compared > 0) fail("FDR-195", "Field minimum exceeds maximum");
-  }
-  if (definition.items) checkDefinition(definition.items, model, target);
-  for (const child of Object.values(definition.fields ?? {})) checkDefinition(child, model, target);
 }
 
 function checkConversion(source: FieldDefinition, target: FieldDefinition, declared?: string): void {
@@ -149,6 +126,8 @@ function checkConversion(source: FieldDefinition, target: FieldDefinition, decla
 }
 
 function requireSchemaModel(model: CollectionModel, type: string): void {
+  const issue = model.schemaIssues?.get(type);
+  if (issue) fail("CM-308", issue.message, issue.kind === "invalid" ? undefined : issue.extension ? { extension: issue.extension } : { specificationVersion: issue.specificationVersion!, path: issue.path });
   const schema = model.schemas.get(type);
   if (!schema) fail("CM-311", `Unknown note type ${type}`);
   if (!String(schema.specification_version).startsWith("0.1.")) fail("CM-308", `${type} uses an unsupported specification compatibility line`, { specificationVersion: String(schema.specification_version), path: `${model.config.metadata_directory ?? ".typedmark"}/schemas/${type}.md` });
@@ -167,17 +146,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     && ["invalid_collection_configuration", "unsupported_specification_version"].includes(result.code));
   if (invalid) fail("CM-308", invalid.message, invalid.code === "unsupported_specification_version" ? { specificationVersion: String(model.config.specification_version), path: invalid.path } : undefined);
   const checkTypes = (types?: string[]) => { for (const type of types ?? []) requireSchemaModel(model, type); };
-  const matchesType = (type: string, requested: string): boolean => {
-    if (type === requested) return true;
-    if (!model.schemas.get(requested)?.abstract) return false;
-    const visited = new Set<string>();
-    let parent = model.schemas.get(type)?.extends;
-    while (typeof parent === "string" && !visited.has(parent)) {
-      if (parent === requested) return true;
-      visited.add(parent); parent = model.schemas.get(parent)?.extends;
-    }
-    return false;
-  };
+  const matchesType = (type: string, requested: string) => matchesNoteType(model.schemas, type, requested);
   const admitted = (type: string, types?: string[]) => !types || types.some((requested) => matchesType(type, requested));
   const checkPredicate = (predicate: Predicate): void => {
     if (predicate.kind === "all" || predicate.kind === "any") predicate.predicates.forEach(checkPredicate);
@@ -240,11 +209,15 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   for (const name of query.group_by ?? []) if (!aliases.has(name)) fail("CM-380", `Unknown grouped column ${name}`);
 
   const graph = buildRelationshipGraph(model, matchesType);
+  const graphFailure = (failure: NoteLinkError): never => {
+    const issue = failure.schemaIssue;
+    fail("CM-307", failure.message, issue?.kind !== "unavailable" ? undefined : issue.extension ? { extension: issue.extension } : { specificationVersion: issue.specificationVersion!, path: issue.path });
+  };
   const byPath = new Map(model.notes.map((note) => [note.path, note]));
   const ensureModel = (note: ManagedNote) => {
     usedTypes.add(note.noteType);
     requireSchemaModel(model, note.noteType);
-    if (graph.failures.has(note.path)) fail("CM-307", graph.failures.get(note.path)![0]!.message);
+    if (graph.failures.has(note.path)) graphFailure(graph.failures.get(note.path)![0]!);
     if (note.problems.some((problem) => ["invalid_field_value", "missing_required_field", "missing_declared_field"].includes(problem.code))) {
       fail("CM-308", `${note.path} has no conforming effective field model`);
     }
@@ -264,7 +237,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     if (predicate.kind === "relationship") {
       let related: ManagedNote[];
       if (predicate.direction === "inbound") {
-        if (graph.failures.size) fail("CM-307", "Incomplete inbound relationship model");
+        if (graph.failures.size) graphFailure([...graph.failures.values()].flat().find((failure) => failure.schemaIssue?.kind === "unavailable") ?? graph.failures.values().next().value![0]!);
         related = model.notes.filter((source) => graph.targets.get(source.path)?.[predicate.relationship].has(note.path));
       } else related = [...(graph.targets.get(note.path)?.[predicate.relationship] ?? [])].map((path) => byPath.get(path)!);
       related = related.filter((target) => admitted(target.noteType, predicate.note_types));
@@ -356,7 +329,8 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const rows = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, structuredClone(entry.cells[column.as]!.value)])));
   const provenance = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.source])));
   const complete = query.specification_version === "0.1.0" && model.config.specification_version === "0.1.0"
-    && [...usedTypes].every((type) => model.schemas.get(type)?.specification_version === "0.1.0");
+    && [...usedTypes].every((type) => model.schemas.get(type)?.specification_version === "0.1.0"
+      && (model.schemaSources?.get(type) ?? []).every((source) => source.version === "0.1.0"));
   const result: QueryResult = { evaluation: complete ? "complete" : "incomplete", rows, provenance };
   if (query.group_by) {
     const groups: Array<{ key: unknown[]; rows: Row[]; cells: Cell[] }> = [];

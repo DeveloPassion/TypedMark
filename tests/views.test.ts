@@ -122,7 +122,7 @@ test("reports an unavailable reused model without inventing invalid dataset fiel
   write(root, ".typedmark/schemas/note.md", { ...schema, extends: "base" });
   write(root, ".typedmark/schemas/base.md", { specification_version: "0.1.0", description: "Base.", abstract: true, frontmatter: { inherited: { type: "text", nullable: true } } });
   write(root, ".typedmark/datasets/notes.md", { ...dataset, query: { ...query, select: [{ kind: "path", as: "path" }, { kind: "field", field: "inherited", as: "inherited" }] } });
-  const report = run(root);
+  const report = validateCollection({ collectionRoot: root, schemaDirectory, supportedExtensions: { "typedmark:queries": "0.1.0", "typedmark:views": "0.1.0" } });
   expect(report.evaluation).toBe("incomplete");
   expect(report.results.filter((result) => result.code === "invalid_dataset")).toEqual([]);
   expect(report.results.filter((result) => result.code === "unsupported_extension").map((result) => result.extension)).toEqual(["typedmark:reuse"]);

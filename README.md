@@ -50,12 +50,12 @@ and conditions. Standalone Queries and the bounded Systems adapter are
 implemented. Capability discovery lists standalone query execution under
 `operations` and collection-validation support under `extensions`. Collection
 validation now also implements Queries and Views for datasets, saved views,
-and their embedded queries over supported note models. Reuse, Expressions,
-Automation, and content-expansion query surfaces remain unsupported.
+and their embedded queries over supported note models. Reuse is implemented;
+Expressions, Automation, and content-expansion query surfaces remain unsupported.
 
 ## Query pilot
 
-`queryCollection` in `src/query.ts` evaluates portable queries over local
+`queryCollection` in `src/query.ts` evaluates portable queries over effective
 concrete note models. It supports boolean, path, field, and relationship
 predicates; direct and converted projections; ordering, limiting, and grouping.
 It captures file bytes, builds an isolated temporary snapshot, and rejects
@@ -70,7 +70,7 @@ and semantic errors to stderr.
 
 Queries distinguish effective-value predicates from stored-presence tests and
 stored-value projections under the existing specification. Unsupported model
-dependencies such as inheritance or computed fields prevent evaluation of the
+dependencies such as disabled Reuse or computed fields prevent evaluation of the
 affected notes. Unrelated optional contracts do not block a Core query. Query
 `evaluation` describes the operation's interpretation; collection conformance
 and unsupported required extensions remain in the separate validation report.
@@ -96,6 +96,28 @@ it does not turn unavailable interpretation into invalid dataset content.
 Unsupported and deliberately limited contracts remain visible in reports.
 Content-expansion query surfaces and broader optional-contract coverage remain
 open. No validator renders a UI, rewrites artifacts, or edits notes.
+
+## Reusable schemas
+
+Validation, queries, datasets, and views share the same effective schema map.
+Composition applies collection-default property sets, abstract contributions,
+field removal, concrete opt-in sets, and local definitions in specification
+order. Fields and top-level inherited metadata use whole replacement; local
+identity and specification versions are never inherited. Omission defaults are
+expanded after composition, without writing them into source files.
+
+Conditional constraints compare effective values but test stored presence.
+Every matching rule applies, including conflict diagnostics. Abstract
+relationship targets count concrete descendants, assigning each instance to
+the most specific declared target. Unused property sets are validated too.
+
+The resolver caches pre-default contributions and traverses ancestry
+iteratively. Invalid dependencies remain distinct from unavailable versions or
+disabled contracts, so dependent queries cannot silently use a partial model.
+Newer compatible source editions retain incomplete best-effort evaluation.
+The `reuse-composition-valid` and `reuse-conditions-invalid` golden vectors
+cover positive composition and conditional failures; regression tests cover
+deep chains, exclusions, references, versions, and relationship cardinality.
 
 ## Adapter boundary
 

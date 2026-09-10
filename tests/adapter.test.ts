@@ -18,6 +18,7 @@ test("advertises the exact contracts the adapter evaluates", () => {
   expect(getCapabilities()).toEqual({
     core: { "0.1": "0.1.0" },
     extensions: {
+      "typedmark:reuse": "0.1.0",
       "typedmark:queries": "0.1.0",
       "typedmark:views": "0.1.0",
       "typedmark:systems": "0.1.0",
@@ -57,6 +58,7 @@ test.each([
   "unsupported-extension-version",
   "limited-required-extension", "supported-required-extension", "undeclared-reuse",
   "views-valid", "views-invalid",
+  "explicit-type-property-set-valid", "reuse-composition-valid", "reuse-conditions-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

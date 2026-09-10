@@ -1,4 +1,5 @@
 import { Temporal } from "@js-temporal/polyfill";
+import type { ErrorObject } from "ajv";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 import { parseMarkdown } from "./frontmatter";
@@ -9,6 +10,10 @@ import { CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type Collectio
 import { isExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
+import { resolveSchemas, type SchemaIssue } from "./reuse";
+import { conditionFailures, validateConditions } from "./conditions";
+import { validateReusableBlocks } from "./schema-semantics";
+import { validateRelationships } from "./relationships";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -45,11 +50,13 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   const results: ValidationResult[] = [];
   const configPath = join(root, "typedmark.md");
   let config: Data = {};
-  const schemas = new Map<string, Data>();
+  let schemas = new Map<string, Data>();
+  let schemaIssues = new Map<string, SchemaIssue>();
+  let schemaSources = new Map<string, Array<{ path: string; version: string }>>();
   const documents: CollectionNote[] = [];
   const effectiveNotes: ManagedNote[] = [];
   const assets = new Set<string>();
-  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, documents, notes: effectiveNotes, assets });
+  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets });
 
   if (!existsSync(configPath)) {
     add(results, {}, "invalid_collection_configuration", "typedmark.md", "CM-1", "typedmark.md is missing");
@@ -79,7 +86,9 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     add(results, config, "unsupported_specification_version", "typedmark.md", "FND-92", `Unsupported specification version ${version}`);
   }
 
-  const configErrors = registry.validate("typedmark.schema.json", config);
+  const configShape = { ...config };
+  if (!requiredExtensions["typedmark:reuse"] || supportedExtensions["typedmark:reuse"] !== requiredExtensions["typedmark:reuse"]) delete configShape.default_property_sets;
+  const configErrors = registry.validate("typedmark.schema.json", configShape);
   if (configErrors.length > 0) {
     add(results, config, "invalid_collection_configuration", "typedmark.md", "CM-537", schemaError(configErrors));
   }
@@ -94,25 +103,72 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   }
 
   validateExtensionDependencies(requiredExtensions, config, results);
-
   const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
   validateReuseDeclaration(root, metadataDirectory, config, requiredExtensions, results);
+  // Reuse consumes collection-controlled names, vocabularies and severities.
+  // Invalid shapes are not safe inputs to composition or semantic evaluation.
+  if (configErrors.length) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
+
   validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results);
   const schemaArtifacts = loadArtifacts(join(root, metadataDirectory, "schemas"), root, "invalid_note_type_schema", "CM-538", results, config);
-  const propertySets = evaluatedExtensions["typedmark:reuse"]
-    ? loadNamedArtifacts(join(root, metadataDirectory, "property-sets"), root, "property_set", "property-set.schema.json", registry, "invalid_property_set", "CM-533", results, config)
-    : new Map<string, Data>();
+  const propertySets = new Map<string, Data>();
+  const propertySetIssues = new Map<string, SchemaIssue>();
+  const checkVersion = (data: Data, path: string): SchemaIssue | undefined => {
+    const version = data.specification_version;
+    if (typeof version !== "string" || !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version)) return;
+    if (version !== IMPLEMENTED_CORE) evaluation = "incomplete";
+    if (sameCompatibilityLine(version, IMPLEMENTED_CORE)) return;
+    const message = `Unsupported specification version ${version}`;
+    add(results, config, "unsupported_specification_version", path, "FND-92", message);
+    return { kind: "unavailable", path, message, specificationVersion: version };
+  };
+  const shapeErrors = (schema: string, data: Data, path: string): { errors: ErrorObject[]; invalidUnknown: boolean } => {
+    const errors = registry.validate(schema, data);
+    const bestEffort = String(data.specification_version).startsWith("0.1.") && data.specification_version !== IMPLEMENTED_CORE;
+    let invalidUnknown = false;
+    const known = errors.filter((error) => {
+      if (error.keyword !== "additionalProperties") return true;
+      if (!bestEffort) invalidUnknown = true;
+      results.push({ code: "unknown_field", severity: bestEffort ? "warn" : "error", path, rule_id: bestEffort ? "FND-11" : "CM-534", message: `Unrecognized structural key ${error.instancePath}/${error.params.additionalProperty}` });
+      return false;
+    });
+    return { errors: known, invalidUnknown };
+  };
+  if (evaluatedExtensions["typedmark:reuse"]) for (const artifact of loadArtifacts(join(root, metadataDirectory, "property-sets"), root, "invalid_property_set", "CM-146", results, config)) {
+    const name = basename(artifact.path, ".md");
+    propertySets.set(name, artifact.data);
+    const unavailable = checkVersion(artifact.data, artifact.relativePath);
+    if (unavailable) { propertySetIssues.set(name, unavailable); continue; }
+    const { errors, invalidUnknown } = shapeErrors("property-set.schema.json", artifact.data, artifact.relativePath);
+    if (errors.length || invalidUnknown || artifact.data.property_set !== name) {
+      const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Property set identity differs from ${name}`;
+      const first = errors[0];
+      const rule = first?.keyword === "required" ? "CM-146" : first?.instancePath.startsWith("/frontmatter") ? "CM-150" : first?.instancePath.startsWith("/relationships") ? "CM-152" : first?.instancePath.startsWith("/headings") ? "CM-153" : first?.instancePath === "/specification_version" ? "FND-5" : first ? "CM-146" : "CM-144";
+      if (errors.length || (!invalidUnknown && artifact.data.property_set !== name)) add(results, config, "invalid_property_set", artifact.relativePath, rule, message);
+      propertySetIssues.set(name, { kind: "invalid", path: artifact.relativePath, message });
+    }
+  }
 
   for (const artifact of schemaArtifacts) {
+    const inferredName = basename(artifact.path, ".md");
+    schemas.set(inferredName, artifact.data);
+    const unavailable = checkVersion(artifact.data, artifact.relativePath);
+    if (unavailable) { schemaIssues.set(inferredName, unavailable); continue; }
     if (artifact.data.abstract === true || ["extends", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"]
       .some((key) => Object.hasOwn(artifact.data, key))) {
       requireExtension("typedmark:reuse", artifact.relativePath, requiredExtensions, config, results);
     }
-    const errors = registry.validate("note-type.schema.json", artifact.data);
-    const inferredName = basename(artifact.path, ".md");
+    const shape = structuredClone(artifact.data);
+    if (!evaluatedExtensions["typedmark:reuse"]) {
+      for (const key of ["extends", "abstract", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"]) delete shape[key];
+      if (Object.hasOwn(artifact.data, "extends") || artifact.data.abstract === true) shape.abstract = true;
+    }
+    const { errors, invalidUnknown } = shapeErrors("note-type.schema.json", shape, artifact.relativePath);
     const name = typeof artifact.data.note_type === "string" ? artifact.data.note_type : inferredName;
-    if (errors.length > 0 || name !== inferredName || schemas.has(name)) {
-      add(results, config, "invalid_note_type_schema", artifact.relativePath, "NTS-4", errors.length ? schemaError(errors) : `Schema identity ${name} does not match ${inferredName}`);
+    if (errors.length > 0 || invalidUnknown || name !== inferredName) {
+      const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Schema identity ${name} does not match ${inferredName}`;
+      if (errors.length || (!invalidUnknown && name !== inferredName)) add(results, config, "invalid_note_type_schema", artifact.relativePath, "NTS-4", message);
+      schemaIssues.set(inferredName, { kind: "invalid", path: artifact.relativePath, message });
       continue;
     }
     schemas.set(name, artifact.data);
@@ -120,40 +176,29 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 
   validateOptionalArtifacts(root, metadataDirectory, requiredExtensions, evaluatedExtensions, registry, results, config);
 
-  const effectiveSchemas = new Map<string, Data>();
-  const resolving = new Set<string>();
-  const effectiveSchema = (name: string): Data | undefined => {
-    if (effectiveSchemas.has(name)) return effectiveSchemas.get(name);
-    const local = schemas.get(name);
-    if (!local || resolving.has(name)) return undefined;
-    resolving.add(name);
-    let effective: Data = { ...local, frontmatter: { ...(local.frontmatter ?? {}) } };
-    if (typeof local.extends === "string" && evaluatedExtensions["typedmark:reuse"]) {
-      const parent = effectiveSchema(local.extends);
-      if (parent) effective = mergeSchemas(parent, effective);
+  for (const [name, propertySet] of propertySets) {
+    if (propertySetIssues.has(name)) continue;
+    const path = `${metadataDirectory}/property-sets/${name}.md`;
+    for (const failure of validateReusableBlocks(propertySet, schemas, config)) {
+      add(results, config, "invalid_property_set", path, failure.rule, failure.message);
+      propertySetIssues.set(name, { kind: "invalid", path, message: failure.message });
     }
-    if (evaluatedExtensions["typedmark:reuse"]) {
-      const names = [...arrayOfStrings(config.default_property_sets), ...arrayOfStrings(local.property_sets)]
-        .filter((value) => !arrayOfStrings(local.exclude_property_sets).includes(value));
-      for (const propertySetName of names) {
-        const propertySet = propertySets.get(propertySetName);
-        if (!propertySet) {
-          add(results, config, "invalid_property_set", `.typedmark/schemas/${name}.md`, "PS-8", `Unknown property set ${propertySetName}`);
-          continue;
-        }
-        effective = mergeSchemas(propertySet, effective);
-      }
-      for (const field of arrayOfStrings(local.frontmatter_remove)) delete effective.frontmatter?.[field];
+  }
+  const resolved = resolveSchemas({ schemas, propertySets, config, metadataDirectory, enabled: !!evaluatedExtensions["typedmark:reuse"], schemaIssues, propertySetIssues });
+  schemas = resolved.schemas; schemaIssues = resolved.issues; schemaSources = resolved.sources;
+  for (const finding of resolved.results) add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { ...(finding.note_type ? { note_type: finding.note_type } : {}) });
+  if ([...schemaIssues.values()].some((issue) => issue.kind === "unavailable" && issue.specificationVersion)) evaluation = "incomplete";
+  for (const [name, schema] of schemas) {
+    if (schemaIssues.has(name)) continue;
+    const path = `${metadataDirectory}/schemas/${name}.md`;
+    const failures = validateReusableBlocks(schema, schemas, config);
+    if (!schema.abstract) failures.push(...validateConditions(schema.conditions ?? [], noteFieldDefinitions(schema)));
+    for (const failure of failures) {
+      const code = ["RHT-15", "RHT-21", "RHT-26"].includes(failure.rule) ? "invalid_relationship_definition" : "invalid_note_type_schema";
+      add(results, config, code, path, failure.rule, failure.message);
+      schemaIssues.set(name, { kind: "invalid", path, message: failure.message });
     }
-    resolving.delete(name);
-    effectiveSchemas.set(name, effective);
-    return effective;
-  };
-
-  for (const name of schemas.keys()) {
-    const schema = effectiveSchema(name);
-    if (!schema) add(results, config, "invalid_note_type_schema", `${metadataDirectory}/schemas/${name}.md`, "NTS-13", "Schema inheritance is cyclic or unresolved");
-    else validateTemplate(root, metadataDirectory, name, schema, registry, results, config);
+    if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config);
   }
 
   const files = discoverFiles(root, metadataDirectory, arrayOfStrings(config.exclude_paths));
@@ -176,19 +221,22 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       continue;
     }
     const noteType = candidates[0]!;
-    const schema = effectiveSchema(noteType);
+    const schema = schemas.get(noteType);
     if (!schema || schema.abstract === true) {
       add(results, config, "invalid_note_type_mapping", notePath, "MN-120", `Unknown or abstract note type ${noteType}`);
       continue;
     }
-    const validation = validateNote(notePath, document.data, document.body, noteType, schema, config);
+    const validation = validateNote(notePath, document.data, document.body, noteType, schemaIssues.has(noteType) ? {} : schema, config, schemaIssues.has(noteType));
     results.push(...validation.results);
     effectiveNotes.push({ path: notePath.normalize("NFC"), noteType, values: validation.values, fields: validation.fields,
       stored: document.data, body: document.body, problems: validation.results });
   }
 
   validateUniqueness(effectiveNotes, config, results);
-  validateCounts(effectiveNotes, schemas, config, results);
+  validateCounts(effectiveNotes, new Map([...schemas].filter(([name, schema]) => !schemaIssues.has(name) && !schema.abstract)), config, results);
+  for (const finding of validateRelationships(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)))) {
+    add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { note_type: finding.note_type, ...(finding.field ? { field: finding.field } : {}), ...(finding.relationship ? { relationship: finding.relationship } : {}) });
+  }
   const views = validateViews(root, metadataDirectory, model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry);
   results.push(...views.results);
   if (views.incomplete) evaluation = "incomplete";
@@ -201,6 +249,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
+  "typedmark:reuse": "0.1.0",
   "typedmark:queries": "0.1.0",
   "typedmark:views": "0.1.0",
   "typedmark:systems": "0.1.0",
@@ -339,7 +388,7 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
   }
 }
 
-function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data) {
+function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data, partial = false) {
   const results: ValidationResult[] = [];
   const fields = noteFieldDefinitions(schema);
   const values: Data = {};
@@ -368,7 +417,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
 
   const declared = new Set(Object.keys(fields));
   for (const field of Object.keys(stored)) {
-    if (!declared.has(field)) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, { note_type: noteType, field }, schema);
+    if (!partial && !declared.has(field)) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, { note_type: noteType, field }, schema);
   }
   const unknownChildren = (value: unknown, definition: FieldDefinition, prefix: string): void => {
     if (definition.type === "list" && definition.items && Array.isArray(value)) {
@@ -391,6 +440,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
 
   validateStorage(path, values, fields, schema, noteType, config, results);
   validateHeadings(path, body, values.title, schema.headings, noteType, config, results);
+  for (const failure of conditionFailures(schema.conditions ?? [], stored, values)) add(results, config, failure.code, path, failure.rule, failure.message, { note_type: noteType, field: failure.field }, schema);
   return { values, fields, results };
 }
 
@@ -446,7 +496,7 @@ function validateCounts(notes: Array<{ noteType: string }>, schemas: Map<string,
     if (!schema.count) continue;
     const count = notes.filter((note) => note.noteType === noteType).length;
     if ((schema.count.min !== undefined && count < schema.count.min) || (schema.count.max !== undefined && count > schema.count.max)) {
-      add(results, config, "invalid_note_count", ".", "NTS-94", `${noteType} has ${count} managed notes`, { note_type: noteType });
+      add(results, config, "invalid_note_count", ".", "NTS-71", `${noteType} has ${count} managed notes`, { note_type: noteType });
     }
   }
 }
@@ -494,18 +544,6 @@ function matchesWhen(when: Data, path: string, frontmatter: Data) {
     }
   }
   return true;
-}
-
-function mergeSchemas(base: Data, overlay: Data): Data {
-  return {
-    ...base,
-    ...overlay,
-    storage: overlay.storage ?? base.storage,
-    frontmatter: { ...(base.frontmatter ?? {}), ...(overlay.frontmatter ?? {}) },
-    relationships: { ...(base.relationships ?? {}), ...(overlay.relationships ?? {}) },
-    headings: { ...(base.headings ?? {}), ...(overlay.headings ?? {}) },
-    mandatory_tags: [...arrayOfStrings(base.mandatory_tags), ...arrayOfStrings(overlay.mandatory_tags)].filter((value, index, all) => all.indexOf(value) === index),
-  };
 }
 
 function add(results: ValidationResult[], config: Data, code: string, path: string, rule_id: string, message: string, context: Partial<ValidationResult> = {}, schema?: Data) {

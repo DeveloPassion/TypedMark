@@ -1,10 +1,12 @@
 import { posix } from "node:path";
 import { Lexer, Marked } from "marked";
 import type { CollectionModel, ManagedNote } from "./collection-model";
+import type { SchemaIssue } from "./reuse";
 
 export interface ParsedNoteLink { form: "wikilink" | "markdown"; target: string; embed: boolean }
 export class NoteLinkError extends Error {
-  constructor(readonly rule_id: string, message: string) { super(`${rule_id}: ${message}`); }
+  field?: string;
+  constructor(readonly rule_id: string, message: string, readonly schemaIssue?: SchemaIssue) { super(`${rule_id}: ${message}`); }
 }
 export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   const wiki = /^(!?)\[\[([^\]\r\n]+)\]\](?![\s\S])/u.exec(raw);
@@ -85,12 +87,14 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
   for (const note of model.notes) {
     const edges = { belongs_to: new Set<string>(), related_to: new Set<string>() };
     graph.targets.set(note.path, edges);
+    const issue = model.schemaIssues?.get(note.noteType);
+    if (issue) { graph.failures.set(note.path, [new NoteLinkError("CM-308", issue.message, issue)]); continue; }
     const schema = model.schemas.get(note.noteType)!;
     const record = (link: ParsedNoteLink, kind?: "belongs_to" | "related_to", targets?: string[], validateExists = false, field = false) => {
       const allowed = targets ? (candidate: ManagedNote) => targets.some((type) => matchesType(candidate.noteType, type)) : undefined;
       const resolved = resolveNoteLink(link, note.path, model, allowed);
       if (resolved.kind === "unresolved") {
-        if (validateExists) throw new NoteLinkError("NL-22", "Required note link does not resolve");
+        if (validateExists) throw new NoteLinkError("FDR-153", "Required note link does not resolve");
         return;
       }
       if (resolved.kind === "asset") {
@@ -98,14 +102,17 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
         return;
       }
       const target = managed.get(resolved.path);
+      const targetIssue = target && model.schemaIssues?.get(target.noteType);
+      if (targetIssue) throw new NoteLinkError("CM-308", targetIssue.message, targetIssue);
       if (allowed && (!target || !allowed(target))) throw new NoteLinkError("FDR-160", "Link target does not satisfy its field targets");
       if (!target || !kind || target.values.deleted === true) return;
       const declarations = Object.keys(schema.relationships?.[kind]?.allowed_note_types ?? {});
       if (declarations.some((type) => matchesType(target.noteType, type))) edges[kind].add(target.path);
     };
-    const attempt = (action: () => void) => {
+    const attempt = (action: () => void, field?: string) => {
       try { action(); } catch (error) {
         if (!(error instanceof NoteLinkError)) throw error;
+        error.field = field;
         const failures = graph.failures.get(note.path) ?? [];
         failures.push(error); graph.failures.set(note.path, failures);
       }
@@ -117,8 +124,9 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
       for (const entry of Array.isArray(value) ? value : value == null ? [] : [value]) attempt(() => {
         const parsed = typeof entry === "string" ? parseNoteLink(entry) : undefined;
         if (!parsed || parsed.embed) throw new NoteLinkError("NL-7", "A note-link field stores one non-embed internal link");
-        record(parsed, definition.relationship_kind, item.targets, item.validate_exists, true);
-      });
+        const stored = Object.hasOwn(note.stored, name);
+        record(parsed, definition.relationship_kind, stored ? item.targets : undefined, stored && item.validate_exists, true);
+      }, name);
     }
     for (const link of extractBodyLinks(note.body)) attempt(() => record(link, "related_to"));
   }
