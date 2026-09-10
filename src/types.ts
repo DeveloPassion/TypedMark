@@ -35,6 +35,7 @@ export interface ValidationReport {
 export interface AdapterCapabilities {
   core: Record<string, string>;
   extensions: ExtensionMap;
+  operations: ExtensionMap;
 }
 
 export interface ValidateCollectionInput {

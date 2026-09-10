@@ -4,6 +4,7 @@ import { getCapabilities, runConformanceVector } from "./adapter";
 import { parseMarkdown } from "./frontmatter";
 import { SchemaRegistry } from "./schema-registry";
 import { readVectorContext, selectVectorCapabilities } from "./vector-context";
+import type { QueryCaseResult } from "./query-vectors";
 import type { AdapterCapabilities, ExtensionMap, ValidationReport } from "./types";
 
 export interface RunSuiteInput {
@@ -22,6 +23,7 @@ export interface ConformanceEvidence {
   finished_at: string;
   capabilities: AdapterCapabilities;
   summary: { discovered: number; executed: number; passed: number; failed: number; skipped: number; changed: number };
+  query_summary: { executed: number; passed: number; failed: number };
   vectors: Array<{
     name: string;
     status: "passed" | "failed" | "not_run_unsupported" | "not_run_precondition";
@@ -32,6 +34,7 @@ export interface ConformanceEvidence {
     skip_reason?: string;
     requested_extensions?: ExtensionMap;
     actual_report?: ValidationReport;
+    query_results?: QueryCaseResult[];
   }>;
 }
 
@@ -72,6 +75,7 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
       differences: result.differences,
       actual_report: result.actual,
       requested_extensions: result.requestedExtensions,
+      ...(result.queryResults.length ? { query_results: result.queryResults } : {}),
     });
   }
   return {
@@ -89,5 +93,10 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
       changed: vectors.filter((vector) => vector.collection_changed).length,
     },
     vectors,
+    query_summary: {
+      executed: vectors.reduce((count, vector) => count + ("query_results" in vector ? vector.query_results?.length ?? 0 : 0), 0),
+      passed: vectors.reduce((count, vector) => count + ("query_results" in vector ? vector.query_results?.filter((query) => query.status === "passed").length ?? 0 : 0), 0),
+      failed: vectors.reduce((count, vector) => count + ("query_results" in vector ? vector.query_results?.filter((query) => query.status === "failed").length ?? 0 : 0), 0),
+    },
   };
 }

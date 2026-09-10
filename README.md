@@ -20,6 +20,9 @@ bun run validate capabilities
 # Validate one collection
 bun run validate validate <collection-directory> --schemas <specification-schema-directory>
 
+# Execute a standalone portable query without altering collection declarations
+bun run validate query <collection-directory> --query <descriptor.json> --query-version 0.1.0 --schemas <specification-schema-directory>
+
 # Compare one checked-in conformance vector with its expected report
 bun run validate run-vector <vector-directory> --schemas <specification-schema-directory>
 
@@ -43,8 +46,39 @@ from the collection, and expected findings cannot select evaluation scope.
 
 The adapter checks the standard Views/Queries and Expansion/Expressions
 dependency declarations and requires Reuse for inheritance, property sets,
-and conditions. These declaration checks do not advertise implementation of
-those optional contracts.
+and conditions. Standalone Queries and the bounded Systems adapter are
+implemented. Capability discovery lists standalone query execution under
+`operations` and collection-validation support under `extensions`. Reuse,
+Views, Automation, and embedded-query validation remain unsupported.
+
+## Query pilot
+
+`queryCollection` in `src/query.ts` evaluates portable queries over local
+concrete note models. It supports boolean, path, field, and relationship
+predicates; direct and converted projections; ordering, limiting, and grouping.
+It captures file bytes, builds an isolated temporary snapshot, and rejects
+detected source changes during the read. Model construction and query evaluation
+use the captured snapshot, which is removed afterward.
+
+Results contain `evaluation`, ordered `rows`, per-column `provenance`, and
+optional `groups`. Provenance's `source_backed` classification is informational
+and grants no write permission. `QueryError.rule_id` identifies semantic
+failures; operational errors remain distinct. The CLI writes results to stdout
+and semantic errors to stderr.
+
+Queries distinguish effective-value predicates from stored-presence tests and
+stored-value projections under the existing specification. Unsupported model
+dependencies such as inheritance or computed fields prevent evaluation of the
+affected notes. Unrelated optional contracts do not block a Core query. Query
+`evaluation` describes the operation's interpretation; collection conformance
+and unsupported required extensions remain in the separate validation report.
+No missing clock or random values are generated, and no source is rewritten.
+
+The `query-pilot-valid` golden vector runs six cases, comparing normalized
+evaluation, rows, groups, and expected failure rules. Provenance remains in the
+actual evidence and has separate regression coverage. This implements the
+standalone query pilot toward B4 in specification issue #123. Embedded-query
+validation and broader optional-contract coverage remain open.
 
 ## Adapter boundary
 

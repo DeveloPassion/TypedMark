@@ -1,20 +1,23 @@
 {
-  "specification_revision": "a57d6e7d66b19870a6805e324f5a3e3661cab990",
-  "adapter_revision": "5d8c583a4eaf68911f150a2bf7a51221f88d2139",
-  "started_at": "2026-09-10T10:01:04.913Z",
-  "finished_at": "2026-09-10T10:01:14.373Z",
+  "specification_revision": "5e26ccc132aeea084ef3265f5b5e2623721422a5",
+  "adapter_revision": "0ebf047eed31870d81763ab689f525e674a6dfc8",
+  "started_at": "2026-09-10T11:40:10.194Z",
+  "finished_at": "2026-09-10T11:40:23.247Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
     },
     "extensions": {
       "typedmark:systems": "0.1.0"
+    },
+    "operations": {
+      "typedmark:queries": "0.1.0"
     }
   },
   "summary": {
-    "discovered": 12,
-    "executed": 10,
-    "passed": 10,
+    "discovered": 13,
+    "executed": 11,
+    "passed": 11,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -229,6 +232,188 @@
       "skip_reason": "A required extension is unavailable outside an explicit negotiation case"
     },
     {
+      "name": "query-pilot-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "effective-default-and-stored-presence",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Tasks/Second.md",
+                "status": null
+              }
+            ],
+            "provenance": [
+              {
+                "path": null,
+                "status": null
+              }
+            ]
+          }
+        },
+        {
+          "name": "relationship-and-priority-order",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Tasks/Second.md",
+                "priority": 5
+              },
+              {
+                "path": "Tasks/First.md",
+                "priority": 2
+              }
+            ],
+            "provenance": [
+              {
+                "path": null,
+                "priority": {
+                  "path": "Tasks/Second.md",
+                  "field": "priority",
+                  "source_backed": true
+                }
+              },
+              {
+                "path": null,
+                "priority": {
+                  "path": "Tasks/First.md",
+                  "field": "priority",
+                  "source_backed": true
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "limit-before-grouping",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "status": null,
+                "priority": 5
+              },
+              {
+                "status": "active",
+                "priority": 2
+              }
+            ],
+            "provenance": [
+              {
+                "status": null,
+                "priority": {
+                  "path": "Tasks/Second.md",
+                  "field": "priority",
+                  "source_backed": true
+                }
+              },
+              {
+                "status": {
+                  "path": "Tasks/First.md",
+                  "field": "status",
+                  "source_backed": true
+                },
+                "priority": {
+                  "path": "Tasks/First.md",
+                  "field": "priority",
+                  "source_backed": true
+                }
+              }
+            ],
+            "groups": [
+              {
+                "key": [
+                  null
+                ],
+                "rows": [
+                  {
+                    "status": null,
+                    "priority": 5
+                  }
+                ]
+              },
+              {
+                "key": [
+                  "active"
+                ],
+                "rows": [
+                  {
+                    "status": "active",
+                    "priority": 2
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "conditional-conversion-rejected",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-488"
+        },
+        {
+          "name": "include-deleted",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Tasks/First.md"
+              },
+              {
+                "path": "Tasks/Removed.md"
+              },
+              {
+                "path": "Tasks/Second.md"
+              }
+            ],
+            "provenance": [
+              {
+                "path": null
+              },
+              {
+                "path": null
+              },
+              {
+                "path": null
+              }
+            ]
+          }
+        },
+        {
+          "name": "invalid-boolean-child",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-345"
+        }
+      ]
+    },
+    {
       "name": "supported-required-extension",
       "status": "passed",
       "collection_changed": false,
@@ -335,5 +520,10 @@
         "typedmark:systems": "0.1.0"
       }
     }
-  ]
+  ],
+  "query_summary": {
+    "executed": 6,
+    "passed": 6,
+    "failed": 0
+  }
 }

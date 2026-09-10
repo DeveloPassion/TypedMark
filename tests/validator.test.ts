@@ -45,6 +45,11 @@ test("reports unsupported exact extensions as incomplete", () => {
   expect(run(root)).toMatchObject({ evaluation: "incomplete", valid: false, evaluated_extensions: {} });
 });
 
+test("reports nested unknown fields using their full paths", () => {
+  const root = collection("---\nnote_type: note\ndetails: {unexpected: true}\n---\n", "frontmatter:\n  details:\n    type: object\n    fields: {}\n");
+  expect(run(root).results).toContainEqual(expect.objectContaining({ code: "unknown_field", field: "details.unexpected", rule_id: "MN-112" }));
+});
+
 test("does not let a caller claim support for an unimplemented extension", () => {
   const root = collection();
   const file = join(root, "typedmark.md");
