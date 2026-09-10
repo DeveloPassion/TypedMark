@@ -1,13 +1,14 @@
 {
-  "specification_revision": "0a33553000e0b20d4c3bf62ce2adf2f41c9d6bfd",
-  "adapter_revision": "4c960e5e867ae5e0b46346e79393a7e92b30f1ea",
-  "started_at": "2026-09-10T13:55:40.961Z",
-  "finished_at": "2026-09-10T13:55:54.610Z",
+  "specification_revision": "2b1402f0bb1fdeeb9523b36c298303edbdd1c273",
+  "adapter_revision": "bed70c39db2036cdddd6780c6adba220040f84c9",
+  "started_at": "2026-09-10T18:03:41.010Z",
+  "finished_at": "2026-09-10T18:03:56.336Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
     },
     "extensions": {
+      "typedmark:reuse": "0.1.0",
       "typedmark:queries": "0.1.0",
       "typedmark:views": "0.1.0",
       "typedmark:systems": "0.1.0"
@@ -17,11 +18,11 @@
     }
   },
   "summary": {
-    "discovered": 15,
-    "executed": 11,
-    "passed": 11,
+    "discovered": 17,
+    "executed": 14,
+    "passed": 14,
     "failed": 0,
-    "skipped": 4,
+    "skipped": 3,
     "changed": 0
   },
   "vectors": [
@@ -60,6 +61,7 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -80,6 +82,7 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -87,13 +90,32 @@
     },
     {
       "name": "explicit-type-property-set-valid",
-      "status": "not_run_unsupported",
+      "status": "passed",
       "collection_changed": false,
       "differences": [],
-      "unsupported_extensions": [
-        "typedmark:reuse"
-      ],
-      "skip_reason": "A required extension is unavailable outside an explicit negotiation case"
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:reuse": "0.1.0",
+          "typedmark:views": "0.1.0",
+          "typedmark:queries": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:reuse": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "limited-required-extension",
@@ -121,6 +143,7 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0"
       }
@@ -150,6 +173,7 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -190,6 +214,7 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -360,6 +385,79 @@
       ]
     },
     {
+      "name": "reuse-composition-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:reuse": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:reuse": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "reuse-conditions-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:reuse": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:reuse": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "missing_required_field",
+            "severity": "error",
+            "path": "Notes/A.md",
+            "rule_id": "NTS-90",
+            "message": "reason requires a non-null effective value",
+            "note_type": "note",
+            "field": "reason"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/A.md",
+            "rule_id": "NTS-92",
+            "message": "reason has conflicting matching conditions",
+            "note_type": "note",
+            "field": "reason"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
       "name": "supported-required-extension",
       "status": "passed",
       "collection_changed": false,
@@ -378,6 +476,7 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -407,6 +506,7 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -438,6 +538,7 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -469,6 +570,7 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -520,6 +622,7 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
@@ -546,6 +649,7 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:systems": "0.1.0"
