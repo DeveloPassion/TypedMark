@@ -11,6 +11,10 @@ test("parses paired markers with exact line-normalized region text", () => {
   expect(result.expansions).toMatchObject([{ descriptor, region: "A\nB" }]);
 });
 
+test("the shared parser preserves the expansion adapter's public result shape", () => {
+  expect(parseExpansions(`${start}\nA\n${end}`)).toEqual({ used: true, expansions: [{ descriptor, region: "A", line: 0 }], failures: [] });
+});
+
 test.each([
   `\x60\x60\x60md\n${start}\n${end}\n\x60\x60\x60\n`,
   `    ${start}\n    ${end}\n`,
