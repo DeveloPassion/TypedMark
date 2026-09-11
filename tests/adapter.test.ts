@@ -18,6 +18,7 @@ test("advertises the exact contracts the adapter evaluates", () => {
   expect(getCapabilities()).toEqual({
     core: { "0.1": "0.1.0" },
     extensions: {
+      "typedmark:authoring": "0.1.0",
       "typedmark:automation": "0.1.0",
       "typedmark:expansion": "0.1.0",
       "typedmark:expressions": "0.1.0",

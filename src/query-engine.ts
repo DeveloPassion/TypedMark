@@ -5,6 +5,7 @@ import { buildRelationshipGraph, type NoteLinkError } from "./note-links";
 import { matchesNoteType } from "./reuse";
 import { validateFieldDefinition } from "./field-definitions";
 import { hasComputed } from "./expressions";
+import { hasAuthoring } from "./authoring";
 import { classifyConversion, comparisonDomain, compareFieldValues, equalFieldValues, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
 
 type Row = Record<string, unknown>;
@@ -136,6 +137,7 @@ export function requireSchemaModel(model: CollectionModel, type: string): void {
   const needsReuse = model.config.default_property_sets || schema.abstract || schema.extends || schema.property_sets || schema.exclude_property_sets || schema.frontmatter_remove || schema.conditions;
   if (needsReuse && !model.report.evaluated_extensions["typedmark:reuse"]) fail("CM-308", `${type} requires Reuse to construct its effective model`, { extension: "typedmark:reuse" });
   if (hasComputed(noteFieldDefinitions(schema)) && !model.report.evaluated_extensions["typedmark:expressions"]) fail("CM-308", `${type} requires expression evaluation`, { extension: "typedmark:expressions" });
+  if (hasAuthoring(noteFieldDefinitions(schema)) && !model.report.evaluated_extensions["typedmark:authoring"]) fail("CM-308", `${type} requires Authoring`, { extension: "typedmark:authoring" });
 }
 
 export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryResult {

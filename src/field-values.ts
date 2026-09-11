@@ -17,7 +17,7 @@ export interface FieldDefinition {
   allowed_values_from?: string;
   const_value?: unknown;
   default_value?: unknown;
-  generated?: false | string;
+  generated?: false | string | { random: number } | { sequence: { start?: number; scope?: "note_type" | "collection" } };
   computed?: string;
   immutable?: boolean;
   relationship_kind?: "belongs_to" | "related_to";

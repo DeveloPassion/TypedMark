@@ -17,6 +17,7 @@ import { validateRelationships } from "./relationships";
 import { computedFailures, hasComputed, validateComputedFields } from "./expressions";
 import { validateExpansions, type ExpansionTemplate } from "./expansions";
 import { validateAutomations } from "./automations";
+import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -140,20 +141,26 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     });
     return { errors: known, invalidUnknown };
   };
-  const expressionShape = (data: Data, path: string): Data => {
+  const fieldContractShape = (data: Data, path: string): Data => {
     const shape = structuredClone(data);
     let used = false;
+    let authoring = false;
     const visit = (field: unknown) => {
       if (!isRecord(field)) return;
       if (Object.hasOwn(field, "computed")) {
         used = true;
         if (!evaluatedExtensions["typedmark:expressions"]) delete field.computed;
       }
+      for (const key of authoringKeys(field)) {
+        authoring = true;
+        if (!evaluatedExtensions["typedmark:authoring"]) delete field[key];
+      }
       visit(field.items);
       if (isRecord(field.fields)) Object.values(field.fields).forEach(visit);
     };
     if (isRecord(shape.frontmatter)) Object.values(shape.frontmatter).forEach(visit);
     if (used) requireExtension("typedmark:expressions", path, requiredExtensions, config, results);
+    if (authoring) requireExtension("typedmark:authoring", path, requiredExtensions, config, results);
     return shape;
   };
   if (evaluatedExtensions["typedmark:reuse"]) for (const artifact of loadArtifacts(join(root, metadataDirectory, "property-sets"), root, "invalid_property_set", "CM-146", results, config)) {
@@ -161,7 +168,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     propertySets.set(name, artifact.data);
     const unavailable = checkVersion(artifact.data, artifact.relativePath);
     if (unavailable) { propertySetIssues.set(name, unavailable); continue; }
-    const { errors, invalidUnknown } = shapeErrors("property-set.schema.json", expressionShape(artifact.data, artifact.relativePath), artifact.relativePath);
+    const { errors, invalidUnknown } = shapeErrors("property-set.schema.json", fieldContractShape(artifact.data, artifact.relativePath), artifact.relativePath);
     if (errors.length || invalidUnknown || artifact.data.property_set !== name) {
       const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Property set identity differs from ${name}`;
       const first = errors[0];
@@ -180,7 +187,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       .some((key) => Object.hasOwn(artifact.data, key))) {
       requireExtension("typedmark:reuse", artifact.relativePath, requiredExtensions, config, results);
     }
-    const shape = expressionShape(artifact.data, artifact.relativePath);
+    const shape = fieldContractShape(artifact.data, artifact.relativePath);
     if (!evaluatedExtensions["typedmark:reuse"]) {
       for (const key of ["extends", "abstract", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"]) delete shape[key];
       if (Object.hasOwn(artifact.data, "extends") || artifact.data.abstract === true) shape.abstract = true;
@@ -202,6 +209,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     if (propertySetIssues.has(name)) continue;
     const path = `${metadataDirectory}/property-sets/${name}.md`;
     const failures = validateReusableBlocks(propertySet, schemas, config);
+    if (evaluatedExtensions["typedmark:authoring"] && !failures.length) failures.push(...validateAuthoringFields(propertySet.frontmatter, config));
     if (evaluatedExtensions["typedmark:expressions"]) failures.push(...validateComputedFields(propertySet.frontmatter, false));
     for (const failure of failures) {
       add(results, config, "invalid_property_set", path, failure.rule, failure.message);
@@ -216,18 +224,28 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     if (schemaIssues.has(name)) continue;
     const path = `${metadataDirectory}/schemas/${name}.md`;
     const fields = noteFieldDefinitions(schema);
+    const failures = validateReusableBlocks(schema, schemas, config);
+    const reportFailures = () => {
+      for (const failure of failures) {
+        const code = ["RHT-15", "RHT-21", "RHT-26"].includes(failure.rule) ? "invalid_relationship_definition" : "invalid_note_type_schema";
+        add(results, config, code, path, failure.rule, failure.message);
+        schemaIssues.set(name, { kind: "invalid", path, message: failure.message });
+      }
+    };
+    if (hasAuthoring(fields) && !evaluatedExtensions["typedmark:authoring"]) {
+      reportFailures();
+      schemaIssues.set(name, { kind: "unavailable", path, message: `${name} requires Authoring`, extension: "typedmark:authoring" });
+      continue;
+    }
     if (hasComputed(fields) && !evaluatedExtensions["typedmark:expressions"]) {
+      reportFailures();
       schemaIssues.set(name, { kind: "unavailable", path, message: `${name} requires Expressions`, extension: "typedmark:expressions" });
       continue;
     }
-    const failures = validateReusableBlocks(schema, schemas, config);
+    if (evaluatedExtensions["typedmark:authoring"] && !failures.length) failures.push(...validateAuthoringFields(fields, config));
     if (evaluatedExtensions["typedmark:expressions"]) failures.push(...validateComputedFields(fields, !schema.abstract));
     if (!schema.abstract) failures.push(...validateConditions(schema.conditions ?? [], noteFieldDefinitions(schema)));
-    for (const failure of failures) {
-      const code = ["RHT-15", "RHT-21", "RHT-26"].includes(failure.rule) ? "invalid_relationship_definition" : "invalid_note_type_schema";
-      add(results, config, code, path, failure.rule, failure.message);
-      schemaIssues.set(name, { kind: "invalid", path, message: failure.message });
-    }
+    reportFailures();
     if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config, templates);
   }
 
@@ -287,6 +305,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
+  "typedmark:authoring": "0.1.0",
   "typedmark:automation": "0.1.0",
   "typedmark:expansion": "0.1.0",
   "typedmark:expressions": "0.1.0",

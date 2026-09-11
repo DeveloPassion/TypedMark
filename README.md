@@ -51,8 +51,8 @@ implemented. Capability discovery lists standalone query execution under
 `operations` and collection-validation support under `extensions`. Collection
 validation now also implements Queries and Views for datasets, saved views,
 and their embedded queries over supported note models. Reuse, Expressions, and
-Content Expansion and Automation artifact validation are implemented. Execution,
-extended authoring, and template tracking remain separate unsupported capabilities.
+Content Expansion, Authoring declarations, and Automation artifact validation are
+implemented. Execution and template tracking remain separate unsupported capabilities.
 
 ## Query pilot
 
@@ -122,6 +122,13 @@ cover positive composition and conditional failures; regression tests cover
 deep chains, exclusions, references, versions, and relationship cardinality.
 
 ## Adapter boundary
+
+Authoring validation recognizes immutable declarations and ULID, random, and
+sequence generators in composed and nested fields. It checks their declared
+shapes and provably incompatible output lengths or finite value constraints.
+It never executes a generator or infers past immutability from one snapshot;
+stored values remain governed by their declared types and constraints. Disabled
+Authoring prevents affected model consumers from claiming full interpretation.
 
 Automation validation checks artifact shape, scope and creation references,
 predicate syntax, effective field assignments, protected fields, tag policies,
