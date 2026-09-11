@@ -76,3 +76,9 @@ test.each([
 ])("rejects generator domains that cannot meet declared constraints: %j", (field) => {
   expect(model(collection(field)).report.results).toContainEqual(expect.objectContaining({ rule_id: "FDR-65" }));
 });
+
+test("an unrelated vocabulary named undefined does not constrain generated fields", () => {
+  const root = collection({ type: "text", generated: { random: 4 }, nullable: true });
+  write(root, "typedmark.md", { ...version, name: "authoring", extensions: { "typedmark:authoring": "0.1.0" }, vocabularies: { undefined: { values: ["long-unrelated-value"] } } });
+  expect(model(root).report).toMatchObject({ valid: true, results: [] });
+});

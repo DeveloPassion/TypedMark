@@ -27,7 +27,7 @@ export function validateAuthoringFields(fields: Data, config: Data): ValueFailur
   const visit = (field: Data) => {
     const length = field.generated === "ulid" ? 26 : field.generated?.random;
     if (typeof length === "number") {
-      const allowed = field.allowed_values ?? config.vocabularies?.[field.allowed_values_from]?.values;
+      const allowed = field.allowed_values ?? (field.allowed_values_from ? config.vocabularies?.[field.allowed_values_from]?.values : undefined);
       const compatible = (value: unknown) => typeof value === "string" && value.length === length
         && (field.generated === "ulid" ? /^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/.test(value) : /^[a-z0-9]+$/.test(value))
         && !validateFieldValue(value, field as FieldDefinition, config.timezone ?? "UTC", config.vocabularies);
