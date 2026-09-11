@@ -1,13 +1,13 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers twenty-four golden vectors at TypedMarkSpecification
-`04a6c7a7061ced0e15f9464e7c7c590e4e47091e`, using adapter
-`ccef2b137b79ceba79463c4e8de4803e30b483e9` on 2026-09-11.
+This record covers thirty golden vectors at TypedMarkSpecification
+`20baf74cad13fb66cb8a4a46d5dafe6348f20137`, using adapter
+`a4894a8219a58ce2f68b00a6ba34bbd2ce00df10` on 2026-09-11.
 
 Results:
 
-- twenty-two eligible collection vectors passed;
-- nine standalone query cases passed, including expected semantic failures;
+- twenty-eight eligible collection vectors passed;
+- eleven standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
 - no vector was skipped for an unsupported validation contract; and
@@ -32,6 +32,16 @@ recognizes unclosed delimiters as body content, rejects invalid UTF-8 without
 replacement, and keeps YAML alias limits inside structured diagnostics. These
 are implementation corrections; no normative prose or artifact shape changed.
 
+Core field coverage now includes stored identifier nullability, intrinsic alias
+restrictions and defaults, and normalized mandatory-tag declarations/membership.
+Storage checks distinguish intrinsic pattern syntax from references resolved
+after concrete composition. Missing or unsafe path inputs produce findings;
+literal text containing `undefined` has no sentinel behavior. Unformatted scalar
+substitution stays separate from field-type validation. Formatted date values
+use the collection timezone and ISO week-year, and archive patterns replace the
+active branch. Invalid configuration remains unavailable to queries even when
+its diagnostics are suppressed.
+
 Computed fields remain stored fields, not virtual replacements. Expansion checks
 respect stored source values, per-row numeric types, pending-template timing,
 and completed-once semantics. Automation validation checks declarations and
@@ -55,24 +65,28 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 432 tooling tests, type checking, dependency audit,
-321 specification tests, 249 fixture expectations, rule-ID checks, and the
+Validation covered 491 tooling tests, type checking, dependency audit,
+321 specification tests, 255 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 90 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
-field-name matching, parser error boundaries, and the new golden reports.
-These results advance B4/E2 in
+field-name matching, parser error boundaries, Core field invariants, deferred
+storage references, timezone failures, and the new golden reports.
+These results advance B4/E1/E2 and the bounded system-exercise part of E3 in
 [specification #123](https://github.com/DeveloPassion/TypedMarkSpecification/issues/123);
 they do not establish coverage of every normative rule
 or completion of the five-working-day full-validator measurement.
 
-Automation execution and writer operations remain follow-up work. Read-only
-system-definition validation of TypedMarkExample at
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b` passed with complete evaluation and no
-findings. The earlier full instantiation/offline-validation/migration exercise
-was not rerun for this slice.
+General automation execution and writer operations remain follow-up work.
+The [fresh bounded system exercise](system-exercise.json) used TypedMarkExample
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`: source validation, instantiation into
+an isolated temporary directory, and a separate offline validation all completed
+with no findings. The instance omitted publishing `version`/`scaffold`, recorded
+its composition source, and materialized `Notes/Welcome.md`. The source snapshot
+was unchanged; the temporary instance was removed after verification. Missing
+history still returned `manual_resolution_required`, with no migration attempted.
 Lossless note re-typing is separately tracked for future design in specification
 [#130](https://github.com/DeveloPassion/TypedMarkSpecification/issues/130).

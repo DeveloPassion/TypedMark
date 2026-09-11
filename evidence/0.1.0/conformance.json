@@ -1,8 +1,8 @@
 {
-  "specification_revision": "04a6c7a7061ced0e15f9464e7c7c590e4e47091e",
-  "adapter_revision": "ccef2b137b79ceba79463c4e8de4803e30b483e9",
-  "started_at": "2026-09-11T13:35:51.272Z",
-  "finished_at": "2026-09-11T13:36:15.663Z",
+  "specification_revision": "20baf74cad13fb66cb8a4a46d5dafe6348f20137",
+  "adapter_revision": "a4894a8219a58ce2f68b00a6ba34bbd2ce00df10",
+  "started_at": "2026-09-11T14:47:36.712Z",
+  "finished_at": "2026-09-11T14:47:50.618Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 24,
-    "executed": 22,
-    "passed": 22,
+    "discovered": 30,
+    "executed": 28,
+    "passed": 28,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -281,6 +281,103 @@
           }
         }
       ]
+    },
+    {
+      "name": "core-fields-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Bad.md",
+            "rule_id": "MN-128",
+            "message": "tags is missing the effective mandatory tag managed",
+            "note_type": "note",
+            "field": "tags"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Bad.md",
+            "rule_id": "MN-35",
+            "message": "aliases must contain unique non-empty text values",
+            "note_type": "note",
+            "field": "aliases"
+          },
+          {
+            "code": "missing_required_field",
+            "severity": "error",
+            "path": "Bad.md",
+            "rule_id": "MN-99",
+            "message": "id is explicitly null but is not nullable",
+            "note_type": "note",
+            "field": "id"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Unsafe.md",
+            "rule_id": "MN-82",
+            "message": "aliases cannot contain path separators, link metacharacters, or line breaks",
+            "note_type": "note",
+            "field": "aliases"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "invalid-core-fields-block-query-model",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-308"
+        }
+      ]
+    },
+    {
+      "name": "core-fields-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "core-invalid-field-value",
@@ -908,6 +1005,184 @@
       }
     },
     {
+      "name": "storage-declarations-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/note.md",
+            "rule_id": "NTS-124",
+            "message": "Unknown storage field missing"
+          },
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/note.md",
+            "rule_id": "NTS-132",
+            "message": "Storage field tags is not an eligible scalar"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "path",
+            "severity": "error",
+            "path": ".Hidden.md",
+            "rule_id": "NTS-134",
+            "message": "Resolved note basename must be non-empty and must not begin with a dot",
+            "note_type": "note"
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Missing.md",
+            "rule_id": "NTS-130",
+            "message": "Storage field title has no concrete non-null value",
+            "note_type": "note"
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "a/b/Injected.md",
+            "rule_id": "NTS-133",
+            "message": "Storage field folder contains an unsafe path value",
+            "note_type": "note"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-timezone-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_collection_configuration",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "CM-551",
+            "message": "timezone must be an IANA timezone identifier"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:reuse": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:reuse": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "composed-path-fields-remain-sparse",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "2020/53/item-2021-01.md",
+                "code": null
+              }
+            ],
+            "provenance": [
+              {
+                "path": null,
+                "code": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "supported-required-extension",
       "status": "passed",
       "collection_changed": false,
@@ -1137,8 +1412,8 @@
     }
   ],
   "query_summary": {
-    "executed": 9,
-    "passed": 9,
+    "executed": 11,
+    "passed": 11,
     "failed": 0
   }
 }

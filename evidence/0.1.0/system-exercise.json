@@ -1,0 +1,64 @@
+{
+  "executed_at": "2026-09-11T14:44:22.824Z",
+  "specification_revision": "20baf74cad13fb66cb8a4a46d5dafe6348f20137",
+  "adapter_revision": "a4894a8219a58ce2f68b00a6ba34bbd2ce00df10",
+  "example_revision": "c55578d0ee6996cc82efeda80b7d60cae3ba591b",
+  "source_changed": false,
+  "source_report": {
+    "specification_version": "0.1.0",
+    "mode": "system_definition",
+    "evaluation": "complete",
+    "required_extensions": {
+      "typedmark:systems": "0.1.0"
+    },
+    "evaluated_extensions": {
+      "typedmark:systems": "0.1.0"
+    },
+    "valid": true,
+    "results": []
+  },
+  "instance_report": {
+    "specification_version": "0.1.0",
+    "mode": "instantiated_collection",
+    "evaluation": "complete",
+    "required_extensions": {
+      "typedmark:systems": "0.1.0"
+    },
+    "evaluated_extensions": {
+      "typedmark:systems": "0.1.0"
+    },
+    "valid": true,
+    "results": []
+  },
+  "offline_report": {
+    "specification_version": "0.1.0",
+    "mode": "instantiated_collection",
+    "evaluation": "complete",
+    "required_extensions": {
+      "typedmark:systems": "0.1.0"
+    },
+    "evaluated_extensions": {
+      "typedmark:systems": "0.1.0"
+    },
+    "valid": true,
+    "results": []
+  },
+  "created_paths": [
+    "Notes/",
+    "Notes/Welcome.md",
+    "typedmark.md"
+  ],
+  "publishing_identity_removed": true,
+  "composition_sources": [
+    {
+      "name": "@developassion/typedmark-example",
+      "version": "0.1.0"
+    }
+  ],
+  "migration_readiness": {
+    "status": "manual_resolution_required",
+    "reasons": [
+      "The target system has no history.md for classifying the 0.0.1 to 0.1.0 update."
+    ]
+  }
+}

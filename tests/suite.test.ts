@@ -17,8 +17,8 @@ test("records reproducible evidence for every golden vector", async () => {
     finishedAt: "2026-09-08T08:01:00.000Z",
   });
 
-  expect(evidence.summary).toEqual({ discovered: 24, executed: 22, passed: 22, failed: 0, skipped: 2, changed: 0 });
-  expect(evidence.query_summary).toEqual({ executed: 9, passed: 9, failed: 0 });
+  expect(evidence.summary).toEqual({ discovered: 30, executed: 28, passed: 28, failed: 0, skipped: 2, changed: 0 });
+  expect(evidence.query_summary).toEqual({ executed: 11, passed: 11, failed: 0 });
   expect(evidence.specification_revision).toBe("spec-test-revision");
   expect(evidence.adapter_revision).toBe("adapter-test-revision");
   expect(evidence.vectors.map((vector) => vector.name)).toContain("unsupported-required-extension");
@@ -32,10 +32,23 @@ test("records reproducible evidence for every golden vector", async () => {
 
 test("checked-in evidence contains schema-valid reports and a passing summary", () => {
   const evidence = JSON.parse(readFileSync(resolve(import.meta.dir, "../evidence/0.1.0/conformance.json"), "utf8"));
-  expect(evidence.summary).toEqual({ discovered: 24, executed: 22, passed: 22, failed: 0, skipped: 2, changed: 0 });
-  expect(evidence.query_summary).toEqual({ executed: 9, passed: 9, failed: 0 });
+  expect(evidence.summary).toEqual({ discovered: 30, executed: 28, passed: 28, failed: 0, skipped: 2, changed: 0 });
+  expect(evidence.query_summary).toEqual({ executed: 11, passed: 11, failed: 0 });
   const registry = new SchemaRegistry(schemaDirectory);
   for (const vector of evidence.vectors) {
     if (vector.actual_report) expect(registry.validate("validation-report.schema.json", vector.actual_report), vector.name).toEqual([]);
+  }
+});
+
+test("checked-in example exercise records bounded instantiation and offline validation", () => {
+  const exercise = JSON.parse(readFileSync(resolve(import.meta.dir, "../evidence/0.1.0/system-exercise.json"), "utf8"));
+  expect(exercise).toMatchObject({ source_changed: false, publishing_identity_removed: true,
+    migration_readiness: { status: "manual_resolution_required" },
+    composition_sources: [{ name: "@developassion/typedmark-example", version: "0.1.0" }] });
+  expect(exercise.created_paths).toContain("Notes/Welcome.md");
+  const registry = new SchemaRegistry(schemaDirectory);
+  for (const report of [exercise.source_report, exercise.instance_report, exercise.offline_report]) {
+    expect(registry.validate("validation-report.schema.json", report)).toEqual([]);
+    expect(report).toMatchObject({ evaluation: "complete", valid: true, results: [] });
   }
 });
