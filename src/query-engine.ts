@@ -4,6 +4,7 @@ import { compareUnicodeCodePoints } from "./order";
 import { buildRelationshipGraph, type NoteLinkError } from "./note-links";
 import { matchesNoteType } from "./reuse";
 import { validateFieldDefinition } from "./field-definitions";
+import { hasComputed } from "./expressions";
 import { classifyConversion, comparisonDomain, compareFieldValues, equalFieldValues, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
 
 type Row = Record<string, unknown>;
@@ -133,7 +134,7 @@ function requireSchemaModel(model: CollectionModel, type: string): void {
   if (!String(schema.specification_version).startsWith("0.1.")) fail("CM-308", `${type} uses an unsupported specification compatibility line`, { specificationVersion: String(schema.specification_version), path: `${model.config.metadata_directory ?? ".typedmark"}/schemas/${type}.md` });
   const needsReuse = model.config.default_property_sets || schema.abstract || schema.extends || schema.property_sets || schema.exclude_property_sets || schema.frontmatter_remove || schema.conditions;
   if (needsReuse && !model.report.evaluated_extensions["typedmark:reuse"]) fail("CM-308", `${type} requires Reuse to construct its effective model`, { extension: "typedmark:reuse" });
-  if (Object.values(noteFieldDefinitions(schema)).some((field) => field.computed) && !model.report.evaluated_extensions["typedmark:expressions"]) fail("CM-308", `${type} requires expression evaluation`, { extension: "typedmark:expressions" });
+  if (hasComputed(noteFieldDefinitions(schema)) && !model.report.evaluated_extensions["typedmark:expressions"]) fail("CM-308", `${type} requires expression evaluation`, { extension: "typedmark:expressions" });
 }
 
 export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryResult {

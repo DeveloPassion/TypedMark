@@ -14,6 +14,7 @@ import { resolveSchemas, type SchemaIssue } from "./reuse";
 import { conditionFailures, validateConditions } from "./conditions";
 import { validateReusableBlocks } from "./schema-semantics";
 import { validateRelationships } from "./relationships";
+import { computedFailures, hasComputed, validateComputedFields } from "./expressions";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -134,12 +135,28 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     });
     return { errors: known, invalidUnknown };
   };
+  const expressionShape = (data: Data, path: string): Data => {
+    const shape = structuredClone(data);
+    let used = false;
+    const visit = (field: unknown) => {
+      if (!isRecord(field)) return;
+      if (Object.hasOwn(field, "computed")) {
+        used = true;
+        if (!evaluatedExtensions["typedmark:expressions"]) delete field.computed;
+      }
+      visit(field.items);
+      if (isRecord(field.fields)) Object.values(field.fields).forEach(visit);
+    };
+    if (isRecord(shape.frontmatter)) Object.values(shape.frontmatter).forEach(visit);
+    if (used) requireExtension("typedmark:expressions", path, requiredExtensions, config, results);
+    return shape;
+  };
   if (evaluatedExtensions["typedmark:reuse"]) for (const artifact of loadArtifacts(join(root, metadataDirectory, "property-sets"), root, "invalid_property_set", "CM-146", results, config)) {
     const name = basename(artifact.path, ".md");
     propertySets.set(name, artifact.data);
     const unavailable = checkVersion(artifact.data, artifact.relativePath);
     if (unavailable) { propertySetIssues.set(name, unavailable); continue; }
-    const { errors, invalidUnknown } = shapeErrors("property-set.schema.json", artifact.data, artifact.relativePath);
+    const { errors, invalidUnknown } = shapeErrors("property-set.schema.json", expressionShape(artifact.data, artifact.relativePath), artifact.relativePath);
     if (errors.length || invalidUnknown || artifact.data.property_set !== name) {
       const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Property set identity differs from ${name}`;
       const first = errors[0];
@@ -158,7 +175,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       .some((key) => Object.hasOwn(artifact.data, key))) {
       requireExtension("typedmark:reuse", artifact.relativePath, requiredExtensions, config, results);
     }
-    const shape = structuredClone(artifact.data);
+    const shape = expressionShape(artifact.data, artifact.relativePath);
     if (!evaluatedExtensions["typedmark:reuse"]) {
       for (const key of ["extends", "abstract", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"]) delete shape[key];
       if (Object.hasOwn(artifact.data, "extends") || artifact.data.abstract === true) shape.abstract = true;
@@ -179,7 +196,9 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   for (const [name, propertySet] of propertySets) {
     if (propertySetIssues.has(name)) continue;
     const path = `${metadataDirectory}/property-sets/${name}.md`;
-    for (const failure of validateReusableBlocks(propertySet, schemas, config)) {
+    const failures = validateReusableBlocks(propertySet, schemas, config);
+    if (evaluatedExtensions["typedmark:expressions"]) failures.push(...validateComputedFields(propertySet.frontmatter, false));
+    for (const failure of failures) {
       add(results, config, "invalid_property_set", path, failure.rule, failure.message);
       propertySetIssues.set(name, { kind: "invalid", path, message: failure.message });
     }
@@ -191,7 +210,13 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   for (const [name, schema] of schemas) {
     if (schemaIssues.has(name)) continue;
     const path = `${metadataDirectory}/schemas/${name}.md`;
+    const fields = noteFieldDefinitions(schema);
+    if (hasComputed(fields) && !evaluatedExtensions["typedmark:expressions"]) {
+      schemaIssues.set(name, { kind: "unavailable", path, message: `${name} requires Expressions`, extension: "typedmark:expressions" });
+      continue;
+    }
     const failures = validateReusableBlocks(schema, schemas, config);
+    if (evaluatedExtensions["typedmark:expressions"]) failures.push(...validateComputedFields(fields, !schema.abstract));
     if (!schema.abstract) failures.push(...validateConditions(schema.conditions ?? [], noteFieldDefinitions(schema)));
     for (const failure of failures) {
       const code = ["RHT-15", "RHT-21", "RHT-26"].includes(failure.rule) ? "invalid_relationship_definition" : "invalid_note_type_schema";
@@ -249,6 +274,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
+  "typedmark:expressions": "0.1.0",
   "typedmark:reuse": "0.1.0",
   "typedmark:queries": "0.1.0",
   "typedmark:views": "0.1.0",
@@ -440,6 +466,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
 
   validateStorage(path, values, fields, schema, noteType, config, results);
   validateHeadings(path, body, values.title, schema.headings, noteType, config, results);
+  for (const failure of computedFailures(fields, stored, values, config.timezone ?? "UTC", config.vocabularies)) add(results, config, "invalid_field_value", path, failure.rule, failure.message, { note_type: noteType, field: failure.field }, schema);
   for (const failure of conditionFailures(schema.conditions ?? [], stored, values)) add(results, config, failure.code, path, failure.rule, failure.message, { note_type: noteType, field: failure.field }, schema);
   return { values, fields, results };
 }

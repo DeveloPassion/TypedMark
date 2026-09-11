@@ -50,8 +50,8 @@ and conditions. Standalone Queries and the bounded Systems adapter are
 implemented. Capability discovery lists standalone query execution under
 `operations` and collection-validation support under `extensions`. Collection
 validation now also implements Queries and Views for datasets, saved views,
-and their embedded queries over supported note models. Reuse is implemented;
-Expressions, Automation, and content-expansion query surfaces remain unsupported.
+and their embedded queries over supported note models. Reuse and Expressions
+are implemented; Automation and content-expansion query surfaces remain unsupported.
 
 ## Query pilot
 
@@ -70,7 +70,7 @@ and semantic errors to stderr.
 
 Queries distinguish effective-value predicates from stored-presence tests and
 stored-value projections under the existing specification. Unsupported model
-dependencies such as disabled Reuse or computed fields prevent evaluation of the
+dependencies such as disabled Reuse or Expressions prevent evaluation of the
 affected notes. Unrelated optional contracts do not block a Core query. Query
 `evaluation` describes the operation's interpretation; collection conformance
 and unsupported required extensions remain in the separate validation report.
@@ -120,6 +120,14 @@ cover positive composition and conditional failures; regression tests cover
 deep chains, exclusions, references, versions, and relationship cardinality.
 
 ## Adapter boundary
+
+Expressions use a shared deterministic text-template parser with only named
+text references and the specified Unicode case transforms. Computed fields
+are validated against materialized non-computed sibling values after schema
+composition. Stored mismatches and unusable dependencies are findings; computed
+values are never silently written or substituted into the read-only model.
+Omitted nullable fields keep the normal null fallback, and disabled Expressions
+block affected query models, including unrecognized nested constructs.
 
 Library callers use `validateCollection` from `src/validator.ts`, discover
 contracts with `getCapabilities`, and compare or run vectors through

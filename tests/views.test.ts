@@ -101,13 +101,13 @@ test("keeps deliberately excluded query evaluation incomplete", () => {
   expect(report.evaluated_extensions).not.toHaveProperty("typedmark:views");
 });
 
-test("does not claim complete query interpretation for an unsupported owning surface", () => {
+test("does not claim complete query interpretation for a deliberately excluded owning surface", () => {
   const root = collection();
   write(root, "typedmark.md", { specification_version: "0.1.0", name: "views", description: "Views.", extensions: {
     "typedmark:queries": "0.1.0", "typedmark:views": "0.1.0", "typedmark:expansion": "0.1.0", "typedmark:expressions": "0.1.0",
   } });
   write(root, ".typedmark/datasets/notes.md", dataset);
-  const report = run(root);
+  const report = validateCollection({ collectionRoot: root, schemaDirectory, supportedExtensions: { "typedmark:queries": "0.1.0", "typedmark:views": "0.1.0" } });
   expect(report).toMatchObject({ evaluation: "incomplete", valid: false });
   expect(report.evaluated_extensions).not.toHaveProperty("typedmark:queries");
   expect(report.results.filter((result) => result.code === "unsupported_extension").map((result) => result.extension))
