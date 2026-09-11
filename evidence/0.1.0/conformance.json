@@ -1,8 +1,8 @@
 {
-  "specification_revision": "6238f53cf9f2f3d0d98257e6f29e047429395533",
-  "adapter_revision": "66fe00bf1f0563187d2d3824de169cf4619bb7c4",
-  "started_at": "2026-09-11T10:45:13.840Z",
-  "finished_at": "2026-09-11T10:45:31.553Z",
+  "specification_revision": "04a6c7a7061ced0e15f9464e7c7c590e4e47091e",
+  "adapter_revision": "ccef2b137b79ceba79463c4e8de4803e30b483e9",
+  "started_at": "2026-09-11T13:35:51.272Z",
+  "finished_at": "2026-09-11T13:36:15.663Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 21,
-    "executed": 19,
-    "passed": 19,
+    "discovered": 24,
+    "executed": 22,
+    "passed": 22,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -133,6 +133,156 @@
       "skip_reason": "Adapter capabilities do not satisfy the explicit negotiation preconditions"
     },
     {
+      "name": "core-association-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Mismatch.md",
+            "rule_id": "MN-40",
+            "message": "Stored note_type differs from the associated concrete type",
+            "note_type": "other",
+            "field": "note_type"
+          },
+          {
+            "code": "invalid_note_type_mapping",
+            "severity": "error",
+            "path": "Null.md",
+            "rule_id": "CM-114",
+            "message": "The winning mapping does not resolve to one known concrete note type"
+          },
+          {
+            "code": "invalid_note_type_mapping",
+            "severity": "error",
+            "path": "Unknown.md",
+            "rule_id": "CM-114",
+            "message": "The winning mapping does not resolve to one known concrete note type"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "invalid-winners-remain-untyped",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [],
+            "provenance": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "core-association-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "managed-association-universe",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Default.md"
+              },
+              {
+                "path": "Empty.md"
+              },
+              {
+                "path": "Preferred.md"
+              },
+              {
+                "path": "Selected.md"
+              },
+              {
+                "path": "Tagged.md"
+              }
+            ],
+            "provenance": [
+              {
+                "path": null
+              },
+              {
+                "path": null
+              },
+              {
+                "path": null
+              },
+              {
+                "path": null
+              },
+              {
+                "path": null
+              }
+            ]
+          }
+        },
+        {
+          "name": "first-winner-is-concrete-type",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Preferred.md"
+              }
+            ],
+            "provenance": [
+              {
+                "path": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "core-invalid-field-value",
       "status": "passed",
       "collection_changed": false,
@@ -153,6 +303,47 @@
             "message": "meeting_date must satisfy the date value contract",
             "note_type": "meeting",
             "field": "meeting_date"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "core-mapping-declarations-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_type_mapping",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "CM-92",
+            "message": "Mapping target missing is not a known concrete note type"
+          },
+          {
+            "code": "invalid_note_type_mapping",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "FND-31",
+            "message": "Invalid note-type mapping regular expression"
           }
         ]
       },
@@ -946,8 +1137,8 @@
     }
   ],
   "query_summary": {
-    "executed": 6,
-    "passed": 6,
+    "executed": 9,
+    "passed": 9,
     "failed": 0
   }
 }
