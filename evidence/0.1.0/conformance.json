@@ -1,13 +1,16 @@
 {
-  "specification_revision": "2b1402f0bb1fdeeb9523b36c298303edbdd1c273",
-  "adapter_revision": "bed70c39db2036cdddd6780c6adba220040f84c9",
-  "started_at": "2026-09-10T18:03:41.010Z",
-  "finished_at": "2026-09-10T18:03:56.336Z",
+  "specification_revision": "c854e3ce0d7c00a0076297a1257201155dd9a0be",
+  "adapter_revision": "fa08ec9ad22b821e2964b16fa0ecdb7fce968fe0",
+  "started_at": "2026-09-11T09:13:07.793Z",
+  "finished_at": "2026-09-11T09:13:24.363Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
     },
     "extensions": {
+      "typedmark:automation": "0.1.0",
+      "typedmark:expansion": "0.1.0",
+      "typedmark:expressions": "0.1.0",
       "typedmark:reuse": "0.1.0",
       "typedmark:queries": "0.1.0",
       "typedmark:views": "0.1.0",
@@ -18,11 +21,11 @@
     }
   },
   "summary": {
-    "discovered": 17,
-    "executed": 14,
-    "passed": 14,
+    "discovered": 19,
+    "executed": 17,
+    "passed": 17,
     "failed": 0,
-    "skipped": 3,
+    "skipped": 2,
     "changed": 0
   },
   "vectors": [
@@ -61,6 +64,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -82,6 +88,104 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "derived-contracts-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expressions": "0.1.0",
+          "typedmark:expansion": "0.1.0",
+          "typedmark:automation": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:automation": "0.1.0",
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_automation",
+            "severity": "error",
+            "path": ".typedmark/automations/overwrite-name.md",
+            "rule_id": "CM-278",
+            "message": "Field full is undeclared or not assignable",
+            "field": "full",
+            "note_type": "person"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "People/Ada.md",
+            "rule_id": "FDR-234",
+            "message": "Stored computed value differs from its expression",
+            "note_type": "person",
+            "field": "full"
+          },
+          {
+            "code": "expansion_drift",
+            "severity": "error",
+            "path": "People/Ada.md",
+            "rule_id": "RHT-164",
+            "message": "Stored expansion differs from current rendered source",
+            "expansion": "first"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "derived-contracts-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expressions": "0.1.0",
+          "typedmark:expansion": "0.1.0",
+          "typedmark:automation": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:automation": "0.1.0",
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -111,6 +215,9 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -143,6 +250,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0"
@@ -173,6 +283,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -191,13 +304,35 @@
     },
     {
       "name": "optional-artifacts-valid",
-      "status": "not_run_unsupported",
+      "status": "passed",
       "collection_changed": false,
       "differences": [],
-      "unsupported_extensions": [
-        "typedmark:automation"
-      ],
-      "skip_reason": "A required extension is unavailable outside an explicit negotiation case"
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:automation": "0.1.0",
+          "typedmark:views": "0.1.0",
+          "typedmark:queries": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:automation": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "query-pilot-valid",
@@ -214,6 +349,9 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -407,6 +545,9 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -451,6 +592,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -476,6 +620,9 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -506,6 +653,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -538,6 +688,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -570,6 +723,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -622,6 +778,9 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
@@ -649,6 +808,9 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
