@@ -146,6 +146,7 @@ export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryR
 
 export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor): QueryEvaluation {
   const timezone = model.config.timezone ?? "UTC";
+  if (model.associationIssue) fail("CM-308", model.associationIssue);
   const invalid = model.report.results.find((result) => result.severity === "error" && result.path === "typedmark.md"
     && ["invalid_collection_configuration", "unsupported_specification_version"].includes(result.code));
   if (invalid) fail("CM-308", invalid.message, invalid.code === "unsupported_specification_version" ? { specificationVersion: String(model.config.specification_version), path: invalid.path } : undefined);
@@ -172,7 +173,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const typeFields = new Map(concreteTypes.map((type) => [type, noteFieldDefinitions(model.schemas.get(type)!)]));
   const modeledPaths = new Set(model.notes.map((note) => note.path));
   for (const document of model.documents) {
-    if (!modeledPaths.has(document.path) && document.candidates?.some((type) => admitted(type, query.note_types))) {
+    if (!modeledPaths.has(document.path) && document.candidates?.some((type) => model.schemas.has(type) && !model.schemas.get(type)!.abstract && admitted(type, query.note_types))) {
       fail("CM-308", `${document.path} cannot provide an admitted effective model`);
     }
   }

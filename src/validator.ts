@@ -5,7 +5,7 @@ import { basename, dirname, join, relative } from "node:path";
 import { FrontmatterError, parseMarkdown } from "./frontmatter";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
-import { expandObjectDefaults, validateFieldValue, type FieldDefinition } from "./field-values";
+import { expandObjectDefaults, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
 import { CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
@@ -62,7 +62,8 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   const effectiveNotes: ManagedNote[] = [];
   const templates: ExpansionTemplate[] = [];
   const assets = new Set<string>();
-  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets });
+  let associationIssue: string | undefined;
+  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets, associationIssue });
 
   if (!existsSync(configPath)) {
     add(results, {}, "invalid_collection_configuration", "typedmark.md", "CM-1", "typedmark.md is missing");
@@ -257,6 +258,13 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config, templates);
   }
 
+  const mappingFailures = validateMappingDeclarations(config, schemas);
+  for (const failure of mappingFailures) add(results, config, "invalid_note_type_mapping", "typedmark.md", failure.rule, failure.message);
+  if (mappingFailures.length) {
+    associationIssue = mappingFailures[0]!.message;
+    return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
+  }
+
   const files = discoverFiles(root, metadataDirectory, exclusionPatterns(config.exclude_paths));
   const notes = files.filter((path) => path.endsWith(".md"));
   for (const path of files) if (!path.endsWith(".md")) assets.add(path.normalize("NFC"));
@@ -266,20 +274,21 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       document = parseMarkdown(readFileSync(join(root, notePath), "utf8"));
     } catch (error) {
       add(results, config, "invalid_note_frontmatter", notePath, "MN-118", errorMessage(error));
-      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: noteTypeCandidates(config, notePath, {}) });
+      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: candidateTypes(selectNoteType(config, notePath, {})) });
       continue;
     }
-    const candidates = noteTypeCandidates(config, notePath, document.data);
+    const association = selectNoteType(config, notePath, document.data);
+    const candidates = candidateTypes(association);
     documents.push({ path: notePath.normalize("NFC"), stored: document.data, body: document.body, hasFrontmatter: document.hasFrontmatter, frontmatterValid: true, candidates });
-    if (candidates.length === 0) continue;
-    if (candidates.length !== 1 || !schemas.has(candidates[0]!)) {
-      add(results, config, "invalid_note_type_mapping", notePath, "MN-120", "The note does not resolve to exactly one known concrete note type");
+    if (!association.matched) continue;
+    if (!candidates.length || !schemas.has(candidates[0]!)) {
+      add(results, config, "invalid_note_type_mapping", notePath, "CM-114", "The winning mapping does not resolve to one known concrete note type");
       continue;
     }
     const noteType = candidates[0]!;
     const schema = schemas.get(noteType);
     if (!schema || schema.abstract === true) {
-      add(results, config, "invalid_note_type_mapping", notePath, "MN-120", `Unknown or abstract note type ${noteType}`);
+      add(results, config, "invalid_note_type_mapping", notePath, "CM-114", `Unknown or abstract note type ${noteType}`);
       continue;
     }
     const validation = validateNote(notePath, document.data, document.body, noteType, schemaIssues.has(noteType) ? {} : schema, config, schemaIssues.has(noteType), !!requiredExtensions["typedmark:template-tracking"]);
@@ -456,6 +465,10 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   const fields = noteFieldDefinitions(schema);
   const values: Data = {};
 
+  if (Object.hasOwn(stored, "note_type") && stored.note_type !== noteType) {
+    add(results, config, "invalid_field_value", path, "MN-40", "Stored note_type differs from the associated concrete type", { note_type: noteType, field: "note_type" }, schema);
+  }
+
   for (const [name, definition] of Object.entries(fields)) {
     const present = Object.hasOwn(stored, name);
     let value: unknown;
@@ -584,24 +597,41 @@ function discoverFiles(root: string, metadataDirectory: string, excludes: string
   return result.sort();
 }
 
-function noteTypeCandidates(config: Data, path: string, frontmatter: Data): string[] {
-  const mappings = Array.isArray(config.note_type_mappings) ? config.note_type_mappings : [{ kind: "frontmatter_field", field: "note_type" }];
-  const candidates: string[] = [];
-  for (const mapping of mappings) {
-    let candidate: unknown;
-    if (mapping.kind === "frontmatter_field") candidate = frontmatter.note_type;
-    else if (mapping.kind === "folder" && path.startsWith(mapping.folder)) candidate = mapping.note_type;
-    else if (mapping.kind === "tag" && Array.isArray(frontmatter.tags) && frontmatter.tags.some((tag: string) => tag === mapping.tag || tag.startsWith(`${mapping.tag}/`))) candidate = mapping.note_type;
-    else if (mapping.kind === "fixed" && matchesWhen(mapping.when, path, frontmatter)) candidate = mapping.note_type;
-    if (typeof candidate === "string" && !candidates.includes(candidate)) candidates.push(candidate);
+type Association = { matched: false } | { matched: true; candidate: unknown };
+
+function candidateTypes(association: Association): string[] {
+  return association.matched && typeof association.candidate === "string" ? [association.candidate] : [];
+}
+
+function validateMappingDeclarations(config: Data, schemas: Map<string, Data>) {
+  const failures: Array<{ rule: string; message: string }> = [];
+  for (const mapping of config.note_type_mappings ?? []) {
+    if (mapping.kind !== "frontmatter_field" && (!schemas.has(mapping.note_type) || schemas.get(mapping.note_type)?.abstract === true)) {
+      failures.push({ rule: mapping.kind === "fixed" ? "CM-83" : "CM-92", message: `Mapping target ${mapping.note_type} is not a known concrete note type` });
+    }
+    const patterns = [mapping.when?.path?.regex, ...Object.values(mapping.when?.frontmatter ?? {}).map((predicate) => (predicate as Data).regex)];
+    for (const pattern of patterns) if (pattern !== undefined) {
+      try { fullPattern(pattern); } catch { failures.push({ rule: "FND-31", message: "Invalid note-type mapping regular expression" }); }
+    }
   }
-  return candidates;
+  return failures;
+}
+
+function selectNoteType(config: Data, path: string, frontmatter: Data): Association {
+  const mappings = Array.isArray(config.note_type_mappings) ? config.note_type_mappings : [{ kind: "frontmatter_field", field: "note_type" }];
+  for (const mapping of mappings) {
+    if (mapping.kind === "frontmatter_field" && Object.hasOwn(frontmatter, mapping.field)) return { matched: true, candidate: frontmatter[mapping.field] };
+    if (mapping.kind === "folder" && path.startsWith(mapping.folder)) return { matched: true, candidate: mapping.note_type };
+    if (mapping.kind === "tag" && Array.isArray(frontmatter.tags) && frontmatter.tags.some((tag: unknown) => typeof tag === "string" && (tag === mapping.tag || tag.startsWith(`${mapping.tag}/`)))) return { matched: true, candidate: mapping.note_type };
+    if (mapping.kind === "fixed" && matchesWhen(mapping.when, path, frontmatter)) return { matched: true, candidate: mapping.note_type };
+  }
+  return { matched: false };
 }
 
 function matchesWhen(when: Data, path: string, frontmatter: Data) {
   if (when.path?.equals !== undefined && path !== when.path.equals) return false;
   if (when.path?.under !== undefined && !path.startsWith(when.path.under)) return false;
-  if (when.path?.regex !== undefined && !(new RegExp(`^(?:${when.path.regex})$`, "u")).test(path)) return false;
+  if (when.path?.regex !== undefined && !fullPattern(when.path.regex).test(path)) return false;
   if (when.frontmatter) {
     for (const [field, predicate] of Object.entries(when.frontmatter as Data)) {
       if (isRecord(predicate) && Object.hasOwn(predicate, "equals") && !deepEqual(frontmatter[field], predicate.equals)) return false;

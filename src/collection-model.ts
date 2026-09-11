@@ -24,6 +24,8 @@ export interface CollectionModel {
   documents: CollectionNote[];
   notes: ManagedNote[];
   assets: Set<string>;
+  // Association availability is independent of diagnostic severity/suppression.
+  associationIssue?: string;
   schemaIssues?: Map<string, SchemaIssue>;
   schemaSources?: Map<string, SchemaSource[]>;
 }
