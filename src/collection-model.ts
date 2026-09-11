@@ -26,6 +26,7 @@ export interface CollectionModel {
   assets: Set<string>;
   // Association availability is independent of diagnostic severity/suppression.
   associationIssue?: string;
+  configurationIssue?: string;
   schemaIssues?: Map<string, SchemaIssue>;
   schemaSources?: Map<string, SchemaSource[]>;
 }

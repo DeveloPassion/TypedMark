@@ -1,7 +1,8 @@
 import { validateFieldDefinition } from "./field-definitions";
 import type { FieldDefinition, ValueFailure } from "./field-values";
 import { matchesNoteType } from "./reuse";
-import { aliasValueFailure } from "./collection-model";
+import { aliasValueFailure, noteFieldDefinitions } from "./collection-model";
+import { validateStorageDefinition } from "./storage";
 
 type Data = Record<string, any>;
 export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>, config: Data): ValueFailure[] {
@@ -31,5 +32,6 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
   const optional = (schema.headings?.optional_h2 ?? []).map((heading: string) => heading.normalize("NFC"));
   if (new Set(required).size !== required.length || new Set(optional).size !== optional.length) fail("RHT-285", "Heading entries are not unique under string equality");
   if (required.some((heading: string) => optional.includes(heading))) fail("RHT-286", "Required and optional headings overlap");
+  if (schema.storage) failures.push(...validateStorageDefinition(schema.storage, schema.abstract ? undefined : noteFieldDefinitions(schema)));
   return failures;
 }

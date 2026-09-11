@@ -1,4 +1,3 @@
-import { Temporal } from "@js-temporal/polyfill";
 import type { ErrorObject } from "ajv";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
@@ -19,6 +18,7 @@ import { validateExpansions, type ExpansionTemplate } from "./expansions";
 import { validateAutomations } from "./automations";
 import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
 import { validateTemplateTracking } from "./template-tracking";
+import { resolveStoragePath } from "./storage";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -63,9 +63,11 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   const templates: ExpansionTemplate[] = [];
   const assets = new Set<string>();
   let associationIssue: string | undefined;
-  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets, associationIssue });
+  let configurationIssue: string | undefined;
+  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets, associationIssue, configurationIssue });
 
   if (!existsSync(configPath)) {
+    configurationIssue = "typedmark.md is missing";
     add(results, {}, "invalid_collection_configuration", "typedmark.md", "CM-1", "typedmark.md is missing");
     return model(report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results));
   }
@@ -73,6 +75,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   try {
     config = parseMarkdown(readFileSync(configPath)).data;
   } catch (error) {
+    configurationIssue = errorMessage(error);
     add(results, {}, "invalid_collection_configuration", "typedmark.md", frontmatterFailureRule(error, "CM-537"), errorMessage(error));
     return model(report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results));
   }
@@ -98,7 +101,22 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"]) delete configShape.automation_defaults;
   const configErrors = registry.validate("typedmark.schema.json", configShape);
   if (configErrors.length > 0) {
+    configurationIssue = schemaError(configErrors);
     add(results, config, "invalid_collection_configuration", "typedmark.md", configErrors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "CM-226" : "CM-537", schemaError(configErrors));
+  }
+  if (!configErrors.length) {
+    try {
+      const timezone = config.timezone ?? "UTC";
+      if (/^[+-]/u.test(timezone)) throw new RangeError("A fixed offset is not an IANA timezone identifier");
+      // Intl checks named zones without reading the clock. Fixed-offset options
+      // are excluded above because the collection contract requires an IANA ID.
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/DateTimeFormat/DateTimeFormat#timezone
+      new Intl.DateTimeFormat("en", { timeZone: timezone });
+    } catch (error) {
+      if (!(error instanceof RangeError)) throw error;
+      configurationIssue = "timezone must be an IANA timezone identifier";
+      add(results, config, "invalid_collection_configuration", "typedmark.md", "CM-551", configurationIssue);
+    }
   }
 
   for (const [extension, requiredVersion] of Object.entries(requiredExtensions).sort()) {
@@ -119,8 +137,9 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   if (Object.hasOwn(config, "automation_defaults")) requireExtension("typedmark:automation", "typedmark.md", requiredExtensions, config, results);
   // Reuse consumes collection-controlled names, vocabularies and severities.
   // Invalid shapes are not safe inputs to composition or semantic evaluation.
-  if (configErrors.length) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
+  if (configurationIssue) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
   if (metadataEntries.length !== 1) {
+    configurationIssue = "The metadata directory must resolve unambiguously to the collection's schema artifacts";
     add(results, config, "invalid_collection_configuration", "typedmark.md", metadataEntries.length ? "CM-24" : "FND-76", "The metadata directory must resolve unambiguously to the collection's schema artifacts");
     return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
   }
@@ -528,13 +547,9 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
 function validateStorage(path: string, values: Data, fields: Data, schema: Data, noteType: string, config: Data, results: ValidationResult[]) {
   const storage = values.archived === true && schema.storage?.archive ? schema.storage.archive : schema.storage;
   if (!storage) return;
-  const resolvePattern = (pattern: string) => pattern.replace(/\{([a-z][a-z0-9_]*)(?::([^}]+))?\}/g, (_all, field, format) => formatStorageValue(values[field], fields[field], format, config.timezone ?? "UTC"));
-  const folder = resolvePattern(storage.folder_pattern ?? "");
-  const prefix = resolvePattern(storage.note_name_prefix?.pattern ?? "");
-  const name = resolvePattern(storage.note_name_pattern ?? "");
-  const suffix = resolvePattern(storage.note_name_suffix?.pattern ?? "");
-  const expected = `${folder ? `${folder}/` : ""}${prefix}${name}${suffix}.md`.normalize("NFC");
-  if (!expected.includes("undefined") && path.normalize("NFC") !== expected) add(results, config, "path", path, "NTS-146", `Expected managed-note path ${expected}`, { note_type: noteType }, schema);
+  const resolved = resolveStoragePath(storage, values, fields, config.timezone ?? "UTC");
+  if ("failure" in resolved) add(results, config, "path", path, resolved.failure.rule, resolved.failure.message, { note_type: noteType }, schema);
+  else if (path.normalize("NFC") !== resolved.path) add(results, config, "path", path, "NTS-146", `Expected managed-note path ${resolved.path}`, { note_type: noteType }, schema);
 }
 
 function validateHeadings(path: string, body: string, title: unknown, headings: Data | undefined, noteType: string, config: Data, results: ValidationResult[]) {
@@ -694,26 +709,6 @@ function extractHeadings(body: string) {
   }
   return headings;
 }
-
-function formatStorageValue(value: unknown, definition: Data | undefined, format: string | undefined, timezone: string) {
-  if (value === undefined || value === null || typeof value === "object") return "undefined";
-  if (!format) return String(value);
-  try {
-    const date = definition?.type === "datetime"
-      ? (/[zZ]|[+-]\d{2}:\d{2}$/.test(String(value)) ? Temporal.Instant.from(String(value)).toZonedDateTimeISO(timezone).toPlainDate() : Temporal.PlainDateTime.from(String(value)).toPlainDate())
-      : Temporal.PlainDate.from(String(value));
-    if (format === "YYYY") return String(date.year).padStart(4, "0");
-    if (format === "MM") return String(date.month).padStart(2, "0");
-    if (format === "DD") return String(date.day).padStart(2, "0");
-    if (format === "YYYY-MM") return `${date.year}-${String(date.month).padStart(2, "0")}`;
-    if (format === "YYYY-MM-DD") return date.toString();
-    if (format === "Q") return String(Math.floor((date.month - 1) / 3) + 1);
-    if (format === "WW") return String(date.weekOfYear).padStart(2, "0");
-    if (format === "GGGG") return String(date.yearOfWeek).padStart(4, "0");
-  } catch {}
-  return "undefined";
-}
-
 
 function sameCompatibilityLine(left: string, right: string) {
   return left.split(".").slice(0, 2).join(".") === right.split(".").slice(0, 2).join(".");
