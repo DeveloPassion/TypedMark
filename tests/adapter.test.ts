@@ -18,6 +18,7 @@ test("advertises the exact contracts the adapter evaluates", () => {
   expect(getCapabilities()).toEqual({
     core: { "0.1": "0.1.0" },
     extensions: {
+      "typedmark:template-tracking": "0.1.0",
       "typedmark:authoring": "0.1.0",
       "typedmark:automation": "0.1.0",
       "typedmark:expansion": "0.1.0",
@@ -64,6 +65,7 @@ test.each([
   "views-valid", "views-invalid",
   "explicit-type-property-set-valid", "reuse-composition-valid", "reuse-conditions-invalid",
   "optional-artifacts-valid", "derived-contracts-valid", "derived-contracts-invalid",
+  "authoring-tracking-valid", "authoring-tracking-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

@@ -18,6 +18,7 @@ import { computedFailures, hasComputed, validateComputedFields } from "./express
 import { validateExpansions, type ExpansionTemplate } from "./expansions";
 import { validateAutomations } from "./automations";
 import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
+import { validateTemplateTracking } from "./template-tracking";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -274,7 +275,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       add(results, config, "invalid_note_type_mapping", notePath, "MN-120", `Unknown or abstract note type ${noteType}`);
       continue;
     }
-    const validation = validateNote(notePath, document.data, document.body, noteType, schemaIssues.has(noteType) ? {} : schema, config, schemaIssues.has(noteType));
+    const validation = validateNote(notePath, document.data, document.body, noteType, schemaIssues.has(noteType) ? {} : schema, config, schemaIssues.has(noteType), !!requiredExtensions["typedmark:template-tracking"]);
     results.push(...validation.results);
     effectiveNotes.push({ path: notePath.normalize("NFC"), noteType, values: validation.values, fields: validation.fields,
       stored: document.data, body: document.body, problems: validation.results });
@@ -300,11 +301,16 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   results.push(...automations.results);
   if (automations.incomplete) evaluation = "incomplete";
   if (automations.blocked) delete evaluatedExtensions["typedmark:automation"];
+  const tracking = validateTemplateTracking(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry, templates);
+  results.push(...tracking.results);
+  if (tracking.incomplete) evaluation = "incomplete";
+  if (tracking.blocked) delete evaluatedExtensions["typedmark:template-tracking"];
   sortResults(results);
   return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
+  "typedmark:template-tracking": "0.1.0",
   "typedmark:authoring": "0.1.0",
   "typedmark:automation": "0.1.0",
   "typedmark:expansion": "0.1.0",
@@ -414,11 +420,13 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
   const explicit = schema.template && typeof schema.template.file === "string";
   const templateName = explicit ? schema.template.file : `${noteType}.md`;
   const path = join(root, metadataDirectory, "templates", templateName);
+  const unavailable = () => templates.push({ path: normalized(relative(root, path)), stored: {}, body: "", version: schema.specification_version, noteType, available: false });
   if (!existsSync(path)) {
-    if (explicit) add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-73", `Explicit template ${templateName} is missing`);
+    if (explicit) { unavailable(); add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-73", `Explicit template ${templateName} is missing`); }
     return;
   }
   if (lstatSync(path).isSymbolicLink()) {
+    unavailable();
     add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-73", `Template ${templateName} must not be a symbolic link`);
     return;
   }
@@ -427,15 +435,16 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
     templates.push({ path: normalized(relative(root, path)), stored: template.data, body: template.body, hasFrontmatter: template.hasFrontmatter, version: schema.specification_version, noteType });
     if (template.hasFrontmatter) {
       const declared = new Set([...Object.keys(CORE_FIELDS), ...Object.keys(schema.frontmatter ?? {})]);
-      const unknown = Object.keys(template.data).find((field) => !declared.has(field));
+      const unknown = Object.keys(template.data).find((field) => !declared.has(field) && !(field === "template_regions" && config.extensions?.["typedmark:template-tracking"]));
       if (unknown) add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-76", `Template field ${unknown} is undeclared`);
     }
   } catch (error) {
+    unavailable();
     add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-67", errorMessage(error));
   }
 }
 
-function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data, partial = false) {
+function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data, partial = false, trackingDeclared = false) {
   const results: ValidationResult[] = [];
   const fields = noteFieldDefinitions(schema);
   const values: Data = {};
@@ -464,7 +473,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
 
   const declared = new Set(Object.keys(fields));
   for (const field of Object.keys(stored)) {
-    if (!partial && !declared.has(field)) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, { note_type: noteType, field }, schema);
+    if (!partial && !declared.has(field) && !(trackingDeclared && field === "template_regions")) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, { note_type: noteType, field }, schema);
   }
   const unknownChildren = (value: unknown, definition: FieldDefinition, prefix: string): void => {
     if (definition.type === "list" && definition.items && Array.isArray(value)) {

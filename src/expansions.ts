@@ -9,7 +9,7 @@ import type { TabularSource } from "./views";
 import type { ValidationResult } from "./types";
 
 type Data = Record<string, any>;
-export interface ExpansionTemplate extends CollectionNote { noteType: string; version: string }
+export interface ExpansionTemplate extends CollectionNote { noteType: string; version: string; available?: boolean }
 export function validateExpansions(model: CollectionModel, registry: SchemaRegistry, tables: Map<string, TabularSource>, templates: ExpansionTemplate[]) {
   const results: ValidationResult[] = [];
   const blocked = new Set<string>();

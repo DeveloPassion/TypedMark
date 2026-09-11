@@ -36,7 +36,7 @@ export function extractBodyLinks(body: string): ParsedNoteLink[] {
       const link = parseNoteLink(token.raw);
       if (link) links.push(link);
     } else if (token.type === "html" && token.raw.includes("<")) {
-      const prose = token.raw.split("\n").filter((line) => !/^ {0,3}<!-- (?:typedmark:expansion \{.*\}|\/typedmark:expansion) -->(?![\s\S])/u.test(line)).join("\n");
+      const prose = token.raw.split("\n").filter((line) => !/^ {0,3}<!-- (?:typedmark:(?:expansion|template-region) \{.*\}|\/typedmark:(?:expansion|template-region)) -->(?![\s\S])/u.test(line)).join("\n");
       links.push(...extractBodyLinks(prose.replaceAll("<", "&lt;")));
     }
   });

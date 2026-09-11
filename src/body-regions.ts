@@ -44,7 +44,7 @@ export function parseBodyRegions(body: string, kind: Kind) {
     const text = lines[line]!;
     if (text.includes(`<!-- typedmark:${kind}`)) {
       used = true;
-      if (open.length) fail(rule.nested, `${kind} regions cannot be nested`);
+      if (open.length) fail(rule.nested, `${kind} regions cannot be nested`, kind === "template-region" ? open.at(-1)?.descriptor?.id : undefined);
       const entry: { line: number; descriptor?: { id?: unknown } } = { line }; open.push(entry);
       const marker = startPattern.exec(text);
       if (!marker) { fail(rule.start, `Invalid ${kind} start marker`); continue; }
@@ -52,11 +52,12 @@ export function parseBodyRegions(body: string, kind: Kind) {
       try { entry.descriptor = JSON.parse(marker[1]!); }
       catch { fail(rule.start, "Region descriptor is not a JSON object"); continue; }
       const id = entry.descriptor?.id;
+      if (kind === "template-region" && open.length > 1) fail(rule.nested, `${kind} regions cannot be nested`, id);
       if (typeof id === "string") { if (ids.has(id)) fail(rule.duplicate, "Duplicate region identifier", id); ids.add(id); }
     } else if (text.includes(`<!-- /typedmark:${kind}`)) {
       used = true;
-      if (!endPattern.test(text)) fail(rule.end, `Invalid ${kind} closing marker`);
       const entry = open.pop();
+      if (!endPattern.test(text)) fail(rule.end, `Invalid ${kind} closing marker`, kind === "template-region" ? entry?.descriptor?.id : undefined);
       if (!entry) { fail(rule.unmatchedEnd, "Region closing marker has no start"); continue; }
       ranges.push({ line: entry.line, endLine: line });
       if (entry.descriptor !== undefined && open.length === 0) regions.push({ descriptor: entry.descriptor, region: lines.slice(entry.line + 1, line).join("\n"), line: entry.line, endLine: line });

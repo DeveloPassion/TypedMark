@@ -51,8 +51,8 @@ implemented. Capability discovery lists standalone query execution under
 `operations` and collection-validation support under `extensions`. Collection
 validation now also implements Queries and Views for datasets, saved views,
 and their embedded queries over supported note models. Reuse, Expressions, and
-Content Expansion, Authoring declarations, and Automation artifact validation are
-implemented. Execution and template tracking remain separate unsupported capabilities.
+Content Expansion, Authoring declarations, Template Tracking, and Automation
+artifact validation are implemented. Writer and executor capabilities remain separate.
 
 ## Query pilot
 
@@ -122,6 +122,13 @@ cover positive composition and conditional failures; regression tests cover
 deep chains, exclusions, references, versions, and relationship cardinality.
 
 ## Adapter boundary
+
+Template Tracking validates source-preserving markers and receipt state, then
+classifies each structurally valid region against its stored baseline, note,
+and canonical template digests. Digests normalize line endings only. Note-owned
+prose and template frontmatter do not determine drift; unavailable canonical
+sources are never mistaken for removed regions. Validation never enrolls notes,
+refreshes regions, detaches content, or rewrites receipts.
 
 Authoring validation recognizes immutable declarations and ULID, random, and
 sequence generators in composed and nested fields. It checks their declared
