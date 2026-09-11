@@ -15,10 +15,16 @@ export function validateConditions(conditions: Data[], fields: Data): ValueFailu
   return failures;
 }
 
-function matches(when: Data, stored: Data, values: Data): boolean {
+// Mapping predicates compare stored values; schema conditions supply effective
+// values separately, while existence always tests physical stored presence.
+export function matchesFrontmatterPredicates(when: Data, stored: Data, values: Data = stored): boolean {
+  const storedNames = new Map(Object.keys(stored).map((key) => [key.normalize("NFC"), key]));
+  const valueNames = values === stored ? storedNames : new Map(Object.keys(values).map((key) => [key.normalize("NFC"), key]));
   return Object.entries(when).every(([field, predicate]) => {
-    const value = values[field];
-    if (predicate.exists !== undefined && Object.hasOwn(stored, field) !== predicate.exists) return false;
+    const name = field.normalize("NFC");
+    const valueKey = valueNames.get(name);
+    const value = valueKey === undefined ? undefined : values[valueKey];
+    if (predicate.exists !== undefined && storedNames.has(name) !== predicate.exists) return false;
     if (Object.hasOwn(predicate, "equals") && !equalFieldValues(value, predicate.equals, { type: "any" }, "UTC")) return false;
     if (predicate.regex !== undefined && (typeof value !== "string" || !fullPattern(predicate.regex).test(value.normalize("NFC")))) return false;
     for (const key of ["contains_any", "contains_all"]) if (predicate[key]) {
@@ -35,7 +41,7 @@ export function conditionFailures(conditions: Data[], stored: Data, values: Data
   const required = new Set<string>();
   const empty = new Set<string>();
   for (const condition of conditions) {
-    if (!matches(condition.when, stored, values)) continue;
+    if (!matchesFrontmatterPredicates(condition.when, stored, values)) continue;
     for (const field of condition.then.require ?? []) {
       required.add(field);
       if (values[field] === null || values[field] === undefined) failures.push({ rule: "NTS-90", code: "missing_required_field", field, message: `${field} requires a non-null effective value` });

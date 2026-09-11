@@ -11,7 +11,7 @@ import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
 import { resolveSchemas, type SchemaIssue } from "./reuse";
-import { conditionFailures, validateConditions } from "./conditions";
+import { conditionFailures, matchesFrontmatterPredicates, validateConditions } from "./conditions";
 import { validateReusableBlocks } from "./schema-semantics";
 import { validateRelationships } from "./relationships";
 import { computedFailures, hasComputed, validateComputedFields } from "./expressions";
@@ -274,10 +274,10 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       document = parseMarkdown(readFileSync(join(root, notePath), "utf8"));
     } catch (error) {
       add(results, config, "invalid_note_frontmatter", notePath, "MN-118", errorMessage(error));
-      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: candidateTypes(selectNoteType(config, notePath, {})) });
+      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: candidateTypes(selectNoteType(config, notePath, {}, false)) });
       continue;
     }
-    const association = selectNoteType(config, notePath, document.data);
+    const association = selectNoteType(config, notePath, document.data, document.hasFrontmatter);
     const candidates = candidateTypes(association);
     documents.push({ path: notePath.normalize("NFC"), stored: document.data, body: document.body, hasFrontmatter: document.hasFrontmatter, frontmatterValid: true, candidates });
     if (!association.matched) continue;
@@ -617,26 +617,28 @@ function validateMappingDeclarations(config: Data, schemas: Map<string, Data>) {
   return failures;
 }
 
-function selectNoteType(config: Data, path: string, frontmatter: Data): Association {
+function selectNoteType(config: Data, path: string, frontmatter: Data, hasFrontmatter: boolean): Association {
+  path = path.normalize("NFC");
   const mappings = Array.isArray(config.note_type_mappings) ? config.note_type_mappings : [{ kind: "frontmatter_field", field: "note_type" }];
   for (const mapping of mappings) {
     if (mapping.kind === "frontmatter_field" && Object.hasOwn(frontmatter, mapping.field)) return { matched: true, candidate: frontmatter[mapping.field] };
-    if (mapping.kind === "folder" && path.startsWith(mapping.folder)) return { matched: true, candidate: mapping.note_type };
-    if (mapping.kind === "tag" && Array.isArray(frontmatter.tags) && frontmatter.tags.some((tag: unknown) => typeof tag === "string" && (tag === mapping.tag || tag.startsWith(`${mapping.tag}/`)))) return { matched: true, candidate: mapping.note_type };
-    if (mapping.kind === "fixed" && matchesWhen(mapping.when, path, frontmatter)) return { matched: true, candidate: mapping.note_type };
+    if (mapping.kind === "folder" && path.startsWith(mapping.folder.normalize("NFC"))) return { matched: true, candidate: mapping.note_type };
+    if (mapping.kind === "tag" && Array.isArray(frontmatter.tags)) {
+      const expected = mapping.tag.normalize("NFC");
+      if (frontmatter.tags.some((tag: unknown) => typeof tag === "string" && (tag.normalize("NFC") === expected || tag.normalize("NFC").startsWith(`${expected}/`)))) {
+        return { matched: true, candidate: mapping.note_type };
+      }
+    }
+    if (mapping.kind === "fixed" && matchesWhen(mapping.when, path, frontmatter, hasFrontmatter)) return { matched: true, candidate: mapping.note_type };
   }
   return { matched: false };
 }
 
-function matchesWhen(when: Data, path: string, frontmatter: Data) {
-  if (when.path?.equals !== undefined && path !== when.path.equals) return false;
-  if (when.path?.under !== undefined && !path.startsWith(when.path.under)) return false;
+function matchesWhen(when: Data, path: string, frontmatter: Data, hasFrontmatter: boolean) {
+  if (when.path?.equals !== undefined && path !== when.path.equals.normalize("NFC")) return false;
+  if (when.path?.under !== undefined && !path.startsWith(when.path.under.normalize("NFC"))) return false;
   if (when.path?.regex !== undefined && !fullPattern(when.path.regex).test(path)) return false;
-  if (when.frontmatter) {
-    for (const [field, predicate] of Object.entries(when.frontmatter as Data)) {
-      if (isRecord(predicate) && Object.hasOwn(predicate, "equals") && !deepEqual(frontmatter[field], predicate.equals)) return false;
-    }
-  }
+  if (when.frontmatter && (!hasFrontmatter || !matchesFrontmatterPredicates(when.frontmatter, frontmatter))) return false;
   return true;
 }
 
@@ -731,7 +733,6 @@ function isRecord(value: unknown): value is Data {
 }
 
 function normalized(path: string) { return path.replaceAll("\\", "/"); }
-function deepEqual(left: unknown, right: unknown) { return JSON.stringify(left) === JSON.stringify(right); }
 function errorMessage(error: unknown) { return error instanceof Error ? error.message : String(error); }
 function schemaError(errors: Array<{ instancePath?: string; message?: string }>) { return errors.map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`).join("; "); }
 
