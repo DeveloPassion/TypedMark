@@ -6,7 +6,7 @@ import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./front
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import { expandObjectDefaults, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
-import { CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
+import { aliasValueFailure, CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
@@ -93,12 +93,12 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     add(results, config, "unsupported_specification_version", "typedmark.md", "FND-92", `Unsupported specification version ${version}`);
   }
 
-  const configShape = { ...config };
+  const configShape = normalizedMandatoryTags(config);
   if (!requiredExtensions["typedmark:reuse"] || supportedExtensions["typedmark:reuse"] !== requiredExtensions["typedmark:reuse"]) delete configShape.default_property_sets;
   if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"]) delete configShape.automation_defaults;
   const configErrors = registry.validate("typedmark.schema.json", configShape);
   if (configErrors.length > 0) {
-    add(results, config, "invalid_collection_configuration", "typedmark.md", "CM-537", schemaError(configErrors));
+    add(results, config, "invalid_collection_configuration", "typedmark.md", configErrors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "CM-226" : "CM-537", schemaError(configErrors));
   }
 
   for (const [extension, requiredVersion] of Object.entries(requiredExtensions).sort()) {
@@ -151,7 +151,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     return { errors: known, invalidUnknown };
   };
   const fieldContractShape = (data: Data, path: string): Data => {
-    const shape = structuredClone(data);
+    const shape = structuredClone(normalizedMandatoryTags(data));
     let used = false;
     let authoring = false;
     const visit = (field: unknown) => {
@@ -205,7 +205,8 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     const name = typeof artifact.data.note_type === "string" ? artifact.data.note_type : inferredName;
     if (errors.length > 0 || invalidUnknown || name !== inferredName) {
       const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Schema identity ${name} does not match ${inferredName}`;
-      if (errors.length || (!invalidUnknown && name !== inferredName)) add(results, config, "invalid_note_type_schema", artifact.relativePath, "NTS-4", message);
+      if (errors.length || (!invalidUnknown && name !== inferredName)) add(results, config, "invalid_note_type_schema", artifact.relativePath,
+        errors.length && errors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "NTS-170" : "NTS-4", message);
       schemaIssues.set(inferredName, { kind: "invalid", path: artifact.relativePath, message });
       continue;
     }
@@ -484,11 +485,13 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
     value = expandObjectDefaults(value, definition);
     values[name] = value;
     if (value === null) {
-      if (definition.nullable !== true) add(results, config, "missing_required_field", path, "MN-99", `${name} is explicitly null but is not nullable`, { note_type: noteType, field: name }, schema);
+      if (definition.nullable !== true || (name === "id" && present)) add(results, config, "missing_required_field", path, "MN-99", `${name} is explicitly null but is not nullable`, { note_type: noteType, field: name }, schema);
       continue;
     }
     const failure = validateFieldValue(value, definition, config.timezone ?? "UTC", config.vocabularies);
     if (failure) add(results, config, "invalid_field_value", path, failure.rule, `${name} ${failure.message}`, { note_type: noteType, field: name }, schema);
+    const aliasFailure = name === "aliases" ? aliasValueFailure(value) : undefined;
+    if (aliasFailure) add(results, config, "invalid_field_value", path, aliasFailure.rule, aliasFailure.message, { note_type: noteType, field: name }, schema);
   }
 
   const declared = new Set(Object.keys(fields));
@@ -508,10 +511,10 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   };
   for (const [name, definition] of Object.entries(fields)) unknownChildren(stored[name], definition, name);
 
-  const mandatory = [...arrayOfStrings(config.mandatory_tags), ...arrayOfStrings(schema.mandatory_tags)].filter((value, index, all) => all.indexOf(value) === index);
-  const tags = Array.isArray(values.tags) ? values.tags : [];
+  const mandatory = new Set([...arrayOfStrings(config.mandatory_tags), ...arrayOfStrings(schema.mandatory_tags)].map((value) => value.normalize("NFC")));
+  const tags = new Set(arrayOfStrings(values.tags).map((value) => value.normalize("NFC")));
   for (const tag of mandatory) {
-    if (!tags.includes(tag)) add(results, config, "invalid_field_value", path, "MN-128", `tags is missing the effective mandatory tag ${tag}`, { note_type: noteType, field: "tags" }, schema);
+    if (!tags.has(tag)) add(results, config, "invalid_field_value", path, "MN-128", `tags is missing the effective mandatory tag ${tag}`, { note_type: noteType, field: "tags" }, schema);
   }
 
   validateStorage(path, values, fields, schema, noteType, config, results);
@@ -726,6 +729,14 @@ function stringMap(value: Data): ExtensionMap {
 
 function arrayOfStrings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+// Validate the governed tag grammar and uniqueness on logical strings, without
+// normalizing arbitrary data or changing the authored collection/schema model.
+function normalizedMandatoryTags(data: Data): Data {
+  return { ...data, ...(Array.isArray(data.mandatory_tags) ? {
+    mandatory_tags: data.mandatory_tags.map((tag: unknown) => typeof tag === "string" ? tag.normalize("NFC") : tag),
+  } : {}) };
 }
 
 function isRecord(value: unknown): value is Data {

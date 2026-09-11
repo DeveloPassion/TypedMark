@@ -1,6 +1,7 @@
 import { validateFieldDefinition } from "./field-definitions";
 import type { FieldDefinition, ValueFailure } from "./field-values";
 import { matchesNoteType } from "./reuse";
+import { aliasValueFailure } from "./collection-model";
 
 type Data = Record<string, any>;
 export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>, config: Data): ValueFailure[] {
@@ -14,6 +15,8 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
   for (const [field, definition] of Object.entries(schema.frontmatter ?? {}) as Array<[string, FieldDefinition]>) {
     const failure = validateFieldDefinition(definition, config.timezone ?? "UTC", config.vocabularies);
     if (failure) failures.push({ ...failure, message: `${field}: ${failure.message}` });
+    const aliasFailure = field === "aliases" && Object.hasOwn(definition, "default_value") ? aliasValueFailure(definition.default_value) : undefined;
+    if (aliasFailure) fail("FDR-4", `Invalid aliases default: ${aliasFailure.message}`);
     checkTargets(definition);
   }
   const declarations = (kind: string): Data => schema.relationships?.[kind]?.allowed_note_types ?? {};

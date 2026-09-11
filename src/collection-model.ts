@@ -1,4 +1,4 @@
-import type { FieldDefinition } from "./field-values";
+import type { FieldDefinition, ValueFailure } from "./field-values";
 import type { ValidationReport, ValidationResult } from "./types";
 import type { SchemaIssue, SchemaSource } from "./reuse";
 type Data = Record<string, any>;
@@ -32,6 +32,7 @@ export interface CollectionModel {
 
 export const CORE_FIELDS: Record<string, Data> = {
   note_type: { type: "text", nullable: false },
+  // Null models the no-identifier fallback; an explicitly stored null is invalid.
   id: { type: "text", format: "slug", nullable: true },
   deleted: { type: "checkbox", nullable: false, default_value: false },
   archived: { type: "checkbox", nullable: false, default_value: false },
@@ -48,4 +49,15 @@ export function noteFieldDefinitions(schema: Data): Record<string, FieldDefiniti
   for (const [name, definition] of Object.entries(CORE_FIELDS)) fields[name] = { ...definition, ...(schema.frontmatter?.[name] ?? {}) };
   for (const [name, definition] of Object.entries(schema.frontmatter ?? {})) fields[name] = { ...(fields[name] ?? {}), ...(definition as Data) };
   return fields;
+}
+
+// These intrinsic alias constraints remain in force when a schema customizes
+// the list or supplies a default; they are not replaceable field declarations.
+export function aliasValueFailure(value: unknown): ValueFailure | undefined {
+  if (!Array.isArray(value) || !value.every((alias) => typeof alias === "string")) return undefined;
+  const normalized = value.map((alias) => alias.normalize("NFC"));
+  if (normalized.some((alias) => alias.length === 0) || new Set(normalized).size !== normalized.length) {
+    return { rule: "MN-35", message: "aliases must contain unique non-empty text values" };
+  }
+  if (normalized.some((alias) => /[/\\#^|\r\n]/u.test(alias))) return { rule: "MN-82", message: "aliases cannot contain path separators, link metacharacters, or line breaks" };
 }

@@ -123,7 +123,7 @@ export function validateFieldValue(value: unknown, definition: FieldDefinition, 
     case "number": valid = typeof value === "number" && Number.isFinite(value); break;
     case "checkbox": valid = typeof value === "boolean"; break;
     case "list": valid = Array.isArray(value); break;
-    case "tags": valid = Array.isArray(value) && value.every((tag) => typeof tag === "string" && fullPattern("[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*(?:/[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*)*").test(tag))
+    case "tags": valid = Array.isArray(value) && value.every((tag) => typeof tag === "string" && fullPattern("[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*(?:/[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*)*").test(tag.normalize("NFC")))
       && new Set(value.map((tag: string) => tag.normalize("NFC"))).size === value.length; break;
     case "object": valid = typeof value === "object" && !Array.isArray(value); break;
     case "date": case "time": case "datetime": {
