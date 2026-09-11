@@ -1,13 +1,15 @@
 {
-  "specification_revision": "c854e3ce0d7c00a0076297a1257201155dd9a0be",
-  "adapter_revision": "fa08ec9ad22b821e2964b16fa0ecdb7fce968fe0",
-  "started_at": "2026-09-11T09:13:07.793Z",
-  "finished_at": "2026-09-11T09:13:24.363Z",
+  "specification_revision": "6238f53cf9f2f3d0d98257e6f29e047429395533",
+  "adapter_revision": "66fe00bf1f0563187d2d3824de169cf4619bb7c4",
+  "started_at": "2026-09-11T10:45:13.840Z",
+  "finished_at": "2026-09-11T10:45:31.553Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
     },
     "extensions": {
+      "typedmark:template-tracking": "0.1.0",
+      "typedmark:authoring": "0.1.0",
       "typedmark:automation": "0.1.0",
       "typedmark:expansion": "0.1.0",
       "typedmark:expressions": "0.1.0",
@@ -21,14 +23,105 @@
     }
   },
   "summary": {
-    "discovered": 19,
-    "executed": 17,
-    "passed": 17,
+    "discovered": 21,
+    "executed": 19,
+    "passed": 19,
     "failed": 0,
     "skipped": 2,
     "changed": 0
   },
   "vectors": [
+    {
+      "name": "authoring-tracking-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:template-tracking": "0.1.0",
+          "typedmark:reuse": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:reuse": "0.1.0",
+          "typedmark:template-tracking": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_property_set",
+            "severity": "error",
+            "path": ".typedmark/property-sets/impossible.md",
+            "rule_id": "FDR-65",
+            "message": "Generator output cannot satisfy the declared length or finite value constraints"
+          },
+          {
+            "code": "invalid_template_region",
+            "severity": "error",
+            "path": "A.md",
+            "rule_id": "RHT-212",
+            "message": "Region marker requires a baseline, not a detached or absent receipt",
+            "template_region": "guidance"
+          },
+          {
+            "code": "template_drift",
+            "severity": "warn",
+            "path": "A.md",
+            "rule_id": "RHT-217",
+            "message": "Tracked region is template_changed",
+            "template_region": "other",
+            "drift_kind": "template_changed"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "authoring-tracking-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:template-tracking": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:template-tracking": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
     {
       "name": "conflicting-extension-dependency",
       "status": "not_run_precondition",
@@ -64,6 +157,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -88,6 +183,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -147,6 +244,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -183,6 +282,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -215,6 +316,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -250,6 +353,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -283,6 +388,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -325,6 +432,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -349,6 +458,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -545,6 +656,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -592,6 +705,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -620,6 +735,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -653,6 +770,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -688,6 +807,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -723,6 +844,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -778,6 +901,8 @@
         ]
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
@@ -808,6 +933,8 @@
         "results": []
       },
       "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
         "typedmark:automation": "0.1.0",
         "typedmark:expansion": "0.1.0",
         "typedmark:expressions": "0.1.0",
