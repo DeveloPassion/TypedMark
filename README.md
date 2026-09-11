@@ -51,7 +51,8 @@ implemented. Capability discovery lists standalone query execution under
 `operations` and collection-validation support under `extensions`. Collection
 validation now also implements Queries and Views for datasets, saved views,
 and their embedded queries over supported note models. Reuse, Expressions, and
-Content Expansion are implemented; Automation remains unsupported.
+Content Expansion and Automation artifact validation are implemented. Execution,
+extended authoring, and template tracking remain separate unsupported capabilities.
 
 ## Query pilot
 
@@ -121,6 +122,13 @@ cover positive composition and conditional failures; regression tests cover
 deep chains, exclusions, references, versions, and relationship cardinality.
 
 ## Adapter boundary
+
+Automation validation checks artifact shape, scope and creation references,
+predicate syntax, effective field assignments, protected fields, tag policies,
+and managed storage-path compatibility. It never matches or executes events,
+obtains schedule instants, stages action effects, or deletes notes. Discovery
+advertises `typedmark:automation` only under collection-validation extensions;
+no automation execution capability is advertised under `operations`.
 
 Content expansions are checked in managed and untyped note bodies and referenced
 templates. Marker grammar uses the CommonMark code-block boundary; auto/manual

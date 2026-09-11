@@ -16,6 +16,7 @@ import { validateReusableBlocks } from "./schema-semantics";
 import { validateRelationships } from "./relationships";
 import { computedFailures, hasComputed, validateComputedFields } from "./expressions";
 import { validateExpansions, type ExpansionTemplate } from "./expansions";
+import { validateAutomations } from "./automations";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -91,6 +92,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 
   const configShape = { ...config };
   if (!requiredExtensions["typedmark:reuse"] || supportedExtensions["typedmark:reuse"] !== requiredExtensions["typedmark:reuse"]) delete configShape.default_property_sets;
+  if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"]) delete configShape.automation_defaults;
   const configErrors = registry.validate("typedmark.schema.json", configShape);
   if (configErrors.length > 0) {
     add(results, config, "invalid_collection_configuration", "typedmark.md", "CM-537", schemaError(configErrors));
@@ -108,6 +110,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   validateExtensionDependencies(requiredExtensions, config, results);
   const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
   validateReuseDeclaration(root, metadataDirectory, config, requiredExtensions, results);
+  if (Object.hasOwn(config, "automation_defaults")) requireExtension("typedmark:automation", "typedmark.md", requiredExtensions, config, results);
   // Reuse consumes collection-controlled names, vocabularies and severities.
   // Invalid shapes are not safe inputs to composition or semantic evaluation.
   if (configErrors.length) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
@@ -193,7 +196,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     schemas.set(name, artifact.data);
   }
 
-  validateOptionalArtifacts(root, metadataDirectory, requiredExtensions, evaluatedExtensions, registry, results, config);
+  validateOptionalArtifacts(root, metadataDirectory, requiredExtensions, results, config);
 
   for (const [name, propertySet] of propertySets) {
     if (propertySetIssues.has(name)) continue;
@@ -275,11 +278,16 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     delete evaluatedExtensions[extension];
     evaluation = "incomplete";
   }
+  const automations = validateAutomations(root, metadataDirectory, model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry);
+  results.push(...automations.results);
+  if (automations.incomplete) evaluation = "incomplete";
+  if (automations.blocked) delete evaluatedExtensions["typedmark:automation"];
   sortResults(results);
   return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
+  "typedmark:automation": "0.1.0",
   "typedmark:expansion": "0.1.0",
   "typedmark:expressions": "0.1.0",
   "typedmark:reuse": "0.1.0",
@@ -371,29 +379,15 @@ function loadArtifacts(directory: string, root: string, code: string, rule: stri
     });
 }
 
-function loadNamedArtifacts(directory: string, root: string, identity: string, schemaName: string, registry: SchemaRegistry, code: string, rule: string, results: ValidationResult[], config: Data) {
-  const values = new Map<string, Data>();
-  for (const artifact of loadArtifacts(directory, root, code, rule, results, config)) {
-    const errors = registry.validate(schemaName, artifact.data);
-    const inferred = basename(artifact.path, ".md");
-    const name = artifact.data[identity] ?? inferred;
-    if (errors.length > 0 || name !== inferred) add(results, config, code, artifact.relativePath, rule, errors.length ? schemaError(errors) : `Artifact identity ${name} does not match ${inferred}`);
-    else values.set(name, artifact.data);
-  }
-  return values;
-}
-
-function validateOptionalArtifacts(root: string, metadataDirectory: string, required: ExtensionMap, evaluated: ExtensionMap, registry: SchemaRegistry, results: ValidationResult[], config: Data) {
+function validateOptionalArtifacts(root: string, metadataDirectory: string, required: ExtensionMap, results: ValidationResult[], config: Data) {
   const definitions = [
-    ["typedmark:automation", "automations", "automation", "automation.schema.json", "invalid_automation", "AUTO-2"],
-    ["typedmark:views", "datasets", "dataset", "dataset.schema.json", "invalid_dataset", "DV-2"],
-    ["typedmark:views", "views", "view", "view.schema.json", "invalid_view", "DV-34"],
+    ["typedmark:views", "datasets"],
+    ["typedmark:views", "views"],
   ] as const;
-  for (const [extension, directory, identity, schema, code, rule] of definitions) {
+  for (const [extension, directory] of definitions) {
     const path = join(root, metadataDirectory, directory);
     const hasArtifacts = existsSync(path) && lstatSync(path).isDirectory() && readdirSync(path, { withFileTypes: true }).some((entry) => entry.isFile() && entry.name.endsWith(".md"));
     if (hasArtifacts && !required[extension]) add(results, config, "invalid_extension_declaration", "typedmark.md", "EXT-16", `${directory} requires ${extension}`, { extension });
-    if (evaluated[extension] && extension !== "typedmark:views") loadNamedArtifacts(path, root, identity, schema, registry, code, rule, results, config);
   }
 }
 

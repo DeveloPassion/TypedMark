@@ -109,6 +109,14 @@ test("source references do not read object prototypes", () => {
   expect(run(root).results).toContainEqual(expect.objectContaining({ code: "invalid_expansion" }));
 });
 
+test("malformed expansion identifiers never enter diagnostic context", () => {
+  const root = collection();
+  write(root, "A.md", { note_type: "note", summary: "Hello" }, expansion({ kind: "self_field", field: "summary" }, "Hello", { id: "bad\n" }));
+  const invalid = run(root).results.find((finding) => finding.code === "invalid_expansion");
+  expect(invalid).toBeDefined();
+  expect(invalid).not.toHaveProperty("expansion");
+});
+
 test.each(["query", "view"])("heterogeneous %s columns retain each row's numeric definition", (kind) => {
   const root = collection();
   for (const [type, path] of [["integer", "I.md"], ["number", "N.md"]]) {

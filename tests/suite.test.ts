@@ -17,7 +17,7 @@ test("records reproducible evidence for every golden vector", async () => {
     finishedAt: "2026-09-08T08:01:00.000Z",
   });
 
-  expect(evidence.summary).toEqual({ discovered: 17, executed: 14, passed: 14, failed: 0, skipped: 3, changed: 0 });
+  expect(evidence.summary).toEqual({ discovered: 19, executed: 17, passed: 17, failed: 0, skipped: 2, changed: 0 });
   expect(evidence.query_summary).toEqual({ executed: 6, passed: 6, failed: 0 });
   expect(evidence.specification_revision).toBe("spec-test-revision");
   expect(evidence.adapter_revision).toBe("adapter-test-revision");
@@ -27,9 +27,7 @@ test("records reproducible evidence for every golden vector", async () => {
   expect(evidence.vectors.filter((vector) => vector.status === "not_run_precondition").map((vector) => vector.name)).toEqual([
     "conflicting-extension-dependency", "missing-extension-dependency",
   ]);
-  expect(evidence.vectors.filter((vector) => vector.status === "not_run_unsupported").map((vector) => vector.name)).toEqual([
-    "optional-artifacts-valid",
-  ]);
+  expect(evidence.vectors.filter((vector) => vector.status === "not_run_unsupported")).toEqual([]);
 }, 90_000);
 
 test("checked-in evidence contains schema-valid reports and a passing summary", () => {
