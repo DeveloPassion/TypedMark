@@ -2,7 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import type { ErrorObject } from "ajv";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import { FrontmatterError, parseMarkdown } from "./frontmatter";
+import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./frontmatter";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import { expandObjectDefaults, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
@@ -71,9 +71,9 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   }
 
   try {
-    config = parseMarkdown(readFileSync(configPath, "utf8")).data;
+    config = parseMarkdown(readFileSync(configPath)).data;
   } catch (error) {
-    add(results, {}, "invalid_collection_configuration", "typedmark.md", "CM-537", errorMessage(error));
+    add(results, {}, "invalid_collection_configuration", "typedmark.md", frontmatterFailureRule(error, "CM-537"), errorMessage(error));
     return model(report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results));
   }
 
@@ -271,9 +271,9 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   for (const notePath of notes) {
     let document;
     try {
-      document = parseMarkdown(readFileSync(join(root, notePath), "utf8"));
+      document = parseMarkdown(readFileSync(join(root, notePath)));
     } catch (error) {
-      add(results, config, "invalid_note_frontmatter", notePath, "MN-118", errorMessage(error));
+      add(results, config, "invalid_note_frontmatter", notePath, frontmatterFailureRule(error, "MN-118"), errorMessage(error));
       documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: candidateTypes(selectNoteType(config, notePath, {}, false)) });
       continue;
     }
@@ -394,13 +394,13 @@ function validateSystemContract(root: string, metadataDirectory: string, mode: V
   }
   if (!existsSync(historyPath)) return;
   try {
-    const history = parseMarkdown(readFileSync(historyPath, "utf8")).data;
+    const history = parseMarkdown(readFileSync(historyPath)).data;
     const errors = registry.validate("history.schema.json", history);
     if (errors.length > 0) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-95", schemaError(errors));
     const entries = Array.isArray(history.history) ? history.history : [];
     if (typeof config.version === "string" && entries.at(-1)?.version !== config.version) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-100", "The last history version must equal the system version");
   } catch (error) {
-    add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-95", errorMessage(error));
+    add(results, config, "invalid_history", normalized(relative(root, historyPath)), frontmatterFailureRule(error, "SCE-95"), errorMessage(error));
   }
 }
 
@@ -412,9 +412,9 @@ function loadArtifacts(directory: string, root: string, code: string, rule: stri
       const path = join(directory, entry.name);
       const relativePath = normalized(relative(root, path));
       try {
-        return { path, relativePath, data: parseMarkdown(readFileSync(path, "utf8")).data };
+        return { path, relativePath, data: parseMarkdown(readFileSync(path)).data };
       } catch (error) {
-        add(results, config, code, relativePath, rule, errorMessage(error));
+        add(results, config, code, relativePath, frontmatterFailureRule(error, rule), errorMessage(error));
         return { path, relativePath, data: {} };
       }
     });
@@ -447,7 +447,7 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
     return;
   }
   try {
-    const template = parseMarkdown(readFileSync(path, "utf8"));
+    const template = parseMarkdown(readFileSync(path));
     templates.push({ path: normalized(relative(root, path)), stored: template.data, body: template.body, hasFrontmatter: template.hasFrontmatter, version: schema.specification_version, noteType });
     if (template.hasFrontmatter) {
       const declared = new Set([...Object.keys(CORE_FIELDS), ...Object.keys(schema.frontmatter ?? {})]);
@@ -456,7 +456,7 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
     }
   } catch (error) {
     unavailable();
-    add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-67", errorMessage(error));
+    add(results, config, "invalid_template", normalized(relative(root, path)), frontmatterFailureRule(error, "RHT-67"), errorMessage(error));
   }
 }
 

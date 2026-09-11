@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { FrontmatterError, parseMarkdown } from "./frontmatter";
+import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./frontmatter";
 import { validateAutomationRule } from "./automation-rules";
 import { QueryError } from "./query-engine";
 import type { CollectionModel } from "./collection-model";
@@ -46,7 +46,7 @@ export function validateAutomations(root: string, metadata: string, model: Colle
     if (!model.report.required_extensions["typedmark:automation"]) finding("invalid_extension_declaration", path, "EXT-16", "Automation artifact requires typedmark:automation", { extension: "typedmark:automation" });
     if (!model.report.evaluated_extensions["typedmark:automation"]) continue;
     try {
-      const parsed = parseMarkdown(readFileSync(join(directory, entry.name), "utf8"));
+      const parsed = parseMarkdown(readFileSync(join(directory, entry.name)));
       const data = parsed.data;
       const version = data.specification_version;
       const validVersion = typeof version === "string" && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version);
@@ -74,7 +74,7 @@ export function validateAutomations(root: string, metadata: string, model: Colle
           const source = error.unavailable.path ?? path;
           if (![...model.report.results, ...results].some((result) => result.code === "unsupported_specification_version" && result.path === source)) finding("unsupported_specification_version", source, "FND-92", error.message);
         }
-      } else if (error instanceof QueryError || error instanceof FrontmatterError) finding("invalid_automation", path, error instanceof QueryError ? "CM-278" : "CM-243", error.message);
+      } else if (error instanceof QueryError || error instanceof FrontmatterError) finding("invalid_automation", path, frontmatterFailureRule(error, error instanceof QueryError ? "CM-278" : "CM-243"), error.message);
       else throw error;
     }
   }

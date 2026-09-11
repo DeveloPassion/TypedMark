@@ -34,7 +34,7 @@ export async function instantiateSystem(input: InstantiateSystemInput): Promise<
 
   const sourceConfigPath = join(sourceRoot, "typedmark.md");
   assertNoSymbolicLinks(sourceConfigPath);
-  const sourceDocument = parseMarkdown(readFileSync(sourceConfigPath, "utf8"));
+  const sourceDocument = parseMarkdown(readFileSync(sourceConfigPath));
   const sourceConfig = sourceDocument.data;
   const metadataDirectory = safeMetadataDirectory(sourceConfig.metadata_directory);
   const sourceMetadata = join(sourceRoot, metadataDirectory);
@@ -70,7 +70,7 @@ export async function instantiateSystem(input: InstantiateSystemInput): Promise<
       await mkdir(dirname(destination), { recursive: true });
       const templateName = typeof note.from_template === "string" ? note.from_template : `${note.note_type}.md`;
       const templatePath = join(stagingRoot, metadataDirectory, "templates", templateName);
-      const template = existsSync(templatePath) ? parseMarkdown(readFileSync(templatePath, "utf8")) : { data: {}, body: "", hasFrontmatter: false };
+      const template = existsSync(templatePath) ? parseMarkdown(readFileSync(templatePath)) : { data: {}, body: "", hasFrontmatter: false };
       const values = isRecord(note.values) ? note.values : {};
       const frontmatter = { ...template.data, ...values, note_type: note.note_type };
       await writeFile(destination, serializeMarkdown(frontmatter, template.body));
@@ -94,7 +94,7 @@ export async function instantiateSystem(input: InstantiateSystemInput): Promise<
 
 export function checkMigrationReadiness(input: { systemRoot: string; fromVersion: string; schemaDirectory: string }): MigrationReadiness {
   const root = resolve(input.systemRoot);
-  const config = parseMarkdown(readFileSync(join(root, "typedmark.md"), "utf8")).data;
+  const config = parseMarkdown(readFileSync(join(root, "typedmark.md"))).data;
   const targetVersion = String(config.version ?? "");
   if (targetVersion === input.fromVersion) return { status: "ready", reasons: [] };
   const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
@@ -104,7 +104,7 @@ export function checkMigrationReadiness(input: { systemRoot: string; fromVersion
     reasons: [`The target system has no history.md for classifying the ${input.fromVersion} to ${targetVersion} update.`],
   };
   try {
-    const history = parseMarkdown(readFileSync(historyPath, "utf8")).data;
+    const history = parseMarkdown(readFileSync(historyPath)).data;
     const errors = new SchemaRegistry(input.schemaDirectory).validate("history.schema.json", history);
     const entries = Array.isArray(history.history) ? history.history : [];
     if (errors.length > 0 || entries.at(-1)?.version !== targetVersion || !entries.some((entry) => entry.version === input.fromVersion)) {

@@ -1,6 +1,6 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { parseMarkdown } from "./frontmatter";
+import { frontmatterFailureRule, parseMarkdown } from "./frontmatter";
 import { noteFieldDefinitions, type CollectionModel } from "./collection-model";
 import { definitionAt, evaluateQueryWithColumns, parseQuery, QueryError, type Descriptor, type QueryEvaluation } from "./query-engine";
 import { equalFieldValues, validateFieldValue, type FieldDefinition } from "./field-values";
@@ -49,7 +49,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
       outcome.sources.set(`${identity}:${id}`, source);
       const context = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) ? { [identity]: id } : {};
       try {
-        const parsed = parseMarkdown(readFileSync(join(parent, entry.name), "utf8"));
+        const parsed = parseMarkdown(readFileSync(join(parent, entry.name)));
         const data = parsed.data as Data;
         const version = data.specification_version;
         source.version = String(version);
@@ -75,7 +75,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         }
         artifacts.push({ path, id, data });
       } catch (error) {
-        finding(`invalid_${identity}`, path, identity === "dataset" ? "CM-499" : "CM-413", error instanceof Error ? error.message : String(error), context);
+        finding(`invalid_${identity}`, path, frontmatterFailureRule(error, identity === "dataset" ? "CM-499" : "CM-413"), error instanceof Error ? error.message : String(error), context);
       }
     }
     return artifacts;

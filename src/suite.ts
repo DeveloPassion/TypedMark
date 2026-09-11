@@ -1,7 +1,7 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { getCapabilities, runConformanceVector } from "./adapter";
-import { parseMarkdown } from "./frontmatter";
+import { FrontmatterError, parseMarkdown } from "./frontmatter";
 import { SchemaRegistry } from "./schema-registry";
 import { readVectorContext, selectVectorCapabilities } from "./vector-context";
 import type { QueryCaseResult } from "./query-vectors";
@@ -48,7 +48,11 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
   const vectors = [];
   for (const name of names) {
     const vectorDirectory = join(input.goldenDirectory, name);
-    const config = parseMarkdown(await readFile(join(vectorDirectory, "collection", "typedmark.md"), "utf8")).data;
+    // Malformed configuration is the validator's finding, not a fabricated
+    // capability requirement or a reason to skip a negative vector.
+    let config: Record<string, unknown> = {};
+    try { config = parseMarkdown(await readFile(join(vectorDirectory, "collection", "typedmark.md"))).data; }
+    catch (error) { if (!(error instanceof FrontmatterError)) throw error; }
     const selection = selectVectorCapabilities((config.extensions ?? {}) as ExtensionMap, capabilities.extensions, readVectorContext(vectorDirectory, registry));
     if (selection.skip) {
       vectors.push({

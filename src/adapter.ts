@@ -5,7 +5,7 @@ import { join, relative } from "node:path";
 import { SchemaRegistry } from "./schema-registry";
 import { compareUnicodeCodePoints } from "./order";
 import { STANDARD_EXTENSIONS, validateCollection } from "./validator";
-import { parseMarkdown } from "./frontmatter";
+import { FrontmatterError, parseMarkdown } from "./frontmatter";
 import { readVectorContext, selectVectorCapabilities } from "./vector-context";
 import { runQueryCases, type QueryCaseResult } from "./query-vectors";
 import { QUERY_VERSION } from "./query";
@@ -52,7 +52,9 @@ export async function runConformanceVector(input: RunVectorInput): Promise<Vecto
     const registry = new SchemaRegistry(input.schemaDirectory);
     const expectedErrors = registry.validate("validation-report.schema.json", expected);
     if (expectedErrors.length > 0) throw new Error("Expected report violates validation-report.schema.json");
-    const config = parseMarkdown(await readFile(join(collectionRoot, "typedmark.md"), "utf8")).data;
+    let config: Record<string, unknown> = {};
+    try { config = parseMarkdown(await readFile(join(collectionRoot, "typedmark.md"))).data; }
+    catch (error) { if (!(error instanceof FrontmatterError)) throw error; }
     const required = (config.extensions ?? {}) as ExtensionMap;
     const selection = selectVectorCapabilities(required, getCapabilities().extensions, readVectorContext(input.vectorDirectory, registry));
     if (selection.skip) throw new Error(`${selection.skip.status}: ${selection.skip.reason}: ${selection.skip.extensions.join(", ")}`);

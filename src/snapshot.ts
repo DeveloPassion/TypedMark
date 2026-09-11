@@ -31,7 +31,7 @@ function capture(root: string): Map<string, Buffer> {
   if (existsSync(configuration) && !lstatSync(configuration).isSymbolicLink()) {
     const content = readFileSync(configuration);
     files.set("typedmark.md", content);
-    try { config = parseMarkdown(content.toString("utf8")).data; } catch { /* The validator reports malformed configuration. */ }
+    try { config = parseMarkdown(content).data; } catch { /* The validator reports malformed configuration. */ }
   }
   const excludes = exclusionPatterns(config.exclude_paths);
   const metadata = (typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark").normalize("NFC");
