@@ -7,7 +7,7 @@ import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import { expandObjectDefaults, validateFieldValue, type FieldDefinition } from "./field-values";
 import { CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
-import { isExcluded } from "./paths";
+import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
 import { resolveSchemas, type SchemaIssue } from "./reuse";
@@ -110,12 +110,19 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   }
 
   validateExtensionDependencies(requiredExtensions, config, results);
-  const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
-  validateReuseDeclaration(root, metadataDirectory, config, requiredExtensions, results);
+  const declaredMetadata = safeMetadataDirectory(config.metadata_directory);
+  const metadataEntries = readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink() && entry.name.normalize("NFC") === declaredMetadata.normalize("NFC"));
+  const metadataDirectory = metadataEntries[0]?.name ?? declaredMetadata;
+  if (metadataEntries.length === 1) validateReuseDeclaration(root, metadataDirectory, config, requiredExtensions, results);
+  else if (Object.hasOwn(config, "default_property_sets")) requireExtension("typedmark:reuse", "typedmark.md", requiredExtensions, config, results);
   if (Object.hasOwn(config, "automation_defaults")) requireExtension("typedmark:automation", "typedmark.md", requiredExtensions, config, results);
   // Reuse consumes collection-controlled names, vocabularies and severities.
   // Invalid shapes are not safe inputs to composition or semantic evaluation.
   if (configErrors.length) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
+  if (metadataEntries.length !== 1) {
+    add(results, config, "invalid_collection_configuration", "typedmark.md", metadataEntries.length ? "CM-24" : "FND-76", "The metadata directory must resolve unambiguously to the collection's schema artifacts");
+    return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
+  }
 
   validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results);
   const schemaArtifacts = loadArtifacts(join(root, metadataDirectory, "schemas"), root, "invalid_note_type_schema", "CM-538", results, config);
@@ -250,7 +257,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config, templates);
   }
 
-  const files = discoverFiles(root, metadataDirectory, arrayOfStrings(config.exclude_paths));
+  const files = discoverFiles(root, metadataDirectory, exclusionPatterns(config.exclude_paths));
   const notes = files.filter((path) => path.endsWith(".md"));
   for (const path of files) if (!path.endsWith(".md")) assets.add(path.normalize("NFC"));
   for (const notePath of notes) {
@@ -563,8 +570,8 @@ function discoverFiles(root: string, metadataDirectory: string, excludes: string
   const visit = (directory: string, relativeDirectory = "") => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const relativePath = normalized(join(relativeDirectory, entry.name));
-      if (relativeDirectory === "" && (entry.name === metadataDirectory || entry.name === "typedmark.md")) continue;
-      if (isExcluded(relativePath, excludes)) continue;
+      if (relativeDirectory === "" && (entry.name.normalize("NFC") === metadataDirectory.normalize("NFC") || entry.name === "typedmark.md")) continue;
+      if (entry.isDirectory() ? isSubtreeExcluded(relativePath, excludes) : isExcluded(relativePath, excludes)) continue;
       const absolute = join(directory, entry.name);
       if (entry.isSymbolicLink() || lstatSync(absolute).isSymbolicLink()) continue;
       if (entry.isDirectory()) {

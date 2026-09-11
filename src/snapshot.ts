@@ -3,7 +3,7 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSyn
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { parseMarkdown } from "./frontmatter";
-import { isExcluded } from "./paths";
+import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 
 export class SnapshotChangedError extends Error {}
 
@@ -33,15 +33,16 @@ function capture(root: string): Map<string, Buffer> {
     files.set("typedmark.md", content);
     try { config = parseMarkdown(content.toString("utf8")).data; } catch { /* The validator reports malformed configuration. */ }
   }
-  const excludes = Array.isArray(config.exclude_paths) ? config.exclude_paths.filter((item): item is string => typeof item === "string") : [];
-  const metadata = typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark";
+  const excludes = exclusionPatterns(config.exclude_paths);
+  const metadata = (typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark").normalize("NFC");
   const visit = (directory: string, prefix = "") => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = prefix + entry.name;
       const absolute = join(directory, entry.name);
       if (entry.isSymbolicLink() || lstatSync(absolute).isSymbolicLink()) continue;
-      const governed = path === "typedmark.md" || path === metadata || path.startsWith(`${metadata}/`);
-      if (!governed && isExcluded(path, excludes)) continue;
+      const logicalPath = path.normalize("NFC");
+      const governed = logicalPath === "typedmark.md" || logicalPath === metadata || logicalPath.startsWith(`${metadata}/`);
+      if (!governed && (entry.isDirectory() ? isSubtreeExcluded(path, excludes) : isExcluded(path, excludes))) continue;
       if (entry.isDirectory()) {
         if (!governed && existsSync(join(absolute, "typedmark.md"))) continue;
         visit(absolute, `${path}/`);
