@@ -2,7 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import type { ErrorObject } from "ajv";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import { parseMarkdown } from "./frontmatter";
+import { FrontmatterError, parseMarkdown } from "./frontmatter";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import { expandObjectDefaults, validateFieldValue, type FieldDefinition } from "./field-values";
@@ -15,6 +15,7 @@ import { conditionFailures, validateConditions } from "./conditions";
 import { validateReusableBlocks } from "./schema-semantics";
 import { validateRelationships } from "./relationships";
 import { computedFailures, hasComputed, validateComputedFields } from "./expressions";
+import { validateExpansions, type ExpansionTemplate } from "./expansions";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -56,6 +57,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   let schemaSources = new Map<string, Array<{ path: string; version: string }>>();
   const documents: CollectionNote[] = [];
   const effectiveNotes: ManagedNote[] = [];
+  const templates: ExpansionTemplate[] = [];
   const assets = new Set<string>();
   const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets });
 
@@ -223,7 +225,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       add(results, config, code, path, failure.rule, failure.message);
       schemaIssues.set(name, { kind: "invalid", path, message: failure.message });
     }
-    if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config);
+    if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config, templates);
   }
 
   const files = discoverFiles(root, metadataDirectory, arrayOfStrings(config.exclude_paths));
@@ -235,11 +237,11 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       document = parseMarkdown(readFileSync(join(root, notePath), "utf8"));
     } catch (error) {
       add(results, config, "invalid_note_frontmatter", notePath, "MN-118", errorMessage(error));
-      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: "", candidates: noteTypeCandidates(config, notePath, {}) });
+      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: noteTypeCandidates(config, notePath, {}) });
       continue;
     }
     const candidates = noteTypeCandidates(config, notePath, document.data);
-    documents.push({ path: notePath.normalize("NFC"), stored: document.data, body: document.body, candidates });
+    documents.push({ path: notePath.normalize("NFC"), stored: document.data, body: document.body, hasFrontmatter: document.hasFrontmatter, frontmatterValid: true, candidates });
     if (candidates.length === 0) continue;
     if (candidates.length !== 1 || !schemas.has(candidates[0]!)) {
       add(results, config, "invalid_note_type_mapping", notePath, "MN-120", "The note does not resolve to exactly one known concrete note type");
@@ -264,6 +266,10 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
   }
   const views = validateViews(root, metadataDirectory, model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry);
   results.push(...views.results);
+  const expansions = validateExpansions(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry, views.sources, templates);
+  results.push(...expansions.results);
+  if (expansions.incomplete) evaluation = "incomplete";
+  for (const extension of expansions.blocked) if (evaluatedExtensions[extension]) { delete evaluatedExtensions[extension]; evaluation = "incomplete"; }
   if (views.incomplete) evaluation = "incomplete";
   for (const extension of views.blocked.keys()) {
     delete evaluatedExtensions[extension];
@@ -274,6 +280,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
 }
 
 const STANDARD_EXTENSIONS: ExtensionMap = {
+  "typedmark:expansion": "0.1.0",
   "typedmark:expressions": "0.1.0",
   "typedmark:reuse": "0.1.0",
   "typedmark:queries": "0.1.0",
@@ -390,7 +397,7 @@ function validateOptionalArtifacts(root: string, metadataDirectory: string, requ
   }
 }
 
-function validateTemplate(root: string, metadataDirectory: string, noteType: string, schema: Data, registry: SchemaRegistry, results: ValidationResult[], config: Data) {
+function validateTemplate(root: string, metadataDirectory: string, noteType: string, schema: Data, registry: SchemaRegistry, results: ValidationResult[], config: Data, templates: ExpansionTemplate[]) {
   const explicit = schema.template && typeof schema.template.file === "string";
   const templateName = explicit ? schema.template.file : `${noteType}.md`;
   const path = join(root, metadataDirectory, "templates", templateName);
@@ -404,6 +411,7 @@ function validateTemplate(root: string, metadataDirectory: string, noteType: str
   }
   try {
     const template = parseMarkdown(readFileSync(path, "utf8"));
+    templates.push({ path: normalized(relative(root, path)), stored: template.data, body: template.body, hasFrontmatter: template.hasFrontmatter, version: schema.specification_version, noteType });
     if (template.hasFrontmatter) {
       const declared = new Set([...Object.keys(CORE_FIELDS), ...Object.keys(schema.frontmatter ?? {})]);
       const unknown = Object.keys(template.data).find((field) => !declared.has(field));

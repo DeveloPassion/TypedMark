@@ -9,14 +9,22 @@ import type { ValidationResult } from "./types";
 
 type Data = Record<string, any>;
 interface Artifact { path: string; id: string; data: Data }
+export interface TabularSource {
+  path: string;
+  version: string;
+  evaluation?: QueryEvaluation;
+  presented?: Set<string>;
+  error?: QueryError;
+}
 export interface ViewValidation {
   results: ValidationResult[];
   blocked: Map<string, string>;
   incomplete: boolean;
+  sources: Map<string, TabularSource>;
 }
 
 export function validateViews(root: string, metadata: string, model: CollectionModel, registry: SchemaRegistry): ViewValidation {
-  const outcome: ViewValidation = { results: [], blocked: new Map(), incomplete: false };
+  const outcome: ViewValidation = { results: [], blocked: new Map(), incomplete: false, sources: new Map() };
   const required = model.report.required_extensions;
   const evaluated = model.report.evaluated_extensions;
   const timezone = model.config.timezone ?? "UTC";
@@ -37,19 +45,23 @@ export function validateViews(root: string, metadata: string, model: CollectionM
       hasOwnedArtifacts = true;
       const path = `${metadata}/${directory}/${entry.name}`;
       const id = basename(entry.name, ".md");
+      const source: TabularSource = { path, version: "", error: new QueryError("CM-421", "Artifact could not be evaluated") };
+      outcome.sources.set(`${identity}:${id}`, source);
       const context = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) ? { [identity]: id } : {};
       try {
         const parsed = parseMarkdown(readFileSync(join(parent, entry.name), "utf8"));
         const data = parsed.data as Data;
         const version = data.specification_version;
+        source.version = String(version);
         const validVersion = typeof version === "string" && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version);
         if (validVersion && version.startsWith("0.1.") && version !== "0.1.0") outcome.incomplete = true;
         if (Object.hasOwn(data, "query") && !required["typedmark:queries"]) finding("invalid_extension_declaration", path, "EXT-16", "An embedded query requires typedmark:queries", { extension: "typedmark:queries" });
-        if (!evaluated["typedmark:views"]) continue;
+        if (!evaluated["typedmark:views"]) { source.error = new QueryError("CM-421", "Views evaluation is unavailable", { extension: "typedmark:views" }); continue; }
         if (validVersion && !version.startsWith("0.1.")) {
           outcome.incomplete = true;
           block("A query-owning artifact uses an unsupported specification compatibility line");
           finding("unsupported_specification_version", path, "FND-92", `Unsupported artifact version ${data.specification_version}`);
+          source.error = new QueryError("FND-92", "Unsupported artifact version", { specificationVersion: version, path });
           continue;
         }
         const errors = registry.validate(`${identity}.schema.json`, data);
@@ -77,7 +89,10 @@ export function validateViews(root: string, metadata: string, model: CollectionM
   const views = read("views", "view");
   if (hasOwnedArtifacts && !evaluated["typedmark:views"]) block("The query-owning Views contract is unavailable or undeclared");
   if ((datasets.length || views.length) && !evaluated["typedmark:queries"]) block("Embedded query evaluation is unavailable or deliberately excluded");
-  if (outcome.blocked.size || !evaluated["typedmark:views"] || !evaluated["typedmark:queries"]) return outcome;
+  if ((required["typedmark:expansion"] && !evaluated["typedmark:expansion"]) || !evaluated["typedmark:views"] || !evaluated["typedmark:queries"]) {
+    for (const source of outcome.sources.values()) if (!source.error?.unavailable) source.error = new QueryError("CM-421", "Query artifact evaluation is unavailable", { extension: !evaluated["typedmark:views"] ? "typedmark:views" : !evaluated["typedmark:queries"] ? "typedmark:queries" : "typedmark:expansion" });
+    return outcome;
+  }
 
   function fail(rule: string, message: string): never { throw new QueryError(rule, message); }
   const evaluate = (artifact: Artifact, queryData: unknown, mismatchRule: string) => {
@@ -89,6 +104,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
   };
   const reportError = (artifact: Artifact, kind: "dataset" | "view", error: unknown) => {
     if (!(error instanceof QueryError)) throw error;
+    outcome.sources.get(`${kind}:${artifact.id}`)!.error = error;
     if (error.unavailable) {
       block(error.message);
       if ("specificationVersion" in error.unavailable) {
@@ -125,6 +141,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         seen.push(value);
       }
       cache.set(artifact.id, { artifact, query, evaluation, columns });
+      Object.assign(outcome.sources.get(`dataset:${artifact.id}`)!, { evaluation, error: undefined });
     } catch (error) { reportError(artifact, "dataset", error); }
   }
 
@@ -133,11 +150,16 @@ export function validateViews(root: string, metadata: string, model: CollectionM
       let evaluation: QueryEvaluation;
       if (artifact.data.dataset !== undefined) {
         const source = datasets.find((dataset) => dataset.id === artifact.data.dataset);
-        if (!source) fail("CM-520", "Referenced dataset does not resolve");
+        if (!source) {
+          const dependency = outcome.sources.get(`dataset:${artifact.data.dataset}`)?.error;
+          if (dependency?.unavailable) throw dependency;
+          fail("CM-520", "Referenced dataset does not resolve");
+        }
         if (source.data.specification_version !== artifact.data.specification_version) fail("CM-521", "View and dataset specification versions differ");
         const dataset = cache.get(source.id);
         if (!dataset) {
-          if (outcome.blocked.size) continue;
+          const dependency = outcome.sources.get(`dataset:${source.id}`)?.error;
+          if (dependency?.unavailable) throw dependency;
           fail("CM-421", "Referenced dataset could not be evaluated");
         }
         evaluation = dataset.evaluation;
@@ -163,6 +185,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
           seen.push(column.value);
         }
       }
+      Object.assign(outcome.sources.get(`view:${artifact.id}`)!, { evaluation, presented, error: undefined });
     } catch (error) { reportError(artifact, "view", error); }
   }
   return outcome;

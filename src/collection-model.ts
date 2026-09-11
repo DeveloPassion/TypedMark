@@ -8,6 +8,8 @@ export interface CollectionNote {
   stored: Data;
   body: string;
   candidates?: string[];
+  hasFrontmatter?: boolean;
+  frontmatterValid?: boolean;
 }
 export interface ManagedNote extends CollectionNote {
   noteType: string;

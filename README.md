@@ -50,8 +50,8 @@ and conditions. Standalone Queries and the bounded Systems adapter are
 implemented. Capability discovery lists standalone query execution under
 `operations` and collection-validation support under `extensions`. Collection
 validation now also implements Queries and Views for datasets, saved views,
-and their embedded queries over supported note models. Reuse and Expressions
-are implemented; Automation and content-expansion query surfaces remain unsupported.
+and their embedded queries over supported note models. Reuse, Expressions, and
+Content Expansion are implemented; Automation remains unsupported.
 
 ## Query pilot
 
@@ -94,8 +94,9 @@ and semantic failures. Validation stays incomplete when a required query/model
 dependency is unavailable or queries belong to an unsupported body contract;
 it does not turn unavailable interpretation into invalid dataset content.
 Unsupported and deliberately limited contracts remain visible in reports.
-Content-expansion query surfaces and broader optional-contract coverage remain
-open. No validator renders a UI, rewrites artifacts, or edits notes.
+Content-expansion query surfaces reuse those interpreted results. Broader
+optional-contract coverage remains open. No validator renders a UI, rewrites
+artifacts, or edits notes.
 
 ## Reusable schemas
 
@@ -120,6 +121,14 @@ cover positive composition and conditional failures; regression tests cover
 deep chains, exclusions, references, versions, and relationship cardinality.
 
 ## Adapter boundary
+
+Content expansions are checked in managed and untyped note bodies and referenced
+templates. Marker grammar uses the CommonMark code-block boundary; auto/manual
+regions are compared with current field, relationship, query, dataset, view, or
+file sources. Completed once regions never obtain a fresh clock or re-evaluate
+source values; pending templates are checked without materialization. Source
+values preserve stored presence and per-row numeric definitions. Refreshing,
+ejecting, scheduling, and propagation remain separate write operations.
 
 Expressions use a shared deterministic text-template parser with only named
 text references and the specified Unicode case transforms. Computed fields

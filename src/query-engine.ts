@@ -44,6 +44,7 @@ export interface QueryEvaluation {
   result: QueryResult;
   columns: Map<string, FieldDefinition[]>;
   admittedTypes: string[];
+  rowDefinitions: Array<Record<string, FieldDefinition | undefined>>;
 }
 export type QueryUnavailability = { extension: string } | { specificationVersion: string; path?: string };
 export class QueryError extends Error {
@@ -126,7 +127,7 @@ function checkConversion(source: FieldDefinition, target: FieldDefinition, decla
   if (declared && declared !== conversion) fail("CM-483", "Declared conversion class differs from the actual conversion");
 }
 
-function requireSchemaModel(model: CollectionModel, type: string): void {
+export function requireSchemaModel(model: CollectionModel, type: string): void {
   const issue = model.schemaIssues?.get(type);
   if (issue) fail("CM-308", issue.message, issue.kind === "invalid" ? undefined : issue.extension ? { extension: issue.extension } : { specificationVersion: issue.specificationVersion!, path: issue.path });
   const schema = model.schemas.get(type);
@@ -344,5 +345,6 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     });
     result.groups = groups.map(({ key, rows }) => ({ key, rows }));
   }
-  return { result, columns: columnDefinitions, admittedTypes: concreteTypes };
+  const rowDefinitions = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.definition])));
+  return { result, columns: columnDefinitions, admittedTypes: concreteTypes, rowDefinitions };
 }
