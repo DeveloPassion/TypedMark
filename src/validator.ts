@@ -19,6 +19,7 @@ import { validateAutomations } from "./automations";
 import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
 import { validateTemplateTracking } from "./template-tracking";
 import { resolveStoragePath } from "./storage";
+import { validateHistoryShape } from "./history";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -48,7 +49,7 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
   return readStableCollection(input.collectionRoot, (root) => readCollectionModel({ ...input, collectionRoot: root })).report;
 }
 
-export function readCollectionModel(input: ValidateCollectionInput): CollectionModel {
+export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict" } = {}): CollectionModel {
   const root = input.collectionRoot;
   const mode = input.mode ?? "instantiated_collection";
   const registry = new SchemaRegistry(input.schemaDirectory);
@@ -119,6 +120,14 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     }
   }
 
+  // Strict eligibility checks need known violations independently of display
+  // policy. Validate the authored configuration first, then override only the
+  // in-memory diagnostic projection; normal validation keeps configured policy.
+  if (options.diagnosticPolicy === "strict" && !configErrors.length) {
+    const categories = new Set([...Object.keys(DEFAULT_SEVERITIES), ...Object.keys(config.validation_defaults ?? {})]);
+    config = { ...config, validation_defaults: Object.fromEntries([...categories].map((code) => [code, "error"])) };
+  }
+
   for (const [extension, requiredVersion] of Object.entries(requiredExtensions).sort()) {
     if (supportedExtensions[extension] === requiredVersion) {
       evaluatedExtensions[extension] = requiredVersion;
@@ -144,7 +153,6 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
   }
 
-  validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results);
   const schemaArtifacts = loadArtifacts(join(root, metadataDirectory, "schemas"), root, "invalid_note_type_schema", "CM-538", results, config);
   const propertySets = new Map<string, Data>();
   const propertySetIssues = new Map<string, SchemaIssue>();
@@ -157,6 +165,7 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
     add(results, config, "unsupported_specification_version", path, "FND-92", message);
     return { kind: "unavailable", path, message, specificationVersion: version };
   };
+  validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results, checkVersion);
   const shapeErrors = (schema: string, data: Data, path: string): { errors: ErrorObject[]; invalidUnknown: boolean } => {
     const errors = registry.validate(schema, data);
     const bestEffort = String(data.specification_version).startsWith("0.1.") && data.specification_version !== IMPLEMENTED_CORE;
@@ -395,7 +404,7 @@ function validateReuseDeclaration(root: string, metadataDirectory: string, confi
   }
 }
 
-function validateSystemContract(root: string, metadataDirectory: string, mode: ValidationReport["mode"], config: Data, required: ExtensionMap, evaluated: ExtensionMap, registry: SchemaRegistry, results: ValidationResult[]) {
+function validateSystemContract(root: string, metadataDirectory: string, mode: ValidationReport["mode"], config: Data, required: ExtensionMap, evaluated: ExtensionMap, registry: SchemaRegistry, results: ValidationResult[], checkVersion: (data: Data, path: string) => SchemaIssue | undefined) {
   const historyPath = join(root, metadataDirectory, "history.md");
   const usesSystems = config.version !== undefined || config.scaffold !== undefined || config.composition !== undefined || existsSync(historyPath);
   if (usesSystems && !required["typedmark:systems"]) {
@@ -409,15 +418,26 @@ function validateSystemContract(root: string, metadataDirectory: string, mode: V
     const names = new Set<string>();
     for (const source of config.composition.sources) {
       if (!isRecord(source) || typeof source.name !== "string") continue;
-      if (source.name === config.name || names.has(source.name)) add(results, config, "invalid_composition", "typedmark.md", "SCE-50", `Invalid or duplicate composition source ${source.name}`);
+      if (source.name === config.name) add(results, config, "invalid_composition", "typedmark.md", "CM-131", "Composition cannot reference its own collection identity");
+      if (names.has(source.name)) add(results, config, "invalid_composition", "typedmark.md", "CM-130", `Duplicate composition source ${source.name}`);
       names.add(source.name);
     }
   }
   if (!existsSync(historyPath)) return;
   try {
     const history = parseMarkdown(readFileSync(historyPath)).data;
-    const errors = registry.validate("history.schema.json", history);
-    if (errors.length > 0) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-95", schemaError(errors));
+    const path = normalized(relative(root, historyPath));
+    if (checkVersion(history, path)) { delete evaluated["typedmark:systems"]; return; }
+    const version = String(history.specification_version);
+    const validVersion = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version);
+    const bestEffort = validVersion && sameCompatibilityLine(version, IMPLEMENTED_CORE)
+      && BigInt(version.split(".")[2]!) > BigInt(IMPLEMENTED_CORE.split(".")[2]!);
+    const shape = validateHistoryShape(history, registry, bestEffort);
+    for (const issue of shape.issues) {
+      if (issue.severity) results.push({ code: issue.code, severity: issue.severity, path, rule_id: issue.rule, message: issue.message });
+      else add(results, config, issue.code, path, issue.rule, issue.message);
+    }
+    if (!shape.valid) return;
     const entries = Array.isArray(history.history) ? history.history : [];
     if (typeof config.version === "string" && entries.at(-1)?.version !== config.version) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-100", "The last history version must equal the system version");
   } catch (error) {

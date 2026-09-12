@@ -4,9 +4,9 @@ import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { stringify } from "yaml";
 import { getCapabilities } from "./adapter";
 import { parseMarkdown } from "./frontmatter";
-import { SchemaRegistry } from "./schema-registry";
 import type { ValidationReport } from "./types";
-import { validateCollection } from "./validator";
+import { readCollectionModel, validateCollection } from "./validator";
+import { readStableCollection } from "./snapshot";
 
 export interface InstantiateSystemInput {
   sourceRoot: string;
@@ -23,6 +23,8 @@ export interface InstantiationResult {
   validateOffline(): ValidationReport;
 }
 
+// "ready" is limited to a validated target with no requested version change;
+// this command cannot certify target-collection impact or apply an update.
 export type MigrationReadiness =
   | { status: "ready"; reasons: [] }
   | { status: "manual_resolution_required"; reasons: string[] };
@@ -93,26 +95,32 @@ export async function instantiateSystem(input: InstantiateSystemInput): Promise<
 }
 
 export function checkMigrationReadiness(input: { systemRoot: string; fromVersion: string; schemaDirectory: string }): MigrationReadiness {
-  const root = resolve(input.systemRoot);
-  const config = parseMarkdown(readFileSync(join(root, "typedmark.md"))).data;
-  const targetVersion = String(config.version ?? "");
-  if (targetVersion === input.fromVersion) return { status: "ready", reasons: [] };
-  const metadataDirectory = safeMetadataDirectory(config.metadata_directory);
-  const historyPath = join(root, metadataDirectory, "history.md");
-  if (!existsSync(historyPath)) return {
-    status: "manual_resolution_required",
-    reasons: [`The target system has no history.md for classifying the ${input.fromVersion} to ${targetVersion} update.`],
-  };
   try {
-    const history = parseMarkdown(readFileSync(historyPath)).data;
-    const errors = new SchemaRegistry(input.schemaDirectory).validate("history.schema.json", history);
-    const entries = Array.isArray(history.history) ? history.history : [];
-    if (errors.length > 0 || entries.at(-1)?.version !== targetVersion || !entries.some((entry) => entry.version === input.fromVersion)) {
-      return { status: "manual_resolution_required", reasons: ["The target system history is invalid or incomplete for this update."] };
-    }
-    return { status: "ready", reasons: [] };
+    return readStableCollection(resolve(input.systemRoot), (root): MigrationReadiness => {
+      const model = readCollectionModel({ collectionRoot: root, schemaDirectory: input.schemaDirectory, mode: "system_definition" }, { diagnosticPolicy: "strict" });
+      if (!model.report.valid || model.report.evaluation !== "complete" || model.configurationIssue || model.associationIssue) return {
+        status: "manual_resolution_required", reasons: ["The target system cannot be fully validated under the supported contracts."],
+      };
+      const config = model.config;
+      const targetVersion = String(config.version ?? "");
+      if (targetVersion === input.fromVersion) return { status: "ready", reasons: [] };
+      const declaredMetadata = safeMetadataDirectory(config.metadata_directory).normalize("NFC");
+      const metadataDirectory = readdirSync(root, { withFileTypes: true }).find((entry) => entry.isDirectory() && entry.name.normalize("NFC") === declaredMetadata)!.name;
+      const historyPath = join(root, metadataDirectory, "history.md");
+      if (!existsSync(historyPath)) return {
+        status: "manual_resolution_required", reasons: [`The target system has no history.md for classifying the ${input.fromVersion} to ${targetVersion} update.`],
+      };
+      const history = parseMarkdown(readFileSync(historyPath)).data;
+      const entries = Array.isArray(history.history) ? history.history : [];
+      if (!entries.some((entry) => entry.version === input.fromVersion)) return {
+        status: "manual_resolution_required", reasons: ["The target system history is incomplete for this update."],
+      };
+      // History is necessary evidence, not target-aware impact analysis. This
+      // bounded adapter cannot approve an actual migration from versions alone.
+      return { status: "manual_resolution_required", reasons: ["Target-collection migration impact analysis is not implemented; review is required before applying an update."] };
+    });
   } catch {
-    return { status: "manual_resolution_required", reasons: ["The target system history cannot be interpreted for this update."] };
+    return { status: "manual_resolution_required", reasons: ["The target system could not be read as a stable, interpretable snapshot."] };
   }
 }
 
