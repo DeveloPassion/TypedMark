@@ -4,7 +4,7 @@ import { basename, dirname, join, relative } from "node:path";
 import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./frontmatter";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
-import { expandObjectDefaults, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
+import { compareFieldValues, comparisonDomain, expandObjectDefaults, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
 import { aliasValueFailure, CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
@@ -317,8 +317,9 @@ export function readCollectionModel(input: ValidateCollectionInput): CollectionM
       stored: document.data, body: document.body, problems: validation.results });
   }
 
-  validateUniqueness(effectiveNotes, config, results);
-  validateCounts(effectiveNotes, new Map([...schemas].filter(([name, schema]) => !schemaIssues.has(name) && !schema.abstract)), config, results);
+  const concreteSchemas = new Map([...schemas].filter(([name, schema]) => !schemaIssues.has(name) && !schema.abstract));
+  validateUniqueness(effectiveNotes, concreteSchemas, config, results);
+  validateCounts(effectiveNotes, concreteSchemas, config, results);
   for (const finding of validateRelationships(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)))) {
     add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { note_type: finding.note_type, ...(finding.field ? { field: finding.field } : {}), ...(finding.relationship ? { relationship: finding.relationship } : {}) });
   }
@@ -571,17 +572,46 @@ function validateHeadings(path: string, body: string, title: unknown, headings: 
   }
 }
 
-function validateUniqueness(notes: Array<{ path: string; noteType: string; values: Data; fields: Data }>, config: Data, results: ValidationResult[]) {
-  const seen = new Map<string, string>();
+function validateUniqueness(notes: ManagedNote[], schemas: Map<string, Data>, config: Data, results: ValidationResult[]) {
+  type Policy = { collection: boolean; types: Set<string> };
+  type Entry = { note: ManagedNote; value: unknown; definition: FieldDefinition };
+  type Group = { field: string; collection: boolean; entries: Entry[] };
+  const policies = new Map<string, Policy>();
+  policies.set(JSON.stringify(["id", "text"]), { collection: true, types: new Set() });
+  // A collection-wide declaration governs same-named, same-typed fields, not
+  // just notes whose schema repeats the declaration (or currently has notes).
+  for (const [noteType, schema] of schemas) for (const [field, definition] of Object.entries(noteFieldDefinitions(schema))) {
+    if (!definition.unique || !comparisonDomain(definition)) continue;
+    const key = JSON.stringify([field, definition.type]);
+    const policy = policies.get(key) ?? { collection: false, types: new Set<string>() };
+    if (definition.unique === "collection") policy.collection = true;
+    else policy.types.add(noteType);
+    policies.set(key, policy);
+  }
+  const groups = new Map<string, Group>();
   for (const note of notes) {
     for (const [field, definition] of Object.entries(note.fields)) {
       const value = note.values[field];
-      const unique = field === "id" ? "collection" : (definition as Data).unique;
-      if (!unique || value === null || value === undefined) continue;
-      const scope = unique === "collection" ? "collection" : note.noteType;
-      const key = `${scope}\0${field}\0${JSON.stringify(value)}`;
-      if (seen.has(key)) add(results, config, "duplicate_unique_value", note.path, field === "id" ? "MN-48" : "FDR-83", `${field} duplicates ${seen.get(key)}`, { note_type: note.noteType, field });
-      else seen.set(key, note.path);
+      const policy = policies.get(JSON.stringify([field, definition.type]));
+      if (!policy || (!policy.collection && !policy.types.has(note.noteType)) || value === null || value === undefined) continue;
+      // Invalid type-domain values have their own field findings; do not coerce
+      // them or let an invalid temporal value throw during comparison.
+      if (validateFieldValue(value, { type: definition.type, format: definition.format }, config.timezone ?? "UTC")) continue;
+      const key = JSON.stringify([policy.collection ? null : note.noteType, field, definition.type]);
+      const group = groups.get(key) ?? { field, collection: policy.collection, entries: [] };
+      group.entries.push({ note, value, definition });
+      groups.set(key, group);
+    }
+  }
+  for (const group of groups.values()) {
+    const compare = (left: Entry, right: Entry) => compareFieldValues(left.value, right.value, left.definition, config.timezone ?? "UTC");
+    group.entries.sort((left, right) => compare(left, right) || compareUnicodeCodePoints(left.note.path, right.note.path));
+    let first: Entry | undefined;
+    for (const entry of group.entries) {
+      if (first && compare(first, entry) === 0) {
+        const rule = group.field === "id" ? "MN-48" : group.collection ? "FDR-84" : "FDR-83";
+        add(results, config, "duplicate_unique_value", entry.note.path, rule, `${group.field} duplicates ${first.note.path}`, { note_type: entry.note.noteType, field: group.field });
+      } else first = entry;
     }
   }
 }

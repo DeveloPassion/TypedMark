@@ -20,6 +20,7 @@ export interface FieldDefinition {
   generated?: false | string | { random: number } | { sequence: { start?: number; scope?: "note_type" | "collection" } };
   computed?: string;
   immutable?: boolean;
+  unique?: boolean | "collection";
   relationship_kind?: "belongs_to" | "related_to";
   targets?: string[];
   validate_exists?: boolean;
