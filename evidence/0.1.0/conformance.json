@@ -1,8 +1,8 @@
 {
-  "specification_revision": "20baf74cad13fb66cb8a4a46d5dafe6348f20137",
-  "adapter_revision": "a4894a8219a58ce2f68b00a6ba34bbd2ce00df10",
-  "started_at": "2026-09-11T14:47:36.712Z",
-  "finished_at": "2026-09-11T14:47:50.618Z",
+  "specification_revision": "9e665769bff1a825ea54136092e2a601876a72ea",
+  "adapter_revision": "85078e3bcc41fd2b5503e5f1a67cfa6c897517bb",
+  "started_at": "2026-09-12T06:04:19.702Z",
+  "finished_at": "2026-09-12T06:05:08.127Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 30,
-    "executed": 28,
-    "passed": 28,
+    "discovered": 37,
+    "executed": 35,
+    "passed": 35,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -109,6 +109,51 @@
         },
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "composition-provenance-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_composition",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "CM-130",
+            "message": "Duplicate composition source external-system"
+          },
+          {
+            "code": "invalid_composition",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "CM-131",
+            "message": "Composition cannot reference its own collection identity"
+          }
+        ]
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
@@ -281,6 +326,112 @@
           }
         }
       ]
+    },
+    {
+      "name": "core-cardinality-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "duplicate_unique_value",
+            "severity": "error",
+            "path": "B.md",
+            "rule_id": "FDR-83",
+            "message": "when duplicates A.md",
+            "note_type": "note",
+            "field": "when"
+          },
+          {
+            "code": "duplicate_unique_value",
+            "severity": "error",
+            "path": "B.md",
+            "rule_id": "FDR-84",
+            "message": "key duplicates A.md",
+            "note_type": "note",
+            "field": "key"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "core-cardinality-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "core-count-range-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/note.md",
+            "rule_id": "NTS-69",
+            "message": "Note count minimum exceeds maximum",
+            "note_type": "note"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "core-fields-invalid",
@@ -599,6 +750,102 @@
           "typedmark:queries": "0.1.0",
           "typedmark:reuse": "0.1.0",
           "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "history-best-effort",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": false,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "history-unsupported-version",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "unsupported_specification_version",
+            "severity": "error",
+            "path": ".typedmark/history.md",
+            "rule_id": "FND-92",
+            "message": "Unsupported specification version 9.0.0"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "history-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
         },
         "valid": true,
         "results": []

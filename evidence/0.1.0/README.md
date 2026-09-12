@@ -1,12 +1,12 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers thirty golden vectors at TypedMarkSpecification
-`20baf74cad13fb66cb8a4a46d5dafe6348f20137`, using adapter
-`a4894a8219a58ce2f68b00a6ba34bbd2ce00df10` on 2026-09-11.
+This record covers thirty-seven golden vectors at TypedMarkSpecification
+`9e665769bff1a825ea54136092e2a601876a72ea`, using adapter
+`85078e3bcc41fd2b5503e5f1a67cfa6c897517bb` on 2026-09-12.
 
 Results:
 
-- twenty-eight eligible collection vectors passed;
+- thirty-five eligible collection vectors passed;
 - eleven standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -31,6 +31,15 @@ Association availability is independent of diagnostic suppression. The parser
 recognizes unclosed delimiters as body content, rejects invalid UTF-8 without
 replacement, and keeps YAML alias limits inside structured diagnostics. These
 are implementation corrections; no normative prose or artifact shape changed.
+
+Uniqueness now uses the shared type-aware equality domain, with collection-wide
+same-name/same-property-type scope derived from concrete schema declarations.
+The count-range implementation was already present; new regressions and vectors
+verify it independently of note population. History now selects its own Core
+artifact version, preserves best-effort incompleteness, and reports specific
+shape/provenance diagnostics. Readiness uses one strict, immutable snapshot and
+does not mistake suppressed errors or history availability for migration impact
+analysis: only a validated version no-op can be ready.
 
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
@@ -65,8 +74,8 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 491 tooling tests, type checking, dependency audit,
-321 specification tests, 255 fixture expectations, rule-ID checks, and the
+Validation covered 553 tooling tests, type checking, dependency audit,
+321 specification tests, 262 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 90 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
@@ -74,19 +83,24 @@ these are correctness checks, not timing benchmarks.
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
 field-name matching, parser error boundaries, Core field invariants, deferred
-storage references, timezone failures, and the new golden reports.
+storage references, timezone failures, type-aware uniqueness, history version
+boundaries, strict snapshot readiness, and the new golden reports.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in
 [specification #123](https://github.com/DeveloPassion/TypedMarkSpecification/issues/123);
 they do not establish coverage of every normative rule
 or completion of the five-working-day full-validator measurement.
 
 General automation execution and writer operations remain follow-up work.
-The [fresh bounded system exercise](system-exercise.json) used TypedMarkExample
+The [2026-09-11 bounded system exercise](system-exercise.json) used TypedMarkExample
 `c55578d0ee6996cc82efeda80b7d60cae3ba591b`: source validation, instantiation into
 an isolated temporary directory, and a separate offline validation all completed
 with no findings. The instance omitted publishing `version`/`scaffold`, recorded
 its composition source, and materialized `Notes/Welcome.md`. The source snapshot
 was unchanged; the temporary instance was removed after verification. Missing
 history still returned `manual_resolution_required`, with no migration attempted.
+That historical exercise was not rerun for this slice; current readiness changes
+are covered by the tooling regression suite. Complete history release-order
+validation (including the equal-precedence/build-metadata policy), replay,
+target-aware impact analysis, and broader composition remain follow-up work.
 Lossless note re-typing is separately tracked for future design in specification
 [#130](https://github.com/DeveloPassion/TypedMarkSpecification/issues/130).

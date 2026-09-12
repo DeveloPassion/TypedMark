@@ -69,6 +69,8 @@ test.each([
   "core-association-valid", "core-association-invalid", "core-mapping-declarations-invalid",
   "core-fields-valid", "core-fields-invalid", "storage-valid", "storage-invalid",
   "storage-declarations-invalid", "storage-timezone-invalid",
+  "core-cardinality-valid", "core-cardinality-invalid", "core-count-range-invalid",
+  "history-valid", "history-unsupported-version", "history-best-effort", "composition-provenance-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);
