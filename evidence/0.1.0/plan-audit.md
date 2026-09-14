@@ -110,13 +110,15 @@ and the relationship graph. Managed-field syntax uses the `CM-54` note-link
 category without a duplicate generic format error, while other field constraints
 and nested siblings remain checked. Suppression does not unlock dependent queries;
 see the [diagnostic decision](../../docs/decisions/006-note-link-diagnostics.md).
-The link audit still has reproduced missing general RFC 3986 target-character
-checks. URI fragment policy, non-UTF-8 percent octets and reference-style outer
-links need separate care. The encoded-anchor and non-UTF-8 policies await answers.
-The absolute `format: uri` checker also accepts malformed percent triplets and
-illegal raw characters through WHATWG URL parsing, while rejecting an RFC-generic
-numeric port above 65535. A shared non-repairing RFC syntax check remains required
-for that field contract as well as internal Markdown targets.
+Shared non-repairing RFC 3986 syntax checks now cover URI fields and pre-fragment
+Markdown targets, including authorities, encoded octets and component-specific
+punctuation. URI fields no longer rely on WHATWG repairs or transport port bounds.
+A linear scanner removes the review's reproduced regex-engine size limit; see the
+[URI syntax decision](../../docs/decisions/007-rfc-uri-syntax.md).
+URI-field fragment policy, Markdown anchor interpretation/general fragment-character
+checks and non-UTF-8 note-target octets await maintainer answers. Reference-style
+outer links remain separate audit work. Existing URI-field fragment acceptance
+is retained without claiming that the formal FDR-140 ambiguity is resolved.
 Independent review also reproduced pre-existing quadratic parsing of large
 backslash-heavy inline destinations in pinned Marked (about 1.6 seconds at
 200 KB and 23 seconds at 800 KB). The new decoding pass scales linearly; the

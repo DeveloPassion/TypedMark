@@ -1,5 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { parseNoteLink } from "./note-links";
+import { hasUriScheme, isUriReference } from "./uri-syntax";
 
 export type FieldType = "text" | "integer" | "number" | "checkbox" | "date" | "time" | "datetime" | "link" | "list" | "tags" | "object" | "any";
 export interface FieldDefinition {
@@ -191,8 +192,9 @@ function validateValue(value: unknown, definition: FieldDefinition, timezone: st
   if (definition.not_blank && !/\S/u.test(String(value))) return fail("FDR-176", "must not be blank");
   if (definition.format === "slug" && !fullPattern("[a-z0-9]+(?:-[a-z0-9]+)*").test(String(value))) return fail("FDR-139", "must use slug format");
   if (definition.format === "uri") {
-    try { if (!/^[a-z][a-z0-9+.-]*:/i.test(String(value)) || /[\s<>]/u.test(String(value))) throw new Error(); new URL(String(value)); }
-    catch { return fail("FDR-140", "must be an absolute URI"); }
+    if (!hasUriScheme(String(value)) || !isUriReference(String(value))) {
+      return fail("FDR-140", "must have a URI scheme and valid RFC 3986 syntax");
+    }
   }
   if (definition.format === "note_link" && context !== "managed_note") {
     const link = parseNoteLink(String(value));

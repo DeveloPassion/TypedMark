@@ -84,6 +84,7 @@ test.each([
   "body-links-escaped-labels-valid", "body-links-html-context-invalid",
   "note-link-entities-valid", "note-link-entities-invalid",
   "note-link-percent-valid", "note-link-percent-invalid", "note-link-percent-suppressed",
+  "uri-syntax-valid", "uri-syntax-invalid", "uri-syntax-defaults-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

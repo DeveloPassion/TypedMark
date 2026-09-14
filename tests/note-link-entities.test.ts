@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import type { CollectionModel, ManagedNote } from "../src/collection-model";
-import { buildRelationshipGraph, extractBodyLinks, parseNoteLink } from "../src/note-links";
+import { buildRelationshipGraph, extractBodyLinks, inspectBodyLinks, parseNoteLink } from "../src/note-links";
 import { markdownLinkDestination } from "../src/markdown-link-destination";
+import { hasUriScheme } from "../src/uri-syntax";
 
 // CommonMark destination escapes/entities precede NL-5 scheme classification
 // and NL-11 target decoding. Authored labels and anchors remain lexical strings.
@@ -11,7 +12,6 @@ test.each([
   { destination: "N&#x2e;md", target: "N.md" },
   { destination: "N&#X2E;md", target: "N.md" },
   { destination: "N&AMP;Co.md", target: "N&Co.md" },
-  { destination: "N&#x1F4DD;.md", target: "N📝.md" },
   { destination: "N&amp;period;md", target: "N&period;md" },
   { destination: "N\\&period;md", target: "N&period;md" },
   { destination: "N&unknown;.md", target: "N&unknown;.md" },
@@ -63,16 +63,26 @@ test.each([
 
 test.each([
   { destination: "https%3A//example.com", target: "https://example.com" },
-  { destination: "%68ttps://example.com", target: "https://example.com" },
   { destination: "h&#116;tps%3A//example.com", target: "https://example.com" },
   { destination: "https&percnt;3A//example.com", target: "https://example.com" },
   { destination: "https\\&colon;//example.com", target: "https&colon;//example.com" },
   { destination: "https&amp;colon;//example.com", target: "https&colon;//example.com" },
-  { destination: "&#8490;:note", target: "K:note" },
-  { destination: "&#383;cheme:note", target: "ſcheme:note" },
 ])("classifies the scheme before percent decoding without re-decoding entities: $destination", ({ destination, target }) => {
   const raw = `[label](${destination})`;
   expect(parseNoteLink(raw)).toEqual({ raw, form: "markdown", target, displayText: "label", embed: false });
+});
+
+test.each([
+  { destination: "N&#x1F4DD;.md", uri: "N📝.md" },
+  { destination: "%68ttps://example.com", uri: "%68ttps://example.com" },
+  { destination: "&#8490;:note", uri: "K:note" },
+  { destination: "&#383;cheme:note", uri: "ſcheme:note" },
+])("keeps Markdown decoding and scheme recognition distinct from URI validity: $destination", ({ destination, uri }) => {
+  expect(markdownLinkDestination(destination)).toEqual({ uri, target: uri });
+  expect(hasUriScheme(uri)).toBe(false);
+  const raw = `[label](${destination})`;
+  expect(parseNoteLink(raw)).toBeUndefined();
+  expect(inspectBodyLinks(raw).failures.map(({ error }) => error.rule_id)).toEqual(["NL-6"]);
 });
 
 test("body extraction retains physical source and lexical components around decoded entities", () => {

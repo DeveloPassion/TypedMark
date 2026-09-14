@@ -5,6 +5,7 @@ import type { FieldDefinition } from "./field-values";
 import type { SchemaIssue } from "./reuse";
 import { markdownBlockSources, type MarkdownBlockSource } from "./markdown-block-sources";
 import { markdownLinkDestination } from "./markdown-link-destination";
+import { hasUriScheme, isUriReference } from "./uri-syntax";
 
 export interface ParsedNoteLink {
   /** Exact input supplied to parseNoteLink, not rendered Markdown. */
@@ -60,12 +61,17 @@ function inspectNoteLink(raw: string): NoteLinkInspection {
   const destination = source[2].trim();
   const authored = destination.startsWith("<") ? destination.slice(1, -1) : destination;
   const parsed = markdownLinkDestination(authored);
-  if (/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(parsed.uri)) return { kind: "ignored" };
+  if (hasUriScheme(parsed.uri)) return { kind: "ignored" };
   // Check the interpreted URI, including its fragment, before decoding the
   // target. A decoded %25 is literal data, not another escape to validate.
   // https://www.rfc-editor.org/rfc/rfc3986#section-2.1
   if (/%(?![0-9A-Fa-f]{2})/u.test(parsed.uri)) {
     return { kind: "invalid", error: new NoteLinkError("NL-6", "Markdown destination contains a malformed percent escape") };
+  }
+  // Fragment interpretation remains separate; target spelling is checked
+  // before decoding so encoded delimiters stay data during URI parsing.
+  if (!isUriReference(parsed.target)) {
+    return { kind: "invalid", error: new NoteLinkError("NL-6", "Markdown target must use valid RFC 3986 URI-reference syntax; encode reserved or non-ASCII filename characters") };
   }
   try { return { kind: "parsed", link: { raw, form: "markdown", target: decodeURIComponent(parsed.target), embed: token.type === "image",
     displayText: source[1], ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }) } }; }

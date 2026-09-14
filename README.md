@@ -90,8 +90,12 @@ triplets in targets/fragments. Invalid links cannot create graph edges or unlock
 dependent queries through diagnostic suppression. Managed-field syntax findings
 use `invalid_note_link` without a duplicate generic field-format error; independent
 field constraints remain checked. See the [diagnostic decision](docs/decisions/006-note-link-diagnostics.md).
-General URI target-character validation, non-UTF-8 percent octets and encoded-anchor
-interpretation remain separate audit work.
+Shared RFC 3986 checks now validate URI fields and pre-fragment Markdown targets
+without repairing characters or changing source strings. Authorities, percent
+triplets and component-specific punctuation follow generic URI syntax; no DNS or
+transport policy is inferred. See the [URI syntax decision](docs/decisions/007-rfc-uri-syntax.md).
+URI-field fragment policy, non-UTF-8 note-target octets and encoded-anchor
+interpretation remain open clarifications.
 
 Unknown-field findings retain their severity policy and authored names. Logical
 field contexts omit list positions; names that cannot be represented by the
