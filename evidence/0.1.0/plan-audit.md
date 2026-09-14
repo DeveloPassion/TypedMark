@@ -101,11 +101,18 @@ and corrects escaped-label phantom links and invented HTML reference/code exclus
 Encoded-anchor interpretation remains an open clarification; preserving authored
 spelling is not a claim to have resolved that policy.
 
-The next link audit has reproduced missing RFC 3986 target-encoding checks,
-missing Markdown entity processing before scheme/fragment detection, and malformed
-percent escapes silently disappearing from body validation. Those findings are
-not fixed by source preservation and remain required implementation work. URI
-fragment policy and malformed decoded-text handling need separate care.
+Markdown destination escapes/entities are now processed before scheme/fragment
+detection and one target percent-decoding pass. This prevents false external-link
+relationships and maps lexical anchors back to authored delimiters; see the
+[decoding decision](../../docs/decisions/005-markdown-destination-decoding.md).
+The link audit still has reproduced missing RFC 3986 target-encoding checks and
+malformed percent escapes silently disappearing from body validation. These
+remain required implementation work. URI fragment policy, non-UTF-8 percent
+octets and reference-style outer links need separate care.
+Independent review also reproduced pre-existing quadratic parsing of large
+backslash-heavy inline destinations in pinned Marked (about 1.6 seconds at
+200 KB and 23 seconds at 800 KB). The new decoding pass scales linearly; the
+upstream parsing boundary remains a separate performance follow-up.
 
 A suspected complete-field-name schema gap was checked against the actual current
 registry: ordinary names/paths pass and their final-LF variants fail. No schema

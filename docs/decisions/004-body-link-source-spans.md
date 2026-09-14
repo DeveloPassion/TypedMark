@@ -68,5 +68,6 @@ review checked 5,000 generated bodies, 11,783 maps and 12,667 extracted spans,
 plus all 652 official CommonMark examples and 652 link-injected variants.
 
 Physical source preservation does not certify every link contract. RFC 3986
-destination validation, Markdown entity processing, malformed-percent diagnostics
-and the pending encoded-anchor interpretation decision remain separate audit work.
+destination validation, malformed-percent diagnostics and the pending encoded-anchor
+interpretation decision remain separate audit work. Markdown entity processing
+was subsequently corrected in [decision 005](005-markdown-destination-decoding.md).

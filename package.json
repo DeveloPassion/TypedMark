@@ -13,6 +13,7 @@
     "@js-temporal/polyfill": "0.5.1",
     "ajv": "8.20.0",
     "commonmark": "0.31.2",
+    "entities": "3.0.1",
     "marked": "18.0.5",
     "yaml": "2.9.0"
   },

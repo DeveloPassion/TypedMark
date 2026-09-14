@@ -82,6 +82,7 @@ test.each([
   "pending-template-references-invalid",
   "html-body-links-invalid",
   "body-links-escaped-labels-valid", "body-links-html-context-invalid",
+  "note-link-entities-valid", "note-link-entities-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

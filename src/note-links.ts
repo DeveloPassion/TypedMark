@@ -4,6 +4,7 @@ import type { CollectionModel, ManagedNote } from "./collection-model";
 import type { FieldDefinition } from "./field-values";
 import type { SchemaIssue } from "./reuse";
 import { markdownBlockSources, type MarkdownBlockSource } from "./markdown-block-sources";
+import { markdownLinkDestination } from "./markdown-link-destination";
 
 export interface ParsedNoteLink {
   /** Exact input supplied to parseNoteLink, not rendered Markdown. */
@@ -36,8 +37,9 @@ export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   }
   const tokens = Lexer.lexInline(raw, { gfm: false });
   if (tokens.length !== 1 || !["link", "image"].includes(tokens[0]!.type) || tokens[0]!.raw !== raw) return undefined;
-  const token = tokens[0] as { type: string; href: string };
-  if (/^[a-z][a-z0-9+.-]*:/iu.test(token.href)) return undefined;
+  const token = tokens[0]!;
+  // CommonMark autolinks are external URI/email forms, not inline note links.
+  if (raw.startsWith("<")) return undefined;
   // Marked's text/href remove some escapes. Preserve lexical components from
   // the same pinned grammar only after its tokenizer accepts the entire input.
   // https://github.com/markedjs/marked/blob/v18.0.5/src/Tokenizer.ts
@@ -47,9 +49,10 @@ export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   }
   const destination = source[2].trim();
   const authored = destination.startsWith("<") ? destination.slice(1, -1) : destination;
-  const hash = authored.indexOf("#");
-  try { return { raw, form: "markdown", target: decodeURIComponent(token.href.split("#")[0]!), embed: token.type === "image",
-    displayText: source[1], ...(hash < 0 ? {} : { anchor: authored.slice(hash + 1) }) }; }
+  const parsed = markdownLinkDestination(authored);
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(parsed.uri)) return undefined;
+  try { return { raw, form: "markdown", target: decodeURIComponent(parsed.target), embed: token.type === "image",
+    displayText: source[1], ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }) }; }
   catch { return undefined; }
 }
 

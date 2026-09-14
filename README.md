@@ -68,7 +68,7 @@ create relationship instances.
 The direct `parseNoteLink` API retains its exact `raw` input and optional authored
 `anchor`/`displayText` components. Missing components are omitted; explicit empty
 ones remain empty strings. These are lexical strings, not rendered labels or
-classified anchors. Target decoding and resolution are unchanged. The pinned
+classified anchors. The pinned
 Marked source-capture seam is guarded and covered by escaped/nested label,
 code-span, angle-destination, title and line-ending regressions. Body extraction
 adds an exact `source` span with zero-based UTF-16 `start`/exclusive `end` offsets
@@ -79,8 +79,14 @@ HTML-contained links no longer undergo character replacement during extraction.
 The dedicated lexer preserves link/code masks while avoiding quadratic HTML-tag
 masking. See the [source-preservation decision](docs/decisions/003-note-link-source-preservation.md)
 for pinned dependency seams, and the [body-span decision](docs/decisions/004-body-link-source-spans.md)
-for mapping, escaping corrections and original block-boundary handling. URI
-encoding/entity interpretation and broader conformance auditing remain separate.
+for mapping, escaping corrections and original block-boundary handling.
+Markdown destinations now process escapes and character references before scheme
+classification, fragment separation and one target percent-decoding pass. This
+prevents entity-encoded external URLs from creating note relationships. Authored
+components and wikilink spelling remain unchanged; see the
+[destination-decoding decision](docs/decisions/005-markdown-destination-decoding.md).
+URI-spelling validation, malformed-percent body diagnostics and encoded-anchor
+interpretation remain separate audit work.
 
 Unknown-field findings retain their severity policy and authored names. Logical
 field contexts omit list positions; names that cannot be represented by the

@@ -3,6 +3,8 @@
 Status: accepted for direct parsing and HTML-contained links on 2026-09-14.
 The physical-span limitation and secondary block parsing described here are
 superseded by [decision 004](004-body-link-source-spans.md).
+The processed-`href` target source is superseded by
+[decision 005](005-markdown-destination-decoding.md).
 
 The specification's [Note Links](https://github.com/DeveloPassion/TypedMarkSpecification/blob/main/note-links.md)
 page owns parsing and resolution. The direct parser now retains exact input
