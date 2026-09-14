@@ -65,6 +65,15 @@ by defaults. Findings use dotted field names without list indices. Nested links
 do not become typed relationships, and malformed scalar/list containers cannot
 create relationship instances.
 
+The direct `parseNoteLink` API retains its exact `raw` input and optional authored
+`anchor`/`displayText` components. Missing components are omitted; explicit empty
+ones remain empty strings. These are lexical strings, not rendered labels or
+classified anchors. Target decoding and resolution are unchanged. The pinned
+Marked source-capture seam is guarded and covered by escaped/nested label,
+code-span, angle-destination, title and line-ending regressions. Body extraction
+still has separate source-fidelity work pending; its parser input is not a promise
+of an exact physical body span.
+
 Unknown-field findings retain their severity policy and authored names. Logical
 field contexts omit list positions; names that cannot be represented by the
 report's dotted-path grammar remain in the message without optional `field`

@@ -4,19 +4,47 @@ import type { CollectionModel, ManagedNote } from "./collection-model";
 import type { FieldDefinition } from "./field-values";
 import type { SchemaIssue } from "./reuse";
 
-export interface ParsedNoteLink { form: "wikilink" | "markdown"; target: string; embed: boolean }
+export interface ParsedNoteLink {
+  /** Exact input supplied to parseNoteLink, not rendered Markdown. */
+  raw: string;
+  form: "wikilink" | "markdown";
+  target: string;
+  /** Authored fragment spelling; anchor interpretation is separate. */
+  anchor?: string;
+  /** Authored label content, including any inline Markdown or escapes. */
+  displayText?: string;
+  embed: boolean;
+}
 export class NoteLinkError extends Error {
   field?: string;
   constructor(readonly rule_id: string, message: string, readonly schemaIssue?: SchemaIssue) { super(`${rule_id}: ${message}`); }
 }
 export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   const wiki = /^(!?)\[\[([^\]\r\n]+)\]\](?![\s\S])/u.exec(raw);
-  if (wiki) return { form: "wikilink", target: wiki[2]!.split("|")[0]!.split("#")[0]!, embed: wiki[1] === "!" };
+  if (wiki) {
+    const inner = wiki[2]!, pipe = inner.indexOf("|");
+    const destination = pipe < 0 ? inner : inner.slice(0, pipe);
+    const hash = destination.indexOf("#");
+    return { raw, form: "wikilink", target: hash < 0 ? destination : destination.slice(0, hash), embed: wiki[1] === "!",
+      ...(hash < 0 ? {} : { anchor: destination.slice(hash + 1) }),
+      ...(pipe < 0 ? {} : { displayText: inner.slice(pipe + 1) }) };
+  }
   const tokens = Lexer.lexInline(raw, { gfm: false });
   if (tokens.length !== 1 || !["link", "image"].includes(tokens[0]!.type) || tokens[0]!.raw !== raw) return undefined;
   const token = tokens[0] as { type: string; href: string };
   if (/^[a-z][a-z0-9+.-]*:/iu.test(token.href)) return undefined;
-  try { return { form: "markdown", target: decodeURIComponent(token.href.split("#")[0]!), embed: token.type === "image" }; }
+  // Marked's text/href remove some escapes. Preserve lexical components from
+  // the same pinned grammar only after its tokenizer accepts the entire input.
+  // https://github.com/markedjs/marked/blob/v18.0.5/src/Tokenizer.ts
+  const source = Lexer.rules.inline.normal.link.exec(raw);
+  if (!source || source[0] !== raw || source[1] === undefined || source[2] === undefined) {
+    throw new Error("Marked's accepted link no longer matches its source-capture contract");
+  }
+  const destination = source[2].trim();
+  const authored = destination.startsWith("<") ? destination.slice(1, -1) : destination;
+  const hash = authored.indexOf("#");
+  try { return { raw, form: "markdown", target: decodeURIComponent(token.href.split("#")[0]!), embed: token.type === "image",
+    displayText: source[1], ...(hash < 0 ? {} : { anchor: authored.slice(hash + 1) }) }; }
   catch { return undefined; }
 }
 
@@ -45,7 +73,7 @@ export function extractBodyLinks(body: string): ParsedNoteLink[] {
 }
 
 type Resolution = { kind: "note" | "asset"; path: string } | { kind: "unresolved" };
-export function resolveNoteLink(link: ParsedNoteLink, source: string, model: CollectionModel, targets?: (note: ManagedNote) => boolean): Resolution {
+export function resolveNoteLink(link: Pick<ParsedNoteLink, "form" | "target" | "embed">, source: string, model: CollectionModel, targets?: (note: ManagedNote) => boolean): Resolution {
   const target = link.target.normalize("NFC");
   const named = link.form === "wikilink" && !target.includes("/");
   if (!named) {
