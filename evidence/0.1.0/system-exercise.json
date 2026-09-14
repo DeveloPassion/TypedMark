@@ -1,9 +1,13 @@
 {
-  "executed_at": "2026-09-11T14:44:22.824Z",
-  "specification_revision": "20baf74cad13fb66cb8a4a46d5dafe6348f20137",
-  "adapter_revision": "a4894a8219a58ce2f68b00a6ba34bbd2ce00df10",
+  "executed_at": "2026-09-14T15:23:40.325Z",
+  "specification_revision": "214cf865e1782804778ee08ff3a86f71aacf6960",
+  "adapter_revision": "4604e7ba8884fe18dd1b381cfb9eb78d8e3724a2",
   "example_revision": "c55578d0ee6996cc82efeda80b7d60cae3ba591b",
+  "source_scope": "tracked published files exported to an isolated temporary directory",
   "source_changed": false,
+  "export_changed": false,
+  "offline_source_removed": true,
+  "offline_target_changed": false,
   "source_report": {
     "specification_version": "0.1.0",
     "mode": "system_definition",
@@ -54,6 +58,9 @@
       "name": "@developassion/typedmark-example",
       "version": "0.1.0"
     }
+  ],
+  "mandatory_tags_present": [
+    "typedmark/example"
   ],
   "migration_readiness": {
     "status": "manual_resolution_required",

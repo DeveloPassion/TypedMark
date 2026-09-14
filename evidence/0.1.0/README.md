@@ -1,11 +1,11 @@
 # TypedMark 0.1.0 conformance evidence
 
 This record covers forty-nine golden vectors at TypedMarkSpecification
-`15db1aed35862040b06208ea0047eafcd63e6a9d`, using adapter
-`beb7d15682504242fbeb3831d3e592540aa1d6f8` on 2026-09-14.
+`214cf865e1782804778ee08ff3a86f71aacf6960`, using adapter
+`4604e7ba8884fe18dd1b381cfb9eb78d8e3724a2` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34859789632),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34861676435),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
@@ -118,6 +118,13 @@ The exact-pinned reference parser's internal raw-source seam is isolated,
 runtime-guarded and documented in the [heading adapter decision](../../docs/decisions/001-commonmark-heading-source.md).
 This does not claim conformance of other Markdown consumers.
 
+Definition-mode validation checks count declarations without requiring live
+notes before a system is instantiated. Instance and `both` modes enforce actual
+counts, and strict import validation rejects an insufficient scaffold before
+publication. Eleven regressions cover these boundaries, invalid declarations,
+and unchanged source bytes. Broader note-validation scope in definition-only
+mode remains a separate clarification; this correction changes only counts.
+
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
 Storage checks distinguish intrinsic pattern syntax from references resolved
@@ -151,14 +158,17 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 791 tooling tests locally and in CI, type checking, dependency
-audit, 333 specification tests, 277 fixture expectations, rule-ID checks, and the
+Validation covered 802 tooling tests locally and in CI, type checking, dependency
+audit, 336 specification tests, 277 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 791 tests with no failures, as did the
-pinned CI run. No test deadlines changed; the CommonMark dependency and its
-development types are exact-pinned and passed the dependency audit.
+The final local full suite passed all 802 tests with no failures, as did the
+pinned CI run. No existing test deadlines changed. The CommonMark dependency
+and its development types remain exact-pinned and passed the dependency audit.
+The three new specification build tests exercise LF, CRLF and CR source files.
+The [reading-path review](site-review.md) records the browser checks and retained
+prior-contract links; it is not a release approval.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
@@ -169,7 +179,8 @@ artifact version handling, root report editions, branch-aware diagnostics,
 YAML-alias preservation, malformed declaration projection, suppression-independent
 incompleteness, tagged YAML containers, scaffold target resolution, unavailable
 schema dependencies, template placeholder provenance, strict snapshot import,
-source/destination isolation, CommonMark heading source and the golden reports.
+source/destination isolation, CommonMark heading source, definition-mode counts,
+site source-line-ending handling and the golden reports.
 The heading adapter also agreed with the reference on 229 relevant official
 CommonMark examples during independent review. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
@@ -181,15 +192,21 @@ or completion of the five-working-day full-validator measurement. The
 [plan completion audit](plan-audit.md) records the remaining evidence and work.
 
 General automation execution and writer operations remain follow-up work.
-The [2026-09-11 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`: source validation, instantiation into
-an isolated temporary directory, and a separate offline validation all completed
-with no findings. The instance omitted publishing `version`/`scaffold`, recorded
-its composition source, and materialized `Notes/Welcome.md`. The source snapshot
-was unchanged; the temporary instance was removed after verification. Missing
-history still returned `manual_resolution_required`, with no migration attempted.
-That historical exercise was not rerun for this slice; current import and readiness changes
-are covered by the tooling regression suite. History replay, target-aware impact
-analysis, and broader composition remain follow-up work.
+The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with the specification and adapter
+revisions above. Its tracked published files were exported into a temporary
+source; unrelated ignored workspace files were not included or altered. Source
+validation and instantiation completed without findings. The instance omitted
+publishing `version`/`scaffold`, recorded its composition source, retained the
+mandatory tag, and materialized `Notes/Welcome.md`.
+
+After verifying that export's bytes were unchanged, the temporary source was
+removed. A separate CLI process then validated the target offline, with no
+findings or target changes. The original tracked source paths/bytes were
+unchanged, and the temporary instance was removed afterward. Missing history
+still returned `manual_resolution_required`, with no migration attempted.
+This replaces the historical exercise record; it does not measure the Core
+validator's five-working-day implementation effort. History replay, target-aware
+impact analysis, and broader composition remain follow-up work.
 Lossless note re-typing is separately tracked for future design in specification
 [#130](https://github.com/DeveloPassion/TypedMarkSpecification/issues/130).

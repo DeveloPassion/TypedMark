@@ -43,6 +43,8 @@ test("checked-in evidence contains schema-valid reports and a passing summary", 
 test("checked-in example exercise records bounded instantiation and offline validation", () => {
   const exercise = JSON.parse(readFileSync(resolve(import.meta.dir, "../evidence/0.1.0/system-exercise.json"), "utf8"));
   expect(exercise).toMatchObject({ source_changed: false, publishing_identity_removed: true,
+    export_changed: false, offline_source_removed: true, offline_target_changed: false,
+    mandatory_tags_present: ["typedmark/example"],
     migration_readiness: { status: "manual_resolution_required" },
     composition_sources: [{ name: "@developassion/typedmark-example", version: "0.1.0" }] });
   expect(exercise.created_paths).toContain("Notes/Welcome.md");
