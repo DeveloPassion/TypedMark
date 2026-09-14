@@ -1,6 +1,7 @@
 import { posix } from "node:path";
 import { Lexer, Marked } from "marked";
 import type { CollectionModel, ManagedNote } from "./collection-model";
+import type { FieldDefinition } from "./field-values";
 import type { SchemaIssue } from "./reuse";
 
 export interface ParsedNoteLink { form: "wikilink" | "markdown"; target: string; embed: boolean }
@@ -118,16 +119,42 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
         failures.push(error); graph.failures.set(note.path, failures);
       }
     };
-    for (const [name, definition] of Object.entries(note.fields)) {
-      const item = definition.type === "list" ? definition.items : definition;
-      if (item?.type !== "link" || item.format !== "note_link") continue;
-      const value = note.values[name];
-      for (const entry of Array.isArray(value) ? value : value == null ? [] : [value]) attempt(() => {
-        const parsed = typeof entry === "string" ? parseNoteLink(entry) : undefined;
+    const visit = (definition: FieldDefinition, value: unknown, stored: unknown, present: boolean, field: string, kind?: "belongs_to" | "related_to"): void => {
+      if (value == null) return;
+      if (definition.type === "list") {
+        if (!Array.isArray(value) || !definition.items) return;
+        const storedItems = present && Array.isArray(stored) ? stored : undefined;
+        value.forEach((entry, index) => {
+          const itemPresent = storedItems !== undefined && Object.hasOwn(storedItems, index);
+          visit(definition.items!, entry, itemPresent ? storedItems[index] : undefined, itemPresent, field, kind);
+        });
+        return;
+      }
+      if (definition.type === "object") {
+        if (typeof value !== "object" || ![null, Object.prototype].includes(Object.getPrototypeOf(value))) return;
+        const effective = value as Record<string, unknown>;
+        const physical = present && stored !== null && typeof stored === "object" && !Array.isArray(stored)
+          ? stored as Record<string, unknown> : undefined;
+        for (const [name, child] of Object.entries(definition.fields ?? {})) {
+          const childPresent = physical !== undefined && Object.hasOwn(physical, name);
+          // FDR-151/160 depend on stored leaves, not a stored parent or defaults.
+          // Nested fields never inherit a top-level relationship contribution.
+          visit(child, Object.hasOwn(effective, name) ? effective[name] : undefined,
+            childPresent ? physical[name] : undefined, childPresent, `${field}.${name}`);
+        }
+        return;
+      }
+      if (definition.type !== "link" || definition.format !== "note_link") return;
+      attempt(() => {
+        const parsed = typeof value === "string" ? parseNoteLink(value) : undefined;
         if (!parsed || parsed.embed) throw new NoteLinkError("NL-7", "A note-link field stores one non-embed internal link");
-        const stored = Object.hasOwn(note.stored, name);
-        record(parsed, definition.relationship_kind, stored ? item.targets : undefined, stored && item.validate_exists, true);
-      }, name);
+        record(parsed, kind, present ? definition.targets : undefined, present && definition.validate_exists, true);
+      }, field);
+    };
+    for (const [name, definition] of Object.entries(note.fields)) {
+      const present = Object.hasOwn(note.stored, name);
+      visit(definition, Object.hasOwn(note.values, name) ? note.values[name] : undefined,
+        present ? note.stored[name] : undefined, present, name, definition.relationship_kind);
     }
     for (const link of extractBodyLinks(note.body)) attempt(() => record(link, "related_to"));
   }

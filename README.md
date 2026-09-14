@@ -59,6 +59,12 @@ model unchanged, including tagged values in opaque vendor metadata and
 unconstrained literal positions. Invalid schema shapes still block dependent
 queries when their displayed findings are suppressed.
 
+Note-link checks follow declared object fields and list items at every depth.
+Existence and target restrictions apply to stored leaves, not values supplied
+by defaults. Findings use dotted field names without list indices. Nested links
+do not become typed relationships, and malformed scalar/list containers cannot
+create relationship instances.
+
 The optional library `referenceEdition` parameter accepts only `0.1.0` and
 throws `RangeError` for other requests. Expected conformance reports do not
 select this parameter or the actual report edition.
