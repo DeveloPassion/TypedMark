@@ -105,10 +105,14 @@ Markdown destination escapes/entities are now processed before scheme/fragment
 detection and one target percent-decoding pass. This prevents false external-link
 relationships and maps lexical anchors back to authored delimiters; see the
 [decoding decision](../../docs/decisions/005-markdown-destination-decoding.md).
-The link audit still has reproduced missing RFC 3986 target-encoding checks and
-malformed percent escapes silently disappearing from body validation. These
-remain required implementation work. URI fragment policy, non-UTF-8 percent
-octets and reference-style outer links need separate care.
+Malformed percent triplets now remain in source-located body inspection failures
+and the relationship graph. Managed-field syntax uses the `CM-54` note-link
+category without a duplicate generic format error, while other field constraints
+and nested siblings remain checked. Suppression does not unlock dependent queries;
+see the [diagnostic decision](../../docs/decisions/006-note-link-diagnostics.md).
+The link audit still has reproduced missing general RFC 3986 target-character
+checks. URI fragment policy, non-UTF-8 percent octets and reference-style outer
+links need separate care. The encoded-anchor and non-UTF-8 policies await answers.
 Independent review also reproduced pre-existing quadratic parsing of large
 backslash-heavy inline destinations in pinned Marked (about 1.6 seconds at
 200 KB and 23 seconds at 800 KB). The new decoding pass scales linearly; the

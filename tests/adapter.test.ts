@@ -83,6 +83,7 @@ test.each([
   "html-body-links-invalid",
   "body-links-escaped-labels-valid", "body-links-html-context-invalid",
   "note-link-entities-valid", "note-link-entities-invalid",
+  "note-link-percent-valid", "note-link-percent-invalid", "note-link-percent-suppressed",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

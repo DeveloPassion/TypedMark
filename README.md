@@ -85,7 +85,12 @@ classification, fragment separation and one target percent-decoding pass. This
 prevents entity-encoded external URLs from creating note relationships. Authored
 components and wikilink spelling remain unchanged; see the
 [destination-decoding decision](docs/decisions/005-markdown-destination-decoding.md).
-URI-spelling validation, malformed-percent body diagnostics and encoded-anchor
+`inspectBodyLinks` additionally retains located failures for malformed percent
+triplets in targets/fragments. Invalid links cannot create graph edges or unlock
+dependent queries through diagnostic suppression. Managed-field syntax findings
+use `invalid_note_link` without a duplicate generic field-format error; independent
+field constraints remain checked. See the [diagnostic decision](docs/decisions/006-note-link-diagnostics.md).
+General URI target-character validation, non-UTF-8 percent octets and encoded-anchor
 interpretation remain separate audit work.
 
 Unknown-field findings retain their severity policy and authored names. Logical

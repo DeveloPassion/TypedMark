@@ -25,21 +25,31 @@ export class NoteLinkError extends Error {
   field?: string;
   constructor(readonly rule_id: string, message: string, readonly schemaIssue?: SchemaIssue) { super(`${rule_id}: ${message}`); }
 }
+type NoteLinkInspection =
+  | { kind: "parsed"; link: ParsedNoteLink }
+  | { kind: "invalid"; error: NoteLinkError }
+  | { kind: "ignored" };
+
 export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
+  const inspected = inspectNoteLink(raw);
+  return inspected.kind === "parsed" ? inspected.link : undefined;
+}
+
+function inspectNoteLink(raw: string): NoteLinkInspection {
   const wiki = /^(!?)\[\[([^\]\r\n]+)\]\](?![\s\S])/u.exec(raw);
   if (wiki) {
     const inner = wiki[2]!, pipe = inner.indexOf("|");
     const destination = pipe < 0 ? inner : inner.slice(0, pipe);
     const hash = destination.indexOf("#");
-    return { raw, form: "wikilink", target: hash < 0 ? destination : destination.slice(0, hash), embed: wiki[1] === "!",
+    return { kind: "parsed", link: { raw, form: "wikilink", target: hash < 0 ? destination : destination.slice(0, hash), embed: wiki[1] === "!",
       ...(hash < 0 ? {} : { anchor: destination.slice(hash + 1) }),
-      ...(pipe < 0 ? {} : { displayText: inner.slice(pipe + 1) }) };
+      ...(pipe < 0 ? {} : { displayText: inner.slice(pipe + 1) }) } };
   }
   const tokens = Lexer.lexInline(raw, { gfm: false });
-  if (tokens.length !== 1 || !["link", "image"].includes(tokens[0]!.type) || tokens[0]!.raw !== raw) return undefined;
+  if (tokens.length !== 1 || !["link", "image"].includes(tokens[0]!.type) || tokens[0]!.raw !== raw) return { kind: "ignored" };
   const token = tokens[0]!;
   // CommonMark autolinks are external URI/email forms, not inline note links.
-  if (raw.startsWith("<")) return undefined;
+  if (raw.startsWith("<")) return { kind: "ignored" };
   // Marked's text/href remove some escapes. Preserve lexical components from
   // the same pinned grammar only after its tokenizer accepts the entire input.
   // https://github.com/markedjs/marked/blob/v18.0.5/src/Tokenizer.ts
@@ -50,10 +60,16 @@ export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   const destination = source[2].trim();
   const authored = destination.startsWith("<") ? destination.slice(1, -1) : destination;
   const parsed = markdownLinkDestination(authored);
-  if (/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(parsed.uri)) return undefined;
-  try { return { raw, form: "markdown", target: decodeURIComponent(parsed.target), embed: token.type === "image",
-    displayText: source[1], ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }) }; }
-  catch { return undefined; }
+  if (/^[A-Za-z][A-Za-z0-9+.-]*:/u.test(parsed.uri)) return { kind: "ignored" };
+  // Check the interpreted URI, including its fragment, before decoding the
+  // target. A decoded %25 is literal data, not another escape to validate.
+  // https://www.rfc-editor.org/rfc/rfc3986#section-2.1
+  if (/%(?![0-9A-Fa-f]{2})/u.test(parsed.uri)) {
+    return { kind: "invalid", error: new NoteLinkError("NL-6", "Markdown destination contains a malformed percent escape") };
+  }
+  try { return { kind: "parsed", link: { raw, form: "markdown", target: decodeURIComponent(parsed.target), embed: token.type === "image",
+    displayText: source[1], ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }) } }; }
+  catch { return { kind: "ignored" }; }
 }
 
 const wikilinks: TokenizerExtension = {
@@ -90,8 +106,19 @@ htmlContent.use({ extensions: [{ ...wikilinks,
   },
 }] });
 
+export interface BodyLinkInspection {
+  links: ExtractedNoteLink[];
+  failures: Array<{ raw: string; source: ExtractedNoteLink["source"]; error: NoteLinkError }>;
+}
+
+/** Convenience view of accepted links; validators use inspectBodyLinks. */
 export function extractBodyLinks(body: string): ExtractedNoteLink[] {
-  const links: ExtractedNoteLink[] = [];
+  return inspectBodyLinks(body).links;
+}
+
+/** Retains recognized invalid destinations with the same physical source map. */
+export function inspectBodyLinks(body: string): BodyLinkInspection {
+  const inspected: BodyLinkInspection = { links: [], failures: [] };
   const collect = (input: MarkdownBlockSource, parser: Marked, parsedTokens?: Token[]): void => {
     const frame = withoutMarkerLines(input);
     if (!frame.text.includes("[")) return;
@@ -101,14 +128,16 @@ export function extractBodyLinks(body: string): ExtractedNoteLink[] {
       const end = offset + token.raw.length;
       if (frame.text.slice(offset, end) !== token.raw) throw new Error("Marked inline source coverage changed");
       if (["typedmarkWikilink", "link", "image"].includes(token.type)) {
-        const link = parseNoteLink(token.raw);
-        if (link) {
+        const candidate = inspectNoteLink(token.raw);
+        if (candidate.kind !== "ignored") {
           const start = frame.offsets[offset], last = frame.offsets[end - 1];
           if (start === undefined || last === undefined || start < 0 || last < start
             || body[start] !== token.raw[0] || body[last] !== token.raw.at(-1)) {
             throw new Error("Body link source span is unavailable");
           }
-          links.push({ ...link, source: { start, end: last + 1, raw: body.slice(start, last + 1) } });
+          const source = { start, end: last + 1, raw: body.slice(start, last + 1) };
+          if (candidate.kind === "parsed") inspected.links.push({ ...candidate.link, source });
+          else inspected.failures.push({ raw: token.raw, source, error: candidate.error });
         }
         if (token.type !== "typedmarkWikilink") {
           const label = Lexer.rules.inline.normal.link.exec(token.raw);
@@ -133,7 +162,7 @@ export function extractBodyLinks(body: string): ExtractedNoteLink[] {
     if (offset !== frame.text.length) throw new Error("Marked inline source coverage is incomplete");
   };
   for (const block of markdownBlockSources(body)) collect(block, block.kind === "html" ? htmlContent : markdown);
-  return links;
+  return inspected;
 }
 
 function sliceSource(frame: MarkdownBlockSource, start: number, end: number): MarkdownBlockSource {
@@ -242,12 +271,15 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
       const declarations = Object.keys(schema.relationships?.[kind]?.allowed_note_types ?? {});
       if (declarations.some((type) => matchesType(target.noteType, type))) edges[kind].add(target.path);
     };
+    const recordFailure = (error: NoteLinkError, field?: string) => {
+      error.field = field;
+      const failures = graph.failures.get(note.path) ?? [];
+      failures.push(error); graph.failures.set(note.path, failures);
+    };
     const attempt = (action: () => void, field?: string) => {
       try { action(); } catch (error) {
         if (!(error instanceof NoteLinkError)) throw error;
-        error.field = field;
-        const failures = graph.failures.get(note.path) ?? [];
-        failures.push(error); graph.failures.set(note.path, failures);
+        recordFailure(error, field);
       }
     };
     const visit = (definition: FieldDefinition, value: unknown, stored: unknown, present: boolean, field: string, kind?: "belongs_to" | "related_to"): void => {
@@ -277,9 +309,10 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
       }
       if (definition.type !== "link" || definition.format !== "note_link") return;
       attempt(() => {
-        const parsed = typeof value === "string" ? parseNoteLink(value) : undefined;
-        if (!parsed || parsed.embed) throw new NoteLinkError("NL-7", "A note-link field stores one non-embed internal link");
-        record(parsed, kind, present ? definition.targets : undefined, present && definition.validate_exists, true);
+        const candidate = typeof value === "string" ? inspectNoteLink(value) : undefined;
+        if (candidate?.kind === "invalid") throw candidate.error;
+        if (candidate?.kind !== "parsed" || candidate.link.embed) throw new NoteLinkError("NL-7", "A note-link field stores one non-embed internal link");
+        record(candidate.link, kind, present ? definition.targets : undefined, present && definition.validate_exists, true);
       }, field);
     };
     for (const [name, definition] of Object.entries(note.fields)) {
@@ -287,7 +320,9 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
       visit(definition, Object.hasOwn(note.values, name) ? note.values[name] : undefined,
         present ? note.stored[name] : undefined, present, name, definition.relationship_kind);
     }
-    for (const link of extractBodyLinks(note.body)) attempt(() => record(link, "related_to"));
+    const body = inspectBodyLinks(note.body);
+    for (const failure of body.failures) recordFailure(failure.error);
+    for (const link of body.links) attempt(() => record(link, "related_to"));
   }
   return graph;
 }

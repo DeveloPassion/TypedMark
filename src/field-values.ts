@@ -118,20 +118,26 @@ export function classifyConversion(source: FieldDefinition, target: FieldDefinit
 }
 
 export function validateFieldValue(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies = {}): ValueFailure | undefined {
-  return validateValue(value, definition, timezone, vocabularies, false);
+  return validateValue(value, definition, timezone, vocabularies, "standalone");
+}
+
+/** CM-54: the managed-note graph owns note-link syntax and resolution findings. */
+export function validateManagedFieldConstraints(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies = {}): ValueFailure | undefined {
+  return validateValue(value, definition, timezone, vocabularies, "managed_note");
 }
 
 /** RHT-77/78: unresolved starter placeholders are not persisted note values. */
 export function validateTemplateValue(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies = {}): ValueFailure | undefined {
-  return validateValue(expandObjectDefaults(value, definition), definition, timezone, vocabularies, true);
+  return validateValue(expandObjectDefaults(value, definition), definition, timezone, vocabularies, "template");
 }
 
 export function isTemplatePlaceholder(value: unknown, definition: FieldDefinition): boolean {
   return value === null || (value === "" && ["text", "link"].includes(definition.type));
 }
 
-function validateValue(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies, template: boolean): ValueFailure | undefined {
+function validateValue(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies, context: "standalone" | "template" | "managed_note"): ValueFailure | undefined {
   const fail = (rule: string, message: string): ValueFailure => ({ rule, message });
+  const template = context === "template";
   if (template && isTemplatePlaceholder(value, definition)) return;
   if (value === null) return definition.nullable === true ? undefined : fail("MN-99", "is not nullable");
   const type = definition.type;
@@ -166,7 +172,7 @@ function validateValue(value: unknown, definition: FieldDefinition, timezone: st
   if (!valid) return fail(rules[type], `must satisfy the ${type} value contract`);
   if (type === "list" && definition.items) {
     for (const item of value as unknown[]) {
-      const failure = validateValue(item, definition.items, timezone, vocabularies, template);
+      const failure = validateValue(item, definition.items, timezone, vocabularies, context);
       if (failure) return failure;
     }
   }
@@ -177,7 +183,7 @@ function validateValue(value: unknown, definition: FieldDefinition, timezone: st
       const effective = Object.hasOwn(object, name) ? object[name]
         : Object.hasOwn(child, "default_value") ? child.default_value : child.nullable ? null : undefined;
       if (effective === undefined) return fail("MN-98", `has no conforming value for ${name}`);
-      const failure = validateValue(effective, child, timezone, vocabularies, template);
+      const failure = validateValue(effective, child, timezone, vocabularies, context);
       if (failure) return failure;
     }
     if (definition.not_empty && Object.keys(value as object).length === 0) return fail("FDR-171", "must not be empty");
@@ -188,7 +194,7 @@ function validateValue(value: unknown, definition: FieldDefinition, timezone: st
     try { if (!/^[a-z][a-z0-9+.-]*:/i.test(String(value)) || /[\s<>]/u.test(String(value))) throw new Error(); new URL(String(value)); }
     catch { return fail("FDR-140", "must be an absolute URI"); }
   }
-  if (definition.format === "note_link") {
+  if (definition.format === "note_link" && context !== "managed_note") {
     const link = parseNoteLink(String(value));
     if (!link || link.embed) return fail("FDR-142", "must be one non-embed internal note link");
   }

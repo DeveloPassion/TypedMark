@@ -5,7 +5,7 @@ import { basename, dirname, join, relative } from "node:path";
 import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./frontmatter";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
-import { compareFieldValues, comparisonDomain, expandObjectDefaults, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
+import { compareFieldValues, comparisonDomain, expandObjectDefaults, fullPattern, validateFieldValue, validateManagedFieldConstraints, type FieldDefinition } from "./field-values";
 import { aliasValueFailure, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
@@ -601,7 +601,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
       if (definition.nullable !== true || (name === "id" && present)) add(results, config, "missing_required_field", path, "MN-99", `${name} is explicitly null but is not nullable`, { note_type: noteType, field: name }, schema);
       continue;
     }
-    const failure = validateFieldValue(value, definition, config.timezone ?? "UTC", config.vocabularies);
+    const failure = validateManagedFieldConstraints(value, definition, config.timezone ?? "UTC", config.vocabularies);
     if (failure) add(results, config, "invalid_field_value", path, failure.rule, `${name} ${failure.message}`, { note_type: noteType, field: name }, schema);
     const aliasFailure = name === "aliases" ? aliasValueFailure(value) : undefined;
     if (aliasFailure) add(results, config, "invalid_field_value", path, aliasFailure.rule, aliasFailure.message, { note_type: noteType, field: name }, schema);

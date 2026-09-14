@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { classifyConversion, compareFieldValues, equalFieldValues, validateFieldValue } from "../src/field-values";
+import { classifyConversion, compareFieldValues, equalFieldValues, validateFieldValue, validateTemplateValue } from "../src/field-values";
 
 test("compares text by NFC code points, numeric values numerically, and datetimes by instant", () => {
   expect(equalFieldValues("e\u0301", "é", { type: "text" }, "UTC")).toBe(true);
@@ -32,4 +32,14 @@ test("enforces full regex matching, canonical tag uniqueness, and nested nullabi
   expect(validateFieldValue(["é", "e\u0301"], { type: "tags" }, "UTC")).toBeDefined();
   expect(validateFieldValue({ value: null }, { type: "object", fields: { value: { type: "text", nullable: true } } }, "UTC")).toBeUndefined();
   expect(validateFieldValue([null], { type: "list", items: { type: "text" } }, "UTC")).toBeDefined();
+});
+
+test.each([
+  { name: "standalone", validate: validateFieldValue },
+  { name: "template", validate: validateTemplateValue },
+])("$name value validation still checks note-link syntax without a managed-note graph", ({ validate }) => {
+  expect(validate("[bad](N.md#bad%)", { type: "link", format: "note_link" }, "UTC")?.rule).toBe("FDR-142");
+  expect(validate({ reference: "[bad](N%GG.md)" }, {
+    type: "object", fields: { reference: { type: "link", format: "note_link" } },
+  }, "UTC")?.rule).toBe("FDR-142");
 });
