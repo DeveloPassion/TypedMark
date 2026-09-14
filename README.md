@@ -190,6 +190,11 @@ targets are system findings; unavailable target contracts prevent a full Systems
 evaluation claim. Strict version no-op readiness cannot bypass these findings
 through diagnostic suppression. Validation does not create scaffold content.
 
+Count declarations are checked in every mode. `system_definition` does not
+require live notes to satisfy those counts before instantiation; actual note
+counts are enforced in `instantiated_collection` and `both` modes. The importer
+checks the completed target, so an insufficient scaffold still cannot publish.
+
 Writer operations are intentionally out of scope until TypedMark defines a
 separate writer capability. System instantiation is the narrow exception defined
 by the system contract: it stages a new target, preserves the metadata artifacts,

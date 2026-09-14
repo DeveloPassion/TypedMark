@@ -394,7 +394,10 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
 
   const concreteSchemas = new Map([...schemas].filter(([name, schema]) => !schemaIssues.has(name) && !schema.abstract));
   validateUniqueness(effectiveNotes, concreteSchemas, config, results);
-  validateCounts(effectiveNotes, concreteSchemas, config, results);
+  // CR-14: a definition declares cardinality; its scaffold is not live notes.
+  // Declaration validity is checked above, and imports validate actual counts
+  // against the materialized target in instantiated_collection mode.
+  if (mode !== "system_definition") validateCounts(effectiveNotes, concreteSchemas, config, results);
   for (const finding of validateRelationships(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)))) {
     add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { note_type: finding.note_type, ...(finding.field ? { field: finding.field } : {}), ...(finding.relationship ? { relationship: finding.relationship } : {}) });
   }
