@@ -81,6 +81,7 @@ test.each([
   "target-scope-system-definition", "target-scope-instantiated-collection", "target-scope-both",
   "pending-template-references-invalid",
   "html-body-links-invalid",
+  "body-links-escaped-labels-valid", "body-links-html-context-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

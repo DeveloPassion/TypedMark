@@ -1,7 +1,8 @@
 # Note-link source preservation
 
 Status: accepted for direct parsing and HTML-contained links on 2026-09-14.
-Physical body-span fidelity remains unfinished.
+The physical-span limitation and secondary block parsing described here are
+superseded by [decision 004](004-body-link-source-spans.md).
 
 The specification's [Note Links](https://github.com/DeveloPassion/TypedMarkSpecification/blob/main/note-links.md)
 page owns parsing and resolution. The direct parser now retains exact input
@@ -47,7 +48,7 @@ Dependency upgrades need review of both guarded seams, the direct/component and
 HTML/code/marker regression suites, the large-input timing guard, and the golden
 root-escape vector. No native source rewriting or writer capability is implied.
 
-## Remaining boundary
+## Historical remaining boundary
 
 Block parsing still normalizes line endings and removes container prefixes.
 Consequently, the `raw` passed through body extraction is not yet an exact

@@ -71,12 +71,16 @@ ones remain empty strings. These are lexical strings, not rendered labels or
 classified anchors. Target decoding and resolution are unchanged. The pinned
 Marked source-capture seam is guarded and covered by escaped/nested label,
 code-span, angle-destination, title and line-ending regressions. Body extraction
-still has separate source-fidelity work pending; its parser input is not a promise
-of an exact physical body span.
+adds an exact `source` span with zero-based UTF-16 `start`/exclusive `end` offsets
+into the supplied body. Its `source.raw` retains original line endings and
+intervening container prefixes, while `raw` remains logical inline Markdown.
+Collection models retain original body line endings without rewriting files.
 HTML-contained links no longer undergo character replacement during extraction.
 The dedicated lexer preserves link/code masks while avoiding quadratic HTML-tag
 masking. See the [source-preservation decision](docs/decisions/003-note-link-source-preservation.md)
-for pinned dependency seams and the remaining physical-span boundary.
+for pinned dependency seams, and the [body-span decision](docs/decisions/004-body-link-source-spans.md)
+for mapping, escaping corrections and original block-boundary handling. URI
+encoding/entity interpretation and broader conformance auditing remain separate.
 
 Unknown-field findings retain their severity policy and authored names. Logical
 field contexts omit list positions; names that cannot be represented by the

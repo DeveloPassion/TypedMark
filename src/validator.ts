@@ -376,7 +376,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   for (const notePath of associationIssue ? [] : notes) {
     let document;
     try {
-      document = parseMarkdown(readFileSync(join(root, notePath)));
+      document = parseMarkdown(readFileSync(join(root, notePath)), { preserveBodyLineEndings: true });
     } catch (error) {
       add(results, config, "invalid_note_frontmatter", notePath, frontmatterFailureRule(error, "MN-118"), errorMessage(error));
       documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: candidateTypes(selectNoteType(config, notePath, {}, false)) });

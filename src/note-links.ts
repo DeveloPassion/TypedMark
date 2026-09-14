@@ -1,8 +1,9 @@
 import { posix } from "node:path";
-import { Lexer, Marked, Tokenizer, type TokenizerExtension } from "marked";
+import { Lexer, Marked, Tokenizer, type Token, type TokenizerExtension } from "marked";
 import type { CollectionModel, ManagedNote } from "./collection-model";
 import type { FieldDefinition } from "./field-values";
 import type { SchemaIssue } from "./reuse";
+import { markdownBlockSources, type MarkdownBlockSource } from "./markdown-block-sources";
 
 export interface ParsedNoteLink {
   /** Exact input supplied to parseNoteLink, not rendered Markdown. */
@@ -14,6 +15,10 @@ export interface ParsedNoteLink {
   /** Authored label content, including any inline Markdown or escapes. */
   displayText?: string;
   embed: boolean;
+}
+export interface ExtractedNoteLink extends ParsedNoteLink {
+  /** Exact physical body span; UTF-16 offsets, with an exclusive end. */
+  source: { start: number; end: number; raw: string };
 }
 export class NoteLinkError extends Error {
   field?: string;
@@ -82,16 +87,76 @@ htmlContent.use({ extensions: [{ ...wikilinks,
   },
 }] });
 
-export function extractBodyLinks(body: string): ParsedNoteLink[] {
-  return extractLinks(body, markdown);
+export function extractBodyLinks(body: string): ExtractedNoteLink[] {
+  const links: ExtractedNoteLink[] = [];
+  const collect = (input: MarkdownBlockSource, parser: Marked, parsedTokens?: Token[]): void => {
+    const frame = withoutMarkerLines(input);
+    if (!frame.text.includes("[")) return;
+    const tokens = parsedTokens && frame === input ? parsedTokens : inlineLexer(parser).inlineTokens(frame.text);
+    let offset = 0;
+    for (const token of tokens) {
+      const end = offset + token.raw.length;
+      if (frame.text.slice(offset, end) !== token.raw) throw new Error("Marked inline source coverage changed");
+      if (["typedmarkWikilink", "link", "image"].includes(token.type)) {
+        const link = parseNoteLink(token.raw);
+        if (link) {
+          const start = frame.offsets[offset], last = frame.offsets[end - 1];
+          if (start === undefined || last === undefined || start < 0 || last < start
+            || body[start] !== token.raw[0] || body[last] !== token.raw.at(-1)) {
+            throw new Error("Body link source span is unavailable");
+          }
+          links.push({ ...link, source: { start, end: last + 1, raw: body.slice(start, last + 1) } });
+        }
+        if (token.type !== "typedmarkWikilink") {
+          const label = Lexer.rules.inline.normal.link.exec(token.raw);
+          if (label?.[0] === token.raw) {
+            const begin = offset + (token.raw.startsWith("!") ? 2 : 1);
+            // Re-lex authored labels: Marked's child text removes bracket
+            // escapes and would turn escaped label text into phantom links.
+            const children = "text" in token && token.text === label[1] && "tokens" in token && Array.isArray(token.tokens) ? token.tokens : undefined;
+            collect(sliceSource(frame, begin, begin + label[1]!.length), parser, children);
+          }
+        }
+      } else if (["em", "strong", "del"].includes(token.type) && "text" in token && typeof token.text === "string") {
+        const inner = token.raw.indexOf(token.text);
+        if (inner < 0) throw new Error("Marked emphasis source coverage changed");
+        const children = "tokens" in token && Array.isArray(token.tokens) ? token.tokens : undefined;
+        collect(sliceSource(frame, offset + inner, offset + inner + token.text.length), parser, children);
+      } else if (token.type === "html" && token.raw.includes("<")) {
+        collect(sliceSource(frame, offset, end), htmlContent);
+      }
+      offset = end;
+    }
+    if (offset !== frame.text.length) throw new Error("Marked inline source coverage is incomplete");
+  };
+  for (const block of markdownBlockSources(body)) collect(block, block.kind === "html" ? htmlContent : markdown);
+  return links;
 }
 
-function extractLinks(body: string, parser: Marked): ParsedNoteLink[] {
-  const links: ParsedNoteLink[] = [];
+function sliceSource(frame: MarkdownBlockSource, start: number, end: number): MarkdownBlockSource {
+  return { kind: frame.kind, text: frame.text.slice(start, end), offsets: frame.offsets.slice(start, end) };
+}
+
+function withoutMarkerLines(frame: MarkdownBlockSource): MarkdownBlockSource {
+  if (!frame.text.includes("<!-- typedmark:") && !frame.text.includes("<!-- /typedmark:")) return frame;
+  const text: string[] = [], offsets: number[] = [];
+  let start = 0;
+  let removed = false;
+  for (const line of frame.text.split("\n")) {
+    const end = Math.min(frame.text.length, start + line.length + 1);
+    if (!/^ {0,3}<!-- (?:typedmark:(?:expansion|template-region) \{.*\}|\/typedmark:(?:expansion|template-region)) -->(?![\s\S])/u.test(line)) {
+      text.push(frame.text.slice(start, end));
+      for (let index = start; index < end; index++) offsets.push(frame.offsets[index]!);
+    } else removed = true;
+    start = end;
+  }
+  return removed ? { kind: frame.kind, text: text.join(""), offsets } : frame;
+}
+
+function inlineLexer(parser: Marked): Lexer {
   const tokenizer = parser === htmlContent ? new Tokenizer(parser.defaults) : undefined;
   const lexer = new Lexer({ ...parser.defaults, ...(tokenizer ? { tokenizer } : {}) });
   if (tokenizer) {
-    tokenizer.html = () => undefined;
     // Marked masks every HTML tag by repeatedly rebuilding the entire inline
     // string. This extraction-only lexer treats HTML as literal prose, so skip
     // that mask while retaining its link/code masks. Never mutate shared rules.
@@ -104,16 +169,7 @@ function extractLinks(body: string, parser: Marked): ParsedNoteLink[] {
       blockSkip: new RegExp(rules.inline.blockSkip.source.slice(0, -htmlMask.length), rules.inline.blockSkip.flags),
     } };
   }
-  parser.walkTokens(lexer.lex(body), (token) => {
-    if (["typedmarkWikilink", "link", "image"].includes(token.type)) {
-      const link = parseNoteLink(token.raw);
-      if (link) links.push(link);
-    } else if (token.type === "html" && token.raw.includes("<")) {
-      const prose = token.raw.split("\n").filter((line) => !/^ {0,3}<!-- (?:typedmark:(?:expansion|template-region) \{.*\}|\/typedmark:(?:expansion|template-region)) -->(?![\s\S])/u.test(line)).join("\n");
-      links.push(...extractLinks(prose, htmlContent));
-    }
-  });
-  return links;
+  return lexer;
 }
 
 type Resolution = { kind: "note" | "asset"; path: string } | { kind: "unresolved" };
