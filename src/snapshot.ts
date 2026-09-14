@@ -7,7 +7,12 @@ import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 
 export class SnapshotChangedError extends Error {}
 export interface SnapshotInfo { blockedPaths: ReadonlySet<string> }
-interface SnapshotOptions { includePaths?: readonly string[]; rejectMetadataLinks?: boolean }
+interface SnapshotOptions {
+  includePaths?: readonly string[];
+  rejectMetadataLinks?: boolean;
+  /** Capture configuration, metadata and explicit inclusions, not current notes/assets. */
+  artifactsOnly?: boolean;
+}
 interface Capture { files: Map<string, Buffer>; blockedPaths: Set<string>; includedDirectories: Set<string> }
 
 export function readStableCollection<T>(root: string, read: (snapshotRoot: string, info: SnapshotInfo) => T, options: SnapshotOptions = {}): T {
@@ -41,26 +46,33 @@ function capture(root: string, options: SnapshotOptions): Capture {
   }
   const excludes = exclusionPatterns(config.exclude_paths);
   const metadata = (typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark").normalize("NFC");
-  const visit = (directory: string, prefix = "") => {
+  const selections = (options.includePaths ?? []).map((path) => path.normalize("NFC"));
+  const visit = (directory: string, prefix = "", onlyGoverned = options.artifactsOnly === true) => {
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = prefix + entry.name;
       const absolute = join(directory, entry.name);
       const logicalPath = path.normalize("NFC");
-      const included = options.includePaths?.some((selected) => logicalPath === selected.normalize("NFC") || logicalPath.startsWith(`${selected.normalize("NFC")}/`));
+      const included = selections.some((selected) => logicalPath === selected || logicalPath.startsWith(`${selected}/`));
+      const leadsToSelection = selections.some((selected) => selected.startsWith(`${logicalPath}/`));
       const governed = logicalPath === "typedmark.md" || logicalPath === metadata || logicalPath.startsWith(`${metadata}/`)
         || included;
+      if (onlyGoverned && !governed && !leadsToSelection) continue;
       if (entry.isSymbolicLink() || lstatSync(absolute).isSymbolicLink()) {
-        if (governed) {
+        if (governed || leadsToSelection) {
           if (options.rejectMetadataLinks) throw new SnapshotChangedError(`System import refuses symbolic link: ${path}`);
           blockedPaths.add(logicalPath);
         }
         continue;
       }
-      if (!governed && (entry.isDirectory() ? isSubtreeExcluded(path, excludes) : isExcluded(path, excludes))) continue;
+      const neededAncestor = entry.isDirectory() && leadsToSelection;
+      if (onlyGoverned && !governed && !neededAncestor) continue;
+      if (!governed && !neededAncestor && (entry.isDirectory() ? isSubtreeExcluded(path, excludes) : isExcluded(path, excludes))) continue;
       if (entry.isDirectory()) {
-        if (!governed && existsSync(join(absolute, "typedmark.md"))) continue;
-        if (included) includedDirectories.add(path);
-        visit(absolute, `${path}/`);
+        const nested = !governed && existsSync(join(absolute, "typedmark.md"));
+        if (nested && !neededAncestor) continue;
+        if (included || (onlyGoverned && governed)) includedDirectories.add(path);
+        // Crossing a nested collection for one explicit file does not admit siblings.
+        visit(absolute, `${path}/`, onlyGoverned || nested);
       } else if (entry.isFile() && !files.has(path)) files.set(path, readFileSync(absolute));
     }
   };
