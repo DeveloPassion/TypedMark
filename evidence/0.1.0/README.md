@@ -1,17 +1,17 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers sixty-four golden vectors at TypedMarkSpecification
-`38295edd64d0598e0a227c3fd08e5be274a8aa85`, using adapter
-`6f0e7719d7bf2dbb9997d68ca39ae13b45cbfd5d` on 2026-09-14.
+This record covers sixty-seven golden vectors at TypedMarkSpecification
+`24cbc5ebf7925981b677738efba191e638669a76`, using adapter
+`afc157f1ee0eaff6126a74aca1f8d5c0c51a8c5f` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34894856538),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34898876888),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- sixty-two eligible collection vectors passed;
-- fourteen standalone query cases passed, including expected semantic failures;
+- sixty-five eligible collection vectors passed;
+- sixteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
 - no vector was skipped for an unsupported validation contract; and
@@ -188,13 +188,29 @@ diagnostics cannot unlock dependent query models. Sixty-three focused regression
 and three new vectors cover this slice, including a suppressed-report query case.
 Independent review checked twenty extraction contexts and sixty model boundaries.
 See the [diagnostic decision](../../docs/decisions/006-note-link-diagnostics.md).
-All sixty-one previous vector machine records remain unchanged in this CI output.
+That slice left all sixty-one previous vector machine records unchanged.
 
-General RFC 3986 character checks for note-link targets and absolute URI fields,
-non-UTF-8 percent-octet handling and encoded-anchor interpretation remain open;
-malformed-triplet checking is not exhaustive URI conformance. Pre-existing
-quadratic parsing of backslash-heavy destinations in Marked is separately recorded
-in the plan audit.
+Shared non-repairing RFC 3986 syntax checks now cover URI fields and pre-fragment
+Markdown targets. Authorities, percent triplets and component punctuation use
+generic syntax without DNS or transport policy. URI strings retain authored case,
+escapes and dot segments. Invalid target spelling remains a located note-link
+failure; default, constant, allowed-value and query checks share field validation.
+Two hundred forty-eight focused regressions and three new vectors cover the change.
+The query vectors verify exact projection and an actual admitted note with invalid
+URI values; the declaration-only vector does not assert eager empty-query behavior.
+
+Review caught a regex-engine limit that rejected valid million-character components.
+A linear scanner fixed it; 393,216 character/escape cases and valid components up to
+ten million characters passed independent review. See the
+[URI syntax decision](../../docs/decisions/007-rfc-uri-syntax.md).
+All sixty-four previous vector machine records remain unchanged in this CI output.
+
+URI-field fragment policy, Markdown anchor interpretation/general fragment-character
+checks and non-UTF-8 note-target octets remain unresolved. Existing URI-field fragment
+acceptance is preserved pending clarification, not treated as a settled FDR-140
+interpretation. The backslash-heavy Marked parsing slowdown remains separate:
+read-only profiling localized it to repeated escaped-character mask rebuilding,
+not URI syntax checks or destination source capture.
 
 Artifact shape checks now use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -237,8 +253,8 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,264 tooling tests locally and in CI, type checking, dependency
-audit, 336 specification tests, 292 fixture expectations, rule-ID checks, and the
+Validation covered 1,515 tooling tests locally and in CI, type checking, dependency
+audit, 336 specification tests, 295 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
@@ -283,8 +299,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `6f0e771` and specification
-`38295edd64d0598e0a227c3fd08e5be274a8aa85`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `afc157f` and specification
+`24cbc5ebf7925981b677738efba191e638669a76`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted

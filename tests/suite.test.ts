@@ -32,8 +32,8 @@ test("records reproducible evidence for every golden vector", async () => {
 
 test("checked-in evidence contains schema-valid reports and a passing summary", () => {
   const evidence = JSON.parse(readFileSync(resolve(import.meta.dir, "../evidence/0.1.0/conformance.json"), "utf8"));
-  expect(evidence.summary).toEqual({ discovered: 64, executed: 62, passed: 62, failed: 0, skipped: 2, changed: 0 });
-  expect(evidence.query_summary).toEqual({ executed: 14, passed: 14, failed: 0 });
+  expect(evidence.summary).toEqual({ discovered: 67, executed: 65, passed: 65, failed: 0, skipped: 2, changed: 0 });
+  expect(evidence.query_summary).toEqual({ executed: 16, passed: 16, failed: 0 });
   const registry = new SchemaRegistry(schemaDirectory);
   for (const vector of evidence.vectors) {
     if (vector.actual_report) expect(registry.validate("validation-report.schema.json", vector.actual_report), vector.name).toEqual([]);

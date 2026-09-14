@@ -1,8 +1,8 @@
 {
-  "specification_revision": "38295edd64d0598e0a227c3fd08e5be274a8aa85",
-  "adapter_revision": "6f0e7719d7bf2dbb9997d68ca39ae13b45cbfd5d",
-  "started_at": "2026-09-14T20:49:01.648Z",
-  "finished_at": "2026-09-14T20:49:25.407Z",
+  "specification_revision": "24cbc5ebf7925981b677738efba191e638669a76",
+  "adapter_revision": "afc157f1ee0eaff6126a74aca1f8d5c0c51a8c5f",
+  "started_at": "2026-09-14T21:29:52.526Z",
+  "finished_at": "2026-09-14T21:30:12.499Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 64,
-    "executed": 62,
-    "passed": 62,
+    "discovered": 67,
+    "executed": 65,
+    "passed": 65,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2665,6 +2665,210 @@
       }
     },
     {
+      "name": "uri-syntax-defaults-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/with-allowed.md",
+            "rule_id": "FDR-198",
+            "message": "address: Allowed value is incompatible with the declared field type"
+          },
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/with-constant.md",
+            "rule_id": "FDR-211",
+            "message": "address: Invalid constant: must have a URI scheme and valid RFC 3986 syntax"
+          },
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/with-default.md",
+            "rule_id": "FDR-4",
+            "message": "address: Invalid default: must have a URI scheme and valid RFC 3986 syntax"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "uri-syntax-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "FDR-140",
+            "message": "authority_uri must have a URI scheme and valid RFC 3986 syntax",
+            "note_type": "source",
+            "field": "authority_uri"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "FDR-140",
+            "message": "homepage must have a URI scheme and valid RFC 3986 syntax",
+            "note_type": "source",
+            "field": "homepage"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "FDR-140",
+            "message": "raw_uri must have a URI scheme and valid RFC 3986 syntax",
+            "note_type": "source",
+            "field": "raw_uri"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "FDR-140",
+            "message": "relative_uri must have a URI scheme and valid RFC 3986 syntax",
+            "note_type": "source",
+            "field": "relative_uri"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown target must use valid RFC 3986 URI-reference syntax; encode reserved or non-ASCII filename characters",
+            "note_type": "source"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown target must use valid RFC 3986 URI-reference syntax; encode reserved or non-ASCII filename characters",
+            "note_type": "source",
+            "field": "reference"
+          },
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "RHT-31",
+            "message": "related_to target target has 0 resolved instances",
+            "note_type": "source",
+            "relationship": "related_to"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/URI.md",
+            "rule_id": "FDR-140",
+            "message": "homepage must have a URI scheme and valid RFC 3986 syntax",
+            "note_type": "uri-source",
+            "field": "homepage"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "invalid-uri-value-blocks-admitted-note-model",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-308"
+        }
+      ]
+    },
+    {
+      "name": "uri-syntax-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "uri-projection-preserves-authored-spelling",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "homepage": "X+V1://user@EXAMPLE.test:99999/a/../%7e?octet=%FF"
+              }
+            ],
+            "provenance": [
+              {
+                "homepage": {
+                  "path": "Notes/Source.md",
+                  "field": "homepage",
+                  "source_backed": true
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "views-invalid",
       "status": "passed",
       "collection_changed": false,
@@ -2755,8 +2959,8 @@
     }
   ],
   "query_summary": {
-    "executed": 14,
-    "passed": 14,
+    "executed": 16,
+    "passed": 16,
     "failed": 0
   }
 }

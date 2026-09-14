@@ -123,6 +123,10 @@ Independent review also reproduced pre-existing quadratic parsing of large
 backslash-heavy inline destinations in pinned Marked (about 1.6 seconds at
 200 KB and 23 seconds at 800 KB). The new decoding pass scales linearly; the
 upstream parsing boundary remains a separate performance follow-up.
+Read-only profiling localized this to Marked's escaped-character mask loop, which
+rebuilds the complete source for each escape. At 120 KB, inline lexing took about
+683 ms, versus 0.13 ms for source capture and 18 ms for Markdown destination
+decoding. The new URI scanner is not the cause; no lexer optimization is claimed.
 
 A suspected complete-field-name schema gap was checked against the actual current
 registry: ordinary names/paths pass and their final-LF variants fail. No schema
