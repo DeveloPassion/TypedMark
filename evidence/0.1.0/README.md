@@ -1,12 +1,12 @@
 # TypedMark 0.1.0 conformance evidence
 
 This record covers sixty-nine golden vectors at TypedMarkSpecification
-`a6d240302c7769cef7b779a7d511080784a9ac0e`, using adapter
-`0bbb94ea364378ac0452946da05d60337856c746`. Exact UTC run timestamps are
+`5550daa3eb2ac15f367f309628ed400b4f70ab5d`, using adapter
+`449efe32fc9bfb8780d91346bf7106c263885f81`. Exact UTC run timestamps are
 retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34903852728),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34907026189),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
@@ -227,8 +227,21 @@ acceptance is preserved pending clarification, not treated as a settled FDR-140
 interpretation. The measured mask/start-scan slowdown is fixed, not claimed as an
 exhaustive parser-performance audit. A separate checker-parity probe found native
 YAML sets/ordered maps accepted as structural configuration maps by the specification
-fixture checker but rejected by the runtime. Both preserve the opaque vendor-data
-control; checker alignment remains open.
+fixture checker but rejected by the runtime. The fixture checker is now aligned:
+native tagged values do not satisfy JSON object constraints, while opaque metadata
+and unconstrained literal positions remain accepted. Live AJV diagnostics are
+forwarded without mutating the parsed model. Both checkers use iterative projection,
+fixing the runtime's stack overflow on a 20,000-level opaque graph. Thirty new
+specification tests, eight tooling tests and four artifact fixtures cover the slice;
+see the [checker-parity decision](../../docs/decisions/009-yaml-shape-checker-parity.md).
+All sixty-nine vector machine records remain unchanged in this exact-source CI run.
+
+Independent review found no new in-scope issues, but reproduced an existing AJV
+`uniqueItems` limitation in `allowed_values`. Distinct mappings with authored
+`valueOf` properties or null prototypes throw `TypeError`; distinct cyclic mappings
+throw `RangeError`. Both raw AJV and the previous runtime fail these probes.
+Fixing that comparison boundary remains required audit work. Iterative projection
+does not claim to fix AJV's subsequent equality or structural recursion.
 
 Runtime artifact shape checks use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -271,16 +284,15 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,539 tooling tests locally and in CI, type checking, dependency
-audit, 336 specification tests, 297 fixture expectations, rule-ID checks, and the
+Validation covered 1,547 tooling tests locally and in CI, type checking, dependency
+audit, 366 specification tests, 301 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
 have separate three-second performance ceilings.
-The final local full suite passed all 1,113 tests with no failures, as did the
-pinned CI run. No existing test deadlines changed. The CommonMark dependency
+No existing test deadlines changed. The CommonMark dependency
 and its development types remain exact-pinned and passed the dependency audit.
-The three new specification build tests exercise LF, CRLF and CR source files.
+The three earlier specification build tests exercise LF, CRLF and CR source files.
 The [reading-path review](site-review.md) records the browser checks and retained
 prior-contract links; it is not a release approval.
 
@@ -288,7 +300,7 @@ One earlier local run passed 1,041 tests and failed the importer's final directo
 rename with Windows `EPERM`. Its fixture contained no HTML, publication code was
 unchanged, and the temporary parent was cleaned up. The isolated test and twenty
 repeated test-file runs (60 tests) passed, followed by the complete 1,042-test
-rerun at that checkpoint. The current 1,113-test run also passed. The denial's
+rerun at that checkpoint. A later 1,113-test checkpoint also passed. The denial's
 cause remains unestablished; no retry workaround or
 claimed file-lock fix was introduced. The successful example exercise also
 rechecked publication and offline validation.
@@ -318,8 +330,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `0bbb94e` and specification
-`a6d240302c7769cef7b779a7d511080784a9ac0e`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `449efe3` and specification
+`5550daa3eb2ac15f367f309628ed400b4f70ab5d`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
