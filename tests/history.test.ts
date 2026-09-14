@@ -24,6 +24,59 @@ function system(history: Data = {}, config: Data = {}) {
 const run = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory, mode: "system_definition" });
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
+test.each([
+  ["1.0.0", "1.0.0"],
+  ["1.0.0+linux", "1.0.0+macos"],
+  ["1.0.0", "1.0.0+build.1"],
+  ["1.0.0-rc.1+linux", "1.0.0-rc.1+macos"],
+  ["2.0.0", "1.9.9"],
+  ["1.10.0", "1.9.0"],
+  ["1.0.10", "1.0.9"],
+  ["1.0.0", "1.0.0-rc.1"],
+  ["1.0.0-alpha.10", "1.0.0-alpha.2"],
+  ["1.0.0-alpha.a", "1.0.0-alpha.9"],
+  ["1.0.0-alpha.1", "1.0.0-alpha"],
+  ["9007199254740993.0.0", "9007199254740992.0.0"],
+])("history rejects non-increasing precedence: %s then %s", (previous, current) => {
+  const root = system({ history: [previous, current].map((version) => ({ version, changes: [] })) }, { version: current });
+  const before = readFileSync(join(root, ".typedmark/history.md"));
+  expect(run(root)).toMatchObject({ evaluation: "complete", valid: false, results: [
+    expect.objectContaining({ code: "invalid_history", rule_id: "SCE-99", path: ".typedmark/history.md" }),
+  ] });
+  expect(readFileSync(join(root, ".typedmark/history.md"))).toEqual(before);
+});
+
+test("history accepts SemVer prerelease, numeric, and build-metadata ordering", () => {
+  const versions = [
+    "1.0.0-alpha", "1.0.0-alpha.1", "1.0.0-alpha.2", "1.0.0-alpha.10",
+    "1.0.0-alpha.9007199254740992", "1.0.0-alpha.9007199254740993",
+    "1.0.0-alpha.A", "1.0.0-alpha.Z", "1.0.0-alpha.a", "1.0.0-alpha.a-b",
+    "1.0.0-beta+z", "1.0.0-beta.2+a", "1.0.0-beta.11", "1.0.0-rc.1", "1.0.0",
+    "1.0.9", "1.0.10", "1.9.0", "1.10.0", "2.0.0",
+    "9007199254740992.0.0", "9007199254740993.0.0",
+  ];
+  expect(run(system({ history: versions.map((version) => ({ version, changes: [] })) }, { version: versions.at(-1) })))
+    .toMatchObject({ valid: true, results: [] });
+});
+
+test("equal-precedence history blocks strict no-op readiness even when findings are suppressed", () => {
+  const root = system({ history: ["1.0.0+linux", "1.0.0+macos"].map((version) => ({ version, changes: [] })) },
+    { version: "1.0.0+macos", validation_defaults: { invalid_history: "off" } });
+  expect(run(root)).toMatchObject({ valid: true, results: [] });
+  expect(checkMigrationReadiness({ systemRoot: root, fromVersion: "1.0.0+macos", schemaDirectory }).status).toBe("manual_resolution_required");
+});
+
+test("history ordering ignores build metadata without weakening the final exact-version check", () => {
+  expect(run(system({ history: [{ version: "1.0.0+linux", changes: [] }] }, { version: "1.0.0+macos" })))
+    .toMatchObject({ valid: false, results: [expect.objectContaining({ rule_id: "SCE-100" })] });
+});
+
+test("best-effort history still checks ordering beyond the first pair", () => {
+  const history = ["0.1.0", "0.2.0", "0.2.0+build"].map((version) => ({ version, changes: [] }));
+  expect(run(system({ specification_version: "0.1.1", history }, { version: "0.2.0+build" })))
+    .toMatchObject({ evaluation: "incomplete", valid: false, results: [expect.objectContaining({ rule_id: "SCE-99" })] });
+});
+
 test.each(["9.0.0", "0.0.9"])("history selects its own unsupported Core compatibility line %s", (version) => {
   const root = system({ specification_version: version });
   const before = readFileSync(join(root, ".typedmark/history.md"));

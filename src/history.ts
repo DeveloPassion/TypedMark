@@ -19,6 +19,43 @@ const operationKeys: Record<string, string[]> = {
 };
 const record = (value: unknown): value is Data => !!value && typeof value === "object" && !Array.isArray(value);
 
+// SemVer 2.0.0 section 11: compare validated versions, never build metadata.
+function compareReleaseVersions(left: string, right: string): number {
+  const parts = (version: string) => /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?/u.exec(version)!;
+  const a = parts(left), b = parts(right);
+  const lexical = (x: string, y: string) => x < y ? -1 : x > y ? 1 : 0;
+  // Length then ASCII order keeps numeric identifiers exact beyond Number's range.
+  const numeric = (x: string, y: string) => x.length - y.length || lexical(x, y);
+  for (let index = 1; index <= 3; index++) {
+    const order = numeric(a[index]!, b[index]!);
+    if (order) return order;
+  }
+  if (a[4] === undefined) return b[4] === undefined ? 0 : 1;
+  if (b[4] === undefined) return -1;
+  const aPre = a[4].split("."), bPre = b[4].split(".");
+  for (let index = 0; index < Math.min(aPre.length, bPre.length); index++) {
+    const x = aPre[index]!, y = bPre[index]!;
+    const xNumeric = /^\d+$/u.test(x), yNumeric = /^\d+$/u.test(y);
+    let order: number;
+    if (xNumeric && yNumeric) order = numeric(x, y);
+    else if (xNumeric !== yNumeric) order = xNumeric ? -1 : 1;
+    else order = lexical(x, y);
+    if (order) return order;
+  }
+  return aPre.length - bPre.length;
+}
+
+/** Check release ordering after history shape validation; never reorder input. */
+export function validateHistoryOrder(entries: readonly { version: string }[]): HistoryIssue[] {
+  for (let index = 1; index < entries.length; index++) {
+    if (compareReleaseVersions(entries[index - 1]!.version, entries[index]!.version) >= 0) {
+      return [{ code: "invalid_history", rule: "SCE-99",
+        message: `History entry ${index + 1} must have higher SemVer precedence than entry ${index}; build metadata does not distinguish releases` }];
+    }
+  }
+  return [];
+}
+
 function shapeRule(error: ErrorObject, data: Data): string {
   if (error.instancePath === "/specification_version") return "FND-5";
   if (error.instancePath === "") return "SCE-95";

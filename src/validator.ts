@@ -19,7 +19,7 @@ import { validateAutomations } from "./automations";
 import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
 import { validateTemplateTracking } from "./template-tracking";
 import { resolveStoragePath } from "./storage";
-import { validateHistoryShape } from "./history";
+import { validateHistoryOrder, validateHistoryShape } from "./history";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -439,6 +439,7 @@ function validateSystemContract(root: string, metadataDirectory: string, mode: V
     }
     if (!shape.valid) return;
     const entries = Array.isArray(history.history) ? history.history : [];
+    for (const issue of validateHistoryOrder(entries)) add(results, config, issue.code, path, issue.rule, issue.message);
     if (typeof config.version === "string" && entries.at(-1)?.version !== config.version) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-100", "The last history version must equal the system version");
   } catch (error) {
     add(results, config, "invalid_history", normalized(relative(root, historyPath)), frontmatterFailureRule(error, "SCE-95"), errorMessage(error));
