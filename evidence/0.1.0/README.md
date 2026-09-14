@@ -1,12 +1,12 @@
 # TypedMark 0.1.0 conformance evidence
 
 This record covers sixty-nine golden vectors at TypedMarkSpecification
-`5550daa3eb2ac15f367f309628ed400b4f70ab5d`, using adapter
-`449efe32fc9bfb8780d91346bf7106c263885f81`. Exact UTC run timestamps are
+`d5b7a3434ad64ba132352d64cdfa50cf93e5040f`, using adapter
+`84186b32a1b65f6067ea812150667bf163c27414`. Exact UTC run timestamps are
 retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34907026189),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34909551153),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
@@ -236,12 +236,29 @@ specification tests, eight tooling tests and four artifact fixtures cover the sl
 see the [checker-parity decision](../../docs/decisions/009-yaml-shape-checker-parity.md).
 All sixty-nine vector machine records remain unchanged in this exact-source CI run.
 
-Independent review found no new in-scope issues, but reproduced an existing AJV
-`uniqueItems` limitation in `allowed_values`. Distinct mappings with authored
-`valueOf` properties or null prototypes throw `TypeError`; distinct cyclic mappings
-throw `RangeError`. Both raw AJV and the previous runtime fail these probes.
-Fixing that comparison boundary remains required audit work. Iterative projection
-does not claim to fix AJV's subsequent equality or structural recursion.
+The separate `allowed_values` crash is now corrected by enforcing FDR-197's existing
+scalar-only item shape and guarding uniqueness in a separate subschema. Invalid
+mappings/sequences no longer reach object equality, including authored method-like
+keys, null-prototype objects and distinct cycles. The correction shares the existing
+schema references across note types, property sets, nested fields and query definitions.
+Scalar compatibility and normalized equality remain semantic; aliases and source bytes
+are preserved.
+
+Review caught a regression in the initial scalar union: AJV's optimized hash missed
+duplicate `"__proto_"` strings. The guarded, separate uniqueness check avoids that
+optimization. Twenty-five schema tests, twenty collection/query regressions and
+seven artifact fixtures cover the final correction. Independent review checked
+1,250 scalar pairs, both error-collection modes, method-bearing objects, cycles and
+mixed invalid values without finding further issues. See the
+[allowed-value boundary decision](../../docs/decisions/010-scalar-allowed-values.md).
+This is not a general cyclic-equality or performance improvement claim.
+
+A separate byte-preservation probe confirmed the next input-boundary mismatch:
+the fixture checker rejects valid CR-only frontmatter but accepts malformed UTF-8
+in an artifact body after replacement decoding. The runtime accepts CR-only input
+and rejects those malformed bytes.
+A valid UTF-8 replacement character passes both controls. Correcting that reader
+boundary remains required work and is not claimed by this slice.
 
 Runtime artifact shape checks use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -284,8 +301,8 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,547 tooling tests locally and in CI, type checking, dependency
-audit, 366 specification tests, 301 fixture expectations, rule-ID checks, and the
+Validation covered 1,567 tooling tests locally and in CI, type checking, dependency
+audit, 391 specification tests, 308 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
@@ -330,8 +347,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `449efe3` and specification
-`5550daa3eb2ac15f367f309628ed400b4f70ab5d`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `84186b3` and specification
+`d5b7a3434ad64ba132352d64cdfa50cf93e5040f`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
