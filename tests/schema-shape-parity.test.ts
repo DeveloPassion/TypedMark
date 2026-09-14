@@ -39,10 +39,10 @@ test.each(["!!set {}", "!!omap []", "!!timestamp 2026-09-15T12:00:00Z", '!!binar
   },
 );
 
-test("both projections preserve native alias identity for uniqueness checks", () => {
+test("both checkers reject native allowed values regardless of alias identity", () => {
   const first = new Date(0), second = new Date(1);
-  for (const [values, valid] of [[[first, second], true], [[first, first], false]] as const) {
-    compare("note-type.schema.json", { ...noteType, frontmatter: { data: { type: "text", allowed_values: [...values] } } }, valid);
+  for (const values of [[first, second], [first, first]]) {
+    compare("note-type.schema.json", { ...noteType, frontmatter: { data: { type: "text", allowed_values: values } } }, false);
   }
   expect(first.getTime()).toBe(0);
   expect(second.getTime()).toBe(1);

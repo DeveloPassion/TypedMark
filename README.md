@@ -56,11 +56,18 @@ for the portable report rules.
 Artifact shape validation does not treat native YAML sets or ordered maps as
 empty structural objects. Its temporary JSON-shape projection leaves the parsed
 model unchanged, including tagged values in opaque vendor metadata and
-unconstrained literal positions. The specification fixture checker uses the same
-shape treatment, with cross-repository parity tests; both projections use an
+unconstrained default/constant positions. The specification fixture checker uses
+the same shape treatment, with cross-repository parity tests; both projections use an
 iterative worklist for deep opaque graphs. Invalid schema shapes still block
 dependent queries when their displayed findings are suppressed. See the
 [checker-parity decision](docs/decisions/009-yaml-shape-checker-parity.md).
+
+The shared schema now enforces the existing scalar-only `allowed_values` shape.
+Malformed object and sequence entries produce shape diagnostics without invoking
+object equality, including authored `valueOf`/`toString` keys and cyclic aliases.
+Scalar type compatibility and normalized equality remain semantic checks; source
+bytes and opaque values are not rewritten. See the
+[allowed-value boundary decision](docs/decisions/010-scalar-allowed-values.md).
 
 Note-link checks follow declared object fields and list items at every depth.
 Existence and target restrictions apply to stored leaves, not values supplied

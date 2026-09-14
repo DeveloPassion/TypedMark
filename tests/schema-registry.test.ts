@@ -23,20 +23,23 @@ test.each([new Map([["required_h2", 7]]), new Set(["required_h2"]), new Date(0)]
   expect(() => JSON.stringify(errors)).not.toThrow();
 });
 
-test("shape projection preserves ordinary-object equality without calling missing prototype methods", () => {
-  expect(registry.validate("defs.schema.json#/$defs/field_definition", {
+test("allowed values reject ordinary objects before equality comparison", () => {
+  const errors = registry.validate("defs.schema.json#/$defs/field_definition", {
     type: "text", allowed_values: [{ a: 1 }, { a: 2 }],
-  })).toEqual([]); // Value compatibility is a later semantic check.
+  });
+  expect(errors.map(error => [error.keyword, error.instancePath])).toEqual([
+    ["type", "/allowed_values/0"], ["type", "/allowed_values/1"],
+  ]);
 });
 
-test("distinct native values do not become a false duplicate during shape validation", () => {
+test("native allowed values are invalid regardless of alias identity", () => {
   const first = new Date(0), second = new Date(1);
-  expect(registry.validate("defs.schema.json#/$defs/field_definition", {
-    type: "text", allowed_values: [first, second],
-  })).toEqual([]);
-  expect(registry.validate("defs.schema.json#/$defs/field_definition", {
-    type: "text", allowed_values: [first, first],
-  }).some((error) => error.keyword === "uniqueItems")).toBe(true);
+  for (const values of [[first, second], [first, first]]) {
+    const errors = registry.validate("defs.schema.json#/$defs/field_definition", { type: "text", allowed_values: values });
+    expect(errors.map(error => [error.keyword, error.instancePath])).toEqual([
+      ["type", "/allowed_values/0"], ["type", "/allowed_values/1"],
+    ]);
+  }
   expect(first.getTime()).toBe(0);
   expect(second.getTime()).toBe(1);
 });

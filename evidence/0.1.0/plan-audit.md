@@ -140,12 +140,24 @@ eight new tooling cases and four artifact fixtures cover tags, aliases, prototyp
 keys, live diagnostics, examples, golden-vector bytes and deep graphs. See the
 [checker-parity decision](../../docs/decisions/009-yaml-shape-checker-parity.md).
 
-Independent review confirmed a separate, pre-existing AJV equality limitation in
-`allowed_values`: two mappings with authored `valueOf` properties or null prototypes
-can throw `TypeError`; distinct cyclic mappings can throw `RangeError`. Raw AJV and
-the previous runtime reproduce these failures. The projection terminates, but the
-subsequent `uniqueItems` comparison does not safely handle those inputs. This remains
-required Core-audit work; no equality fix is claimed by the tagged-shape correction.
+The separate `allowed_values` crash is now addressed by mirroring FDR-197's existing
+scalar-only item shape in the shared schema. Invalid mappings/sequences no longer
+reach AJV's object comparison, including authored method-like keys, null-prototype
+objects and distinct cycles. Review caught a prototype-like string duplicate missed
+by AJV's scalar hash; guarded, separate uniqueness avoids that optimization.
+Twenty-five schema and twenty collection/query regressions plus seven artifact
+fixtures cover the correction. Scalar compatibility and normalized equality remain
+semantic, and opaque aliases/source bytes are retained;
+see the [boundary decision](../../docs/decisions/010-scalar-allowed-values.md).
+This is not a general cyclic-equality implementation or completion of the remaining
+Core audit, checker input-boundary audit or open URI-policy dispositions.
+
+A separate source-byte probe now confirms the next checker mismatch: CR-only
+frontmatter is accepted by the runtime but rejected by the fixture checker, while
+an invalid UTF-8 byte in a governed artifact's body is rejected by the runtime but
+accepted after the checker's replacement decoding. An actual UTF-8 replacement
+character passes both controls. All probe bytes stayed unchanged. Correcting
+this input boundary remains required work; the allowed-value fix does not change it.
 
 ## Completion evidence still required
 
