@@ -72,6 +72,7 @@ test.each([
   "core-cardinality-valid", "core-cardinality-invalid", "core-count-range-invalid",
   "history-valid", "history-unsupported-version", "history-best-effort", "composition-provenance-invalid",
   "history-order-valid", "history-order-invalid",
+  "root-best-effort", "root-unsupported",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);
@@ -91,6 +92,24 @@ test("a caller cannot manufacture an unsupported case by hiding an implemented c
   } finally {
     rmSync(vectorDirectory, { recursive: true, force: true });
   }
+});
+
+test("expected reports cannot select the actual report edition", async () => {
+  const root = mkdtempSync(join(tmpdir(), "typedmark-report-edition-"));
+  const vectorDirectory = join(root, "vector");
+  try {
+    await cp(join(goldenDirectory, "core-valid"), vectorDirectory, { recursive: true });
+    const configPath = join(vectorDirectory, "collection", "typedmark.md");
+    writeFileSync(configPath, readFileSync(configPath, "utf8").replace(/^specification_version:.*$/mu, ""));
+    const expectedPath = join(vectorDirectory, "expected-validation-report.json");
+    const expected = JSON.parse(readFileSync(expectedPath, "utf8"));
+    expected.specification_version = "0.1.1";
+    writeFileSync(expectedPath, JSON.stringify(expected));
+    const result = await runConformanceVector({ vectorDirectory, schemaDirectory });
+    expect(result.actual.specification_version).toBe("0.1.0");
+    expect(result.differences.length).toBeGreaterThan(0);
+    expect(result.collectionChanged).toBe(false);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test.each(["missing-extension-dependency", "conflicting-extension-dependency"])("does not run expired negotiation preconditions for %s", async (name) => {

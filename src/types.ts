@@ -41,6 +41,7 @@ export interface AdapterCapabilities {
 export interface ValidateCollectionInput {
   collectionRoot: string;
   schemaDirectory: string;
+  /** Requested report edition; only the implemented 0.1.0 edition is accepted. */
   referenceEdition?: string;
   mode?: ValidationMode;
   supportedExtensions?: ExtensionMap;

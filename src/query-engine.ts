@@ -146,7 +146,8 @@ export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryR
 
 export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor): QueryEvaluation {
   const timezone = model.config.timezone ?? "UTC";
-  if (model.configurationIssue) fail("CM-308", model.configurationIssue);
+  if (model.configurationIssue) fail("CM-308", model.configurationIssue, model.unsupportedConfigurationVersion
+    ? { specificationVersion: model.unsupportedConfigurationVersion, path: "typedmark.md" } : undefined);
   if (model.associationIssue) fail("CM-308", model.associationIssue);
   const invalid = model.report.results.find((result) => result.severity === "error" && result.path === "typedmark.md"
     && ["invalid_collection_configuration", "unsupported_specification_version"].includes(result.code));

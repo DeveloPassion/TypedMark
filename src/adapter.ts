@@ -68,7 +68,6 @@ export async function runConformanceVector(input: RunVectorInput): Promise<Vecto
     const actual = validateCollection({
       collectionRoot,
       schemaDirectory: input.schemaDirectory,
-      referenceEdition: expected.specification_version,
       mode: expected.mode,
       supportedExtensions: selection.supportedExtensions,
     });

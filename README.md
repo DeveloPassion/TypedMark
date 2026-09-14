@@ -38,6 +38,16 @@ unsupported required extension produces an incomplete report rather than a
 successful Core-only result. Validation runs are read-only; the vector runner
 also hashes every input file before and after evaluation.
 
+Reports identify the implemented `0.1.0` edition used for evaluation, not an
+unsupported or malformed edition copied from the root configuration. A newer
+compatible root remains best-effort/incomplete; an unsupported root prevents
+child interpretation and querying even when its diagnostic is suppressed.
+Declared artifact versions and source bytes are preserved.
+
+The optional library `referenceEdition` parameter accepts only `0.1.0` and
+throws `RangeError` for other requests. Expected conformance reports do not
+select this parameter or the actual report edition.
+
 Conformance vectors can include the specification repository's non-normative
 `vector.json` negotiation context. Unsupported cases check advertised exact
 capabilities; deliberately disabled cases explicitly record the excluded

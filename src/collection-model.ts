@@ -27,6 +27,8 @@ export interface CollectionModel {
   // Association availability is independent of diagnostic severity/suppression.
   associationIssue?: string;
   configurationIssue?: string;
+  // Root-version availability survives diagnostic suppression.
+  unsupportedConfigurationVersion?: string;
   schemaIssues?: Map<string, SchemaIssue>;
   schemaSources?: Map<string, SchemaSource[]>;
 }

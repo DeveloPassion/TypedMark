@@ -50,6 +50,10 @@ export function validateCollection(input: ValidateCollectionInput): ValidationRe
 }
 
 export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict" } = {}): CollectionModel {
+  if (input.referenceEdition !== undefined && input.referenceEdition !== IMPLEMENTED_CORE) {
+    throw new RangeError(`Only referenceEdition ${IMPLEMENTED_CORE} is implemented`);
+  }
+  const version = IMPLEMENTED_CORE;
   const root = input.collectionRoot;
   const mode = input.mode ?? "instantiated_collection";
   const registry = new SchemaRegistry(input.schemaDirectory);
@@ -65,12 +69,13 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   const assets = new Set<string>();
   let associationIssue: string | undefined;
   let configurationIssue: string | undefined;
-  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets, associationIssue, configurationIssue });
+  let unsupportedConfigurationVersion: string | undefined;
+  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets, associationIssue, configurationIssue, unsupportedConfigurationVersion });
 
   if (!existsSync(configPath)) {
     configurationIssue = "typedmark.md is missing";
     add(results, {}, "invalid_collection_configuration", "typedmark.md", "CM-1", "typedmark.md is missing");
-    return model(report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results));
+    return model(report(version, mode, {}, {}, "complete", results));
   }
 
   try {
@@ -78,34 +83,66 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   } catch (error) {
     configurationIssue = errorMessage(error);
     add(results, {}, "invalid_collection_configuration", "typedmark.md", frontmatterFailureRule(error, "CM-537"), errorMessage(error));
-    return model(report(input.referenceEdition ?? IMPLEMENTED_CORE, mode, {}, {}, "complete", results));
+    return model(report(version, mode, {}, {}, "complete", results));
   }
 
-  const version = typeof config.specification_version === "string"
-    ? config.specification_version
-    : input.referenceEdition ?? IMPLEMENTED_CORE;
+  const declaredVersion = config.specification_version;
   const requiredExtensions = isRecord(config.extensions) ? stringMap(config.extensions) : {};
   const requestedExtensions = input.supportedExtensions ?? STANDARD_EXTENSIONS;
   const supportedExtensions = Object.fromEntries(
     Object.entries(STANDARD_EXTENSIONS).filter(([extension, version]) => requestedExtensions[extension] === version),
   );
   const evaluatedExtensions: ExtensionMap = {};
-  let evaluation: "complete" | "incomplete" = "complete";
+  let evaluation: "complete" | "incomplete" = isBestEffortVersion(declaredVersion) ? "incomplete" : "complete";
 
-  if (!sameCompatibilityLine(version, IMPLEMENTED_CORE)) {
-    evaluation = "incomplete";
-    add(results, config, "unsupported_specification_version", "typedmark.md", "FND-92", `Unsupported specification version ${version}`);
+  if (isSpecificationVersion(declaredVersion) && !sameCompatibilityLine(declaredVersion, IMPLEMENTED_CORE)) {
+    unsupportedConfigurationVersion = declaredVersion;
+    configurationIssue = `Unsupported specification version ${declaredVersion}`;
+    add(results, config, "unsupported_specification_version", "typedmark.md", "FND-92", configurationIssue);
+    return model(report(version, mode, requiredExtensions, evaluatedExtensions, "incomplete", results));
   }
 
-  const configShape = normalizedMandatoryTags(config);
+  const configShape = structuredClone(normalizedMandatoryTags(config));
   if (!requiredExtensions["typedmark:reuse"] || supportedExtensions["typedmark:reuse"] !== requiredExtensions["typedmark:reuse"]) delete configShape.default_property_sets;
   if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"]) delete configShape.automation_defaults;
-  const configErrors = registry.validate("typedmark.schema.json", configShape);
+  const unknownConfigKeys: Array<{ path: string; key: string }> = [];
+  const projectConfigKey = (path: string, key: string) => {
+    if (removePropertyAt(configShape, path, key)) unknownConfigKeys.push({ path, key });
+  };
+  // The root's only oneOf is mapping-kind selection. Project the actual kind,
+  // never keys rejected by a different mapping alternative.
+  const mappingKeys: Record<string, string[]> = {
+    frontmatter_field: ["kind", "field"], tag: ["kind", "tag", "note_type"],
+    folder: ["kind", "folder", "note_type"], fixed: ["kind", "note_type", "when"],
+  };
+  if (Array.isArray(configShape.note_type_mappings)) configShape.note_type_mappings.forEach((mapping: unknown, index: number) => {
+    if (!isRecord(mapping) || typeof mapping.kind !== "string" || !Object.hasOwn(mappingKeys, mapping.kind)) return;
+    for (const key of Object.keys(mapping)) if (!mappingKeys[mapping.kind]!.includes(key)) projectConfigKey(`/note_type_mappings/${index}`, key);
+  });
+  let configErrors = registry.validate("typedmark.schema.json", configShape);
+  for (const error of configErrors) {
+    if (error.keyword === "additionalProperties" && !/^\/note_type_mappings\/\d+$/u.test(error.instancePath)) {
+      projectConfigKey(error.instancePath, error.params.additionalProperty);
+    }
+  }
+  if (unknownConfigKeys.length) configErrors = registry.validate("typedmark.schema.json", configShape);
+  configErrors = configErrors.filter((error) => error.keyword !== "additionalProperties");
+  const bestEffortRoot = isBestEffortVersion(declaredVersion);
+  const invalidConfigUnknown = unknownConfigKeys.length > 0 && !bestEffortRoot;
+  for (const { path, key } of unknownConfigKeys) results.push({ code: "unknown_field", severity: bestEffortRoot ? "warn" : "error",
+    path: "typedmark.md", rule_id: bestEffortRoot ? "FND-11" : "CM-534", message: `Unrecognized structural key ${path}/${key}` });
+  if (bestEffortRoot && unknownConfigKeys.length) {
+    // Keep unavailable extension-owned fields omitted only from schema checking;
+    // remove genuinely unknown keys from the interpreted copy, not source bytes.
+    config = { ...config };
+    for (const { path, key } of unknownConfigKeys) removePropertyAt(config, path, key);
+  }
+  if (invalidConfigUnknown) configurationIssue = "Unrecognized structural key in typedmark.md";
   if (configErrors.length > 0) {
     configurationIssue = schemaError(configErrors);
     add(results, config, "invalid_collection_configuration", "typedmark.md", configErrors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "CM-226" : "CM-537", schemaError(configErrors));
   }
-  if (!configErrors.length) {
+  if (!configurationIssue) {
     try {
       const timezone = config.timezone ?? "UTC";
       if (/^[+-]/u.test(timezone)) throw new RangeError("A fixed offset is not an IANA timezone identifier");
@@ -123,7 +160,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   // Strict eligibility checks need known violations independently of display
   // policy. Validate the authored configuration first, then override only the
   // in-memory diagnostic projection; normal validation keeps configured policy.
-  if (options.diagnosticPolicy === "strict" && !configErrors.length) {
+  if (options.diagnosticPolicy === "strict" && !configurationIssue) {
     const categories = new Set([...Object.keys(DEFAULT_SEVERITIES), ...Object.keys(config.validation_defaults ?? {})]);
     config = { ...config, validation_defaults: Object.fromEntries([...categories].map((code) => [code, "error"])) };
   }
@@ -158,7 +195,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   const propertySetIssues = new Map<string, SchemaIssue>();
   const checkVersion = (data: Data, path: string): SchemaIssue | undefined => {
     const version = data.specification_version;
-    if (typeof version !== "string" || !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version)) return;
+    if (!isSpecificationVersion(version)) return;
     if (version !== IMPLEMENTED_CORE) evaluation = "incomplete";
     if (sameCompatibilityLine(version, IMPLEMENTED_CORE)) return;
     const message = `Unsupported specification version ${version}`;
@@ -762,9 +799,27 @@ function sameCompatibilityLine(left: string, right: string) {
   return left.split(".").slice(0, 2).join(".") === right.split(".").slice(0, 2).join(".");
 }
 
+function isSpecificationVersion(version: unknown): version is string {
+  return typeof version === "string" && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version);
+}
+
+function removePropertyAt(data: Data, pointer: string, key: string): boolean {
+  let parent: any = data;
+  for (const segment of pointer.split("/").slice(1).map((part) => part.replaceAll("~1", "/").replaceAll("~0", "~"))) {
+    if (parent === null || typeof parent !== "object" || !Object.hasOwn(parent, segment)) return false;
+    const child = parent[segment];
+    if (child === null || typeof child !== "object") return false;
+    // YAML aliases may share this node with an opaque value elsewhere.
+    parent[segment] = Array.isArray(child) ? [...child] : { ...child };
+    parent = parent[segment];
+  }
+  if (!isRecord(parent) || !Object.hasOwn(parent, key)) return false;
+  delete parent[key];
+  return true;
+}
+
 function isBestEffortVersion(version: unknown): boolean {
-  return typeof version === "string"
-    && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version)
+  return isSpecificationVersion(version)
     && sameCompatibilityLine(version, IMPLEMENTED_CORE)
     && BigInt(version.split(".")[2]!) > BigInt(IMPLEMENTED_CORE.split(".")[2]!);
 }

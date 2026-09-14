@@ -17,8 +17,8 @@ test("records reproducible evidence for every golden vector", async () => {
     finishedAt: "2026-09-08T08:01:00.000Z",
   });
 
-  expect(evidence.summary).toEqual({ discovered: 39, executed: 37, passed: 37, failed: 0, skipped: 2, changed: 0 });
-  expect(evidence.query_summary).toEqual({ executed: 11, passed: 11, failed: 0 });
+  expect(evidence.summary).toEqual({ discovered: 41, executed: 39, passed: 39, failed: 0, skipped: 2, changed: 0 });
+  expect(evidence.query_summary).toEqual({ executed: 13, passed: 13, failed: 0 });
   expect(evidence.specification_revision).toBe("spec-test-revision");
   expect(evidence.adapter_revision).toBe("adapter-test-revision");
   expect(evidence.vectors.map((vector) => vector.name)).toContain("unsupported-required-extension");
