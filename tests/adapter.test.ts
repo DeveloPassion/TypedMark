@@ -75,6 +75,7 @@ test.each([
   "root-best-effort", "root-unsupported",
   "scaffold-references-valid", "scaffold-references-invalid", "scaffold-references-unavailable",
   "template-values-invalid", "template-placeholders-valid", "scaffold-template-override-invalid",
+  "headings-commonmark-valid", "headings-constraints-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

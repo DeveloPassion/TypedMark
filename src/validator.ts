@@ -1,4 +1,5 @@
 import type { ErrorObject } from "ajv";
+import { extractHeadings } from "./markdown-headings";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
 import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./frontmatter";
@@ -629,16 +630,18 @@ function validateHeadings(path: string, body: string, title: unknown, headings: 
   const found = extractHeadings(body);
   const h1 = found.filter((item) => item.depth === 1);
   const h2 = found.filter((item) => item.depth === 2).map((item) => item.text);
-  const fail = (message: string, heading?: string) => add(results, config, "invalid_heading", path, "RHT-53", message, { note_type: noteType, ...(heading ? { heading } : {}) });
-  if (headings.require_h1_title === true && (h1.length !== 1 || h1[0]!.text !== title || found[0]?.depth !== 1)) fail("The body must start with exactly one H1 equal to the effective title");
-  for (const required of arrayOfStrings(headings.required_h2)) if (h2.filter((value) => value === required).length !== 1) fail(`Required H2 ${required} must appear exactly once`, required);
-  for (const optional of arrayOfStrings(headings.optional_h2)) if (h2.filter((value) => value === optional).length > 1) fail(`Optional H2 ${optional} appears more than once`, optional);
-  const declared = new Set([...arrayOfStrings(headings.required_h2), ...arrayOfStrings(headings.optional_h2)]);
-  if (headings.allow_other_h2 === false) for (const value of h2) if (!declared.has(value)) fail(`Undeclared H2 ${value} is not allowed`, value);
+  const fail = (rule: string, message: string, heading?: string) => add(results, config, "invalid_heading", path, rule, message, { note_type: noteType, ...(heading ? { heading } : {}) });
+  const nfc = (value: string) => value.normalize("NFC");
+  if (headings.require_h1_title === true && (h1.length !== 1 || typeof title !== "string" || nfc(h1[0]!.text) !== nfc(title) || found[0]?.depth !== 1)) fail("RHT-53", "The body must have one H1 before other headings, equal to the effective title");
+  for (const required of arrayOfStrings(headings.required_h2)) if (h2.filter((value) => nfc(value) === nfc(required)).length !== 1) fail("RHT-58", `Required H2 ${required} must appear exactly once`, required);
+  for (const optional of arrayOfStrings(headings.optional_h2)) if (h2.filter((value) => nfc(value) === nfc(optional)).length > 1) fail("RHT-59", `Optional H2 ${optional} appears more than once`, optional);
+  const declared = new Set([...arrayOfStrings(headings.required_h2), ...arrayOfStrings(headings.optional_h2)].map(nfc));
+  if (headings.allow_other_h2 === false) for (const value of h2) if (!declared.has(nfc(value))) fail("RHT-60", `Undeclared H2 ${value} is not allowed`, value);
   if (headings.require_order === true) {
     for (const list of [arrayOfStrings(headings.required_h2), arrayOfStrings(headings.optional_h2)]) {
-      const seen = h2.filter((value) => list.includes(value));
-      if (seen.some((value, index) => list.indexOf(value) < list.indexOf(seen[index - 1] ?? value))) fail("Declared H2 headings are out of order");
+      const normalized = list.map(nfc);
+      const seen = h2.map(nfc).filter((value) => normalized.includes(value));
+      if (seen.some((value, index) => normalized.indexOf(value) < normalized.indexOf(seen[index - 1] ?? value))) fail("RHT-62", "Declared H2 headings are out of order");
     }
   }
 }
@@ -792,24 +795,6 @@ function sortResults(results: ValidationResult[]) {
     }
     return 0;
   });
-}
-
-function extractHeadings(body: string) {
-  const headings: Array<{ depth: number; text: string }> = [];
-  let fenced = false;
-  const lines = body.split(/\r?\n/);
-  for (let index = 0; index < lines.length; index++) {
-    const line = lines[index]!;
-    if (/^\s{0,3}(```|~~~)/.test(line)) { fenced = !fenced; continue; }
-    if (fenced) continue;
-    const atx = /^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/.exec(line);
-    if (atx) headings.push({ depth: atx[1]!.length, text: atx[2]!.trim() });
-    else if (index + 1 < lines.length && /^\s{0,3}(=+|-+)\s*$/.test(lines[index + 1]!)) {
-      headings.push({ depth: lines[index + 1]!.trim().startsWith("=") ? 1 : 2, text: line.trim() });
-      index++;
-    }
-  }
-  return headings;
 }
 
 function sameCompatibilityLine(left: string, right: string) {
