@@ -34,6 +34,33 @@ export class SchemaRegistry {
       if (validate) this.#validators.set(schemaName, validate);
     }
     if (!validate) throw new Error(`Unknown TypedMark schema: ${schemaName}`);
-    return validate(value) ? [] : [...(validate.errors ?? [])];
+    return validate(shapeValue(value)) ? [] : [...(validate.errors ?? [])];
   }
+}
+
+/** AJV's JavaScript object test also accepts native YAML containers as maps.
+ * Validate their shape without changing the original model or opaque values.
+ * A symbol matches no JSON type, but remains accepted by an unconstrained {}.
+ */
+function shapeValue(value: unknown, seen = new WeakMap<object, unknown>()): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (seen.has(value)) return seen.get(value);
+  const array = Array.isArray(value);
+  const prototype = Object.getPrototypeOf(value);
+  if (!array && prototype !== null && prototype !== Object.prototype) {
+    // Preserve identity without making different native values false duplicates.
+    const marker = Symbol("non-JSON YAML value");
+    seen.set(value, marker);
+    return marker;
+  }
+  // Ordinary objects retain their prototype for AJV's deep equality helpers.
+  const projected = array ? new Array(value.length) : Object.create(prototype);
+  seen.set(value, projected);
+  for (const [key, child] of Object.entries(value)) {
+    // Assignment could interpret an authored __proto__ key as a prototype write.
+    Object.defineProperty(projected, key, {
+      value: shapeValue(child, seen), enumerable: true, writable: true, configurable: true,
+    });
+  }
+  return projected;
 }

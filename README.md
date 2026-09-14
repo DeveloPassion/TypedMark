@@ -53,6 +53,12 @@ and system operations until the declaration is repaired, without rewriting it.
 See the specification's [validation report contract](https://github.com/DeveloPassion/TypedMarkSpecification/blob/main/conformance-and-roadmap.md#validation-reports)
 for the portable report rules.
 
+Artifact shape validation does not treat native YAML sets or ordered maps as
+empty structural objects. Its temporary JSON-shape projection leaves the parsed
+model unchanged, including tagged values in opaque vendor metadata and
+unconstrained literal positions. Invalid schema shapes still block dependent
+queries when their displayed findings are suppressed.
+
 The optional library `referenceEdition` parameter accepts only `0.1.0` and
 throws `RangeError` for other requests. Expected conformance reports do not
 select this parameter or the actual report edition.
