@@ -589,22 +589,30 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
     if (aliasFailure) add(results, config, "invalid_field_value", path, aliasFailure.rule, aliasFailure.message, { note_type: noteType, field: name }, schema);
   }
 
+  // CR-37/38 provide no escaping syntax for arbitrary stored property names.
+  // Keep their spelling in the message and omit an unrepresentable context.
+  const unknownContext = (names: readonly string[]): Partial<ValidationResult> => ({
+    note_type: noteType,
+    ...(names.every((name) => /^[a-z][a-z0-9_]*(?![\s\S])/u.test(name)) ? { field: names.join(".") } : {}),
+  });
   const declared = new Set(Object.keys(fields));
   for (const field of Object.keys(stored)) {
-    if (!partial && !declared.has(field) && !(trackingDeclared && field === "template_regions")) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, { note_type: noteType, field }, schema);
+    if (!partial && !declared.has(field) && !(trackingDeclared && field === "template_regions")) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, unknownContext([field]), schema);
   }
-  const unknownChildren = (value: unknown, definition: FieldDefinition, prefix: string): void => {
+  const unknownChildren = (value: unknown, definition: FieldDefinition, names: readonly string[], location: string): void => {
     if (definition.type === "list" && definition.items && Array.isArray(value)) {
-      value.forEach((item, index) => unknownChildren(item, definition.items!, `${prefix}.${index}`));
+      // List positions help locate the finding but are not field-name segments.
+      value.forEach((item, index) => unknownChildren(item, definition.items!, names, `${location}.${index}`));
     } else if (definition.type === "object" && isRecord(value)) {
       for (const [name, child] of Object.entries(value)) {
-        const field = `${prefix}.${name}`;
-        if (!Object.hasOwn(definition.fields ?? {}, name)) add(results, config, "unknown_field", path, "MN-112", `${field} is not declared`, { note_type: noteType, field }, schema);
-        else unknownChildren(child, definition.fields![name]!, field);
+        const field = `${location}.${name}`;
+        const childNames = [...names, name];
+        if (!Object.hasOwn(definition.fields ?? {}, name)) add(results, config, "unknown_field", path, "MN-112", `${field} is not declared`, unknownContext(childNames), schema);
+        else unknownChildren(child, definition.fields![name]!, childNames, field);
       }
     }
   };
-  for (const [name, definition] of Object.entries(fields)) unknownChildren(stored[name], definition, name);
+  for (const [name, definition] of Object.entries(fields)) unknownChildren(stored[name], definition, [name], name);
 
   const mandatory = new Set([...arrayOfStrings(config.mandatory_tags), ...arrayOfStrings(schema.mandatory_tags)].map((value) => value.normalize("NFC")));
   const tags = new Set(arrayOfStrings(values.tags).map((value) => value.normalize("NFC")));

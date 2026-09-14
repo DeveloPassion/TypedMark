@@ -65,6 +65,11 @@ by defaults. Findings use dotted field names without list indices. Nested links
 do not become typed relationships, and malformed scalar/list containers cannot
 create relationship instances.
 
+Unknown-field findings retain their severity policy and authored names. Logical
+field contexts omit list positions; names that cannot be represented by the
+report's dotted-path grammar remain in the message without optional `field`
+metadata. This does not rename properties or discard findings.
+
 The optional library `referenceEdition` parameter accepts only `0.1.0` and
 throws `RangeError` for other requests. Expected conformance reports do not
 select this parameter or the actual report edition.
