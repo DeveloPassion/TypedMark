@@ -1,12 +1,12 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers thirty-seven golden vectors at TypedMarkSpecification
-`9e665769bff1a825ea54136092e2a601876a72ea`, using adapter
-`85078e3bcc41fd2b5503e5f1a67cfa6c897517bb` on 2026-09-12.
+This record covers thirty-nine golden vectors at TypedMarkSpecification
+`4d61db140c045bc2f2a5d6af00f38ca3330000cd`, using adapter
+`51f0ed961d6aef160c00ee258feb5674ad3c0137` on 2026-09-14.
 
 Results:
 
-- thirty-five eligible collection vectors passed;
+- thirty-seven eligible collection vectors passed;
 - eleven standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -30,7 +30,7 @@ comparison while preserving the distinction between absent and empty frontmatter
 Association availability is independent of diagnostic suppression. The parser
 recognizes unclosed delimiters as body content, rejects invalid UTF-8 without
 replacement, and keeps YAML alias limits inside structured diagnostics. These
-are implementation corrections; no normative prose or artifact shape changed.
+were implementation corrections without normative prose or artifact shape changes.
 
 Uniqueness now uses the shared type-aware equality domain, with collection-wide
 same-name/same-property-type scope derived from concrete schema declarations.
@@ -40,6 +40,13 @@ artifact version, preserves best-effort incompleteness, and reports specific
 shape/provenance diagnostics. Readiness uses one strict, immutable snapshot and
 does not mistake suppressed errors or history availability for migration impact
 analysis: only a validated version no-op can be ready.
+
+History ordering now enforces the accepted strict SemVer precedence policy in
+`SCE-99`: equal precedence is rejected even when build metadata differs.
+Prerelease identifiers use numeric or ASCII comparison as appropriate, including
+numbers beyond JavaScript's safe integer range. Build metadata is ignored only
+for ordering; the final exact-version check remains unchanged. The positive and
+negative history-order vectors exercise this policy without rewriting history.
 
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
@@ -74,17 +81,23 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 553 tooling tests, type checking, dependency audit,
-321 specification tests, 262 fixture expectations, rule-ID checks, and the
+Validation covered 571 tooling tests, type checking, dependency audit,
+321 specification tests, 264 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
-filesystem integration case and 90 seconds for the whole vector-suite case;
+filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
+The initial local run passed 570 tests and hit the aggregate test's former
+90-second deadline. After increasing only that execution budget, all three
+suite tests passed, including the full vector/report comparison.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
 field-name matching, parser error boundaries, Core field invariants, deferred
 storage references, timezone failures, type-aware uniqueness, history version
-boundaries, strict snapshot readiness, and the new golden reports.
+boundaries, strict snapshot readiness, release precedence, and the new golden
+reports. The ordering review also checked 193,600 pairs of 440 schema-valid
+versions against an independent BigInt/ASCII comparator, including 1001-digit
+identifiers; all comparisons agreed.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in
 [specification #123](https://github.com/DeveloPassion/TypedMarkSpecification/issues/123);
 they do not establish coverage of every normative rule
@@ -99,8 +112,7 @@ its composition source, and materialized `Notes/Welcome.md`. The source snapshot
 was unchanged; the temporary instance was removed after verification. Missing
 history still returned `manual_resolution_required`, with no migration attempted.
 That historical exercise was not rerun for this slice; current readiness changes
-are covered by the tooling regression suite. Complete history release-order
-validation (including the equal-precedence/build-metadata policy), replay,
-target-aware impact analysis, and broader composition remain follow-up work.
+are covered by the tooling regression suite. History replay, target-aware impact
+analysis, and broader composition remain follow-up work.
 Lossless note re-typing is separately tracked for future design in specification
 [#130](https://github.com/DeveloPassion/TypedMarkSpecification/issues/130).

@@ -1,8 +1,8 @@
 {
-  "specification_revision": "9e665769bff1a825ea54136092e2a601876a72ea",
-  "adapter_revision": "85078e3bcc41fd2b5503e5f1a67cfa6c897517bb",
-  "started_at": "2026-09-12T06:04:19.702Z",
-  "finished_at": "2026-09-12T06:05:08.127Z",
+  "specification_revision": "4d61db140c045bc2f2a5d6af00f38ca3330000cd",
+  "adapter_revision": "51f0ed961d6aef160c00ee258feb5674ad3c0137",
+  "started_at": "2026-09-14T07:42:16.048Z",
+  "finished_at": "2026-09-14T07:45:44.926Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 37,
-    "executed": 35,
-    "passed": 35,
+    "discovered": 39,
+    "executed": 37,
+    "passed": 37,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -782,6 +782,74 @@
           "typedmark:systems": "0.1.0"
         },
         "valid": false,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "history-order-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_history",
+            "severity": "error",
+            "path": ".typedmark/history.md",
+            "rule_id": "SCE-99",
+            "message": "History entry 2 must have higher SemVer precedence than entry 1; build metadata does not distinguish releases"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "history-order-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": true,
         "results": []
       },
       "requested_extensions": {
