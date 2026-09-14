@@ -94,9 +94,18 @@ components without changing target processing. HTML-contained links are extracte
 without replacing source characters. The guarded, isolated Marked seams and
 performance regression are documented in the
 [source-preservation decision](../../docs/decisions/003-note-link-source-preservation.md).
-This does not establish exact physical body-span fidelity across CRLF or container
-normalization. Encoded-anchor interpretation also remains an open clarification;
-preserving its authored spelling is not a claim to have resolved that policy.
+The subsequent [body-span implementation](../../docs/decisions/004-body-link-source-spans.md)
+now adds exact physical UTF-16 source ranges while retaining logical parser input.
+It captures original CommonMark block offsets, preserves reader body line endings,
+and corrects escaped-label phantom links and invented HTML reference/code exclusions.
+Encoded-anchor interpretation remains an open clarification; preserving authored
+spelling is not a claim to have resolved that policy.
+
+The next link audit has reproduced missing RFC 3986 target-encoding checks,
+missing Markdown entity processing before scheme/fragment detection, and malformed
+percent escapes silently disappearing from body validation. Those findings are
+not fixed by source preservation and remain required implementation work. URI
+fragment policy and malformed decoded-text handling need separate care.
 
 A suspected complete-field-name schema gap was checked against the actual current
 registry: ordinary names/paths pass and their final-LF variants fail. No schema
