@@ -45,7 +45,7 @@ the remaining completion checks in the last column.
 | C3 automation ownership | Separate artifact/runtime/interchange pages; read-only artifact checks | Execution remains a separate follow-up, not a Core validator prerequisite. |
 | C4 Systems ownership | Systems/history/migration contracts; local provenance and offline validation | Do not claim history replay, target-aware migration or external composition resolution where absent. |
 | D5 values/templates/Core fields | Effective-record tests; template resolution, placeholder checks and import materialization work | Final integrated template/import verification, including explicit values and source preservation. |
-| D6 boundaries/paths/headings/time | Discovery, path, storage and timezone regression suites | **Open:** heading validation still uses a handwritten parser; replace it with the required CommonMark behavior. |
+| D6 boundaries/paths/headings/time | Discovery, path, storage and timezone suites; pinned CommonMark heading adapter, 30 heading regressions and two golden vectors | Heading correction is implemented; continue auditing other Markdown consumers against their own contracts. |
 | D7 identity/merge/tags/archive/untyped | Core field, uniqueness, association, Reuse and storage suites | Audit each concern against its owner; the existence of tests alone does not close this row. |
 | D8 simplifications | Removed-shape fixtures, retained count/object constraints, migration checklist | Verify each intentional incompatibility has a migration or explicit manual-resolution outcome. |
 | D9 feature moves/removals | Reuse/Expressions/Authoring ownership; old folder-scope/generated forms rejected | Verify no undocumented equivalence or data-loss claim in the compatibility ledger. |

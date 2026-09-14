@@ -1,16 +1,16 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers forty-seven golden vectors at TypedMarkSpecification
-`eaa356e99c1e148b729d74731b5e3ae036d45bf5`, using adapter
-`a09e861612e36e11808451aa59ef27ea6316888e` on 2026-09-14.
+This record covers forty-nine golden vectors at TypedMarkSpecification
+`15db1aed35862040b06208ea0047eafcd63e6a9d`, using adapter
+`beb7d15682504242fbeb3831d3e592540aa1d6f8` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34854550550),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34859789632),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- forty-five eligible collection vectors passed;
+- forty-seven eligible collection vectors passed;
 - thirteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -109,6 +109,15 @@ and conventional licensing material are preserved. Optional Authoring generators
 and arbitrary legal-file discovery are not claimed. The three template vectors
 remain read-only; runtime regressions exercise actual temporary imports.
 
+Heading validation now uses CommonMark 0.31.2 block structure and raw inline
+source, with case-sensitive NFC comparisons and constraint-specific H2 rule
+identifiers. Thirty regressions cover nested blocks, matching fences, setext
+continuations, tabs, literal Markdown, Unicode and reference definitions. Two
+new read-only vectors cover valid structures and distinct heading failures.
+The exact-pinned reference parser's internal raw-source seam is isolated,
+runtime-guarded and documented in the [heading adapter decision](../../docs/decisions/001-commonmark-heading-source.md).
+This does not claim conformance of other Markdown consumers.
+
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
 Storage checks distinguish intrinsic pattern syntax from references resolved
@@ -142,13 +151,14 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 759 tooling tests locally and in CI, type checking, dependency
-audit, 333 specification tests, 275 fixture expectations, rule-ID checks, and the
+Validation covered 791 tooling tests locally and in CI, type checking, dependency
+audit, 333 specification tests, 277 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 759 tests with no failures, as did the
-pinned CI run. No test deadlines or dependencies were changed for this slice.
+The final local full suite passed all 791 tests with no failures, as did the
+pinned CI run. No test deadlines changed; the CommonMark dependency and its
+development types are exact-pinned and passed the dependency audit.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
@@ -159,7 +169,9 @@ artifact version handling, root report editions, branch-aware diagnostics,
 YAML-alias preservation, malformed declaration projection, suppression-independent
 incompleteness, tagged YAML containers, scaffold target resolution, unavailable
 schema dependencies, template placeholder provenance, strict snapshot import,
-source/destination isolation, and the golden reports. The earlier ordering review
+source/destination isolation, CommonMark heading source and the golden reports.
+The heading adapter also agreed with the reference on 229 relevant official
+CommonMark examples during independent review. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
 BigInt/ASCII comparator, including 1001-digit identifiers; all comparisons agreed.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in

@@ -1,8 +1,8 @@
 {
-  "specification_revision": "eaa356e99c1e148b729d74731b5e3ae036d45bf5",
-  "adapter_revision": "a09e861612e36e11808451aa59ef27ea6316888e",
-  "started_at": "2026-09-14T14:19:05.500Z",
-  "finished_at": "2026-09-14T14:19:23.604Z",
+  "specification_revision": "15db1aed35862040b06208ea0047eafcd63e6a9d",
+  "adapter_revision": "beb7d15682504242fbeb3831d3e592540aa1d6f8",
+  "started_at": "2026-09-14T15:07:30.325Z",
+  "finished_at": "2026-09-14T15:07:48.705Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 47,
-    "executed": 45,
-    "passed": 45,
+    "discovered": 49,
+    "executed": 47,
+    "passed": 47,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -753,6 +753,101 @@
         },
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "headings-commonmark-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "headings-constraints-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_heading",
+            "severity": "error",
+            "path": "Note.md",
+            "rule_id": "RHT-53",
+            "message": "The body must have one H1 before other headings, equal to the effective title",
+            "note_type": "note"
+          },
+          {
+            "code": "invalid_heading",
+            "severity": "error",
+            "path": "Note.md",
+            "rule_id": "RHT-58",
+            "message": "Required H2 Missing must appear exactly once",
+            "note_type": "note",
+            "heading": "Missing"
+          },
+          {
+            "code": "invalid_heading",
+            "severity": "error",
+            "path": "Note.md",
+            "rule_id": "RHT-59",
+            "message": "Optional H2 Notes appears more than once",
+            "note_type": "note",
+            "heading": "Notes"
+          },
+          {
+            "code": "invalid_heading",
+            "severity": "error",
+            "path": "Note.md",
+            "rule_id": "RHT-60",
+            "message": "Undeclared H2  is not allowed",
+            "note_type": "note"
+          },
+          {
+            "code": "invalid_heading",
+            "severity": "error",
+            "path": "Note.md",
+            "rule_id": "RHT-62",
+            "message": "Declared H2 headings are out of order",
+            "note_type": "note"
+          }
+        ]
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
