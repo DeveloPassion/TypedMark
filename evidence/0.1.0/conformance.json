@@ -1,8 +1,8 @@
 {
-  "specification_revision": "c869cb7e1830e1c826ee977d2fa89ef4f1025fb6",
-  "adapter_revision": "15d193d01ce74638ae2bc3da9728758cea6a0138",
-  "started_at": "2026-09-14T17:45:50.210Z",
-  "finished_at": "2026-09-14T17:46:11.537Z",
+  "specification_revision": "6b91b0e6dbe3ae182eebc2590b623f43d819fdb7",
+  "adapter_revision": "bcb19cc8b1db7fc13c731837af6386f7fb468a1f",
+  "started_at": "2026-09-14T18:34:33.451Z",
+  "finished_at": "2026-09-14T18:34:53.578Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 56,
-    "executed": 54,
-    "passed": 54,
+    "discovered": 57,
+    "executed": 55,
+    "passed": 55,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1012,6 +1012,41 @@
         },
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "html-body-links-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-16",
+            "message": "NL-16: Link escapes the selected collection root",
+            "note_type": "note"
+          }
+        ]
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",

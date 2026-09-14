@@ -89,6 +89,19 @@ optional field context when a complete portable field path cannot represent its
 name; source names remain in messages. These corrections do not finish the
 remaining Markdown-consumer or schema-checker parity audits.
 
+Direct note-link parsing now retains its exact input and lexical label/fragment
+components without changing target processing. HTML-contained links are extracted
+without replacing source characters. The guarded, isolated Marked seams and
+performance regression are documented in the
+[source-preservation decision](../../docs/decisions/003-note-link-source-preservation.md).
+This does not establish exact physical body-span fidelity across CRLF or container
+normalization. Encoded-anchor interpretation also remains an open clarification;
+preserving its authored spelling is not a claim to have resolved that policy.
+
+A suspected complete-field-name schema gap was checked against the actual current
+registry: ordinary names/paths pass and their final-LF variants fail. No schema
+change was justified by that probe. Broader checker parity remains under audit.
+
 ## Completion evidence still required
 
 1. Resolve known implementation gaps and audit the plan's named Core concerns.

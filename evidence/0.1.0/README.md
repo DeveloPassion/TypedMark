@@ -1,16 +1,16 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers fifty-six golden vectors at TypedMarkSpecification
-`c869cb7e1830e1c826ee977d2fa89ef4f1025fb6`, using adapter
-`15d193d01ce74638ae2bc3da9728758cea6a0138` on 2026-09-14.
+This record covers fifty-seven golden vectors at TypedMarkSpecification
+`6b91b0e6dbe3ae182eebc2590b623f43d819fdb7`, using adapter
+`bcb19cc8b1db7fc13c731837af6386f7fb468a1f` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34876387389),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34881322049),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- fifty-four eligible collection vectors passed;
+- fifty-five eligible collection vectors passed;
 - thirteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -140,6 +140,24 @@ when every segment is representable, leaving other source names in messages.
 Twenty-four regressions and one vector cover this report correction. All prior
 vector machine records remain unchanged in the refreshed CI output.
 
+Direct note-link parsing now retains exact input and authored label/fragment
+components, including explicit empty values, Unicode, escapes, nested labels,
+angle destinations and optional titles. Target processing and resolver inputs
+remain unchanged. Sixty-nine new focused tests cover this boundary. Independent
+review compared 61,899 inputs, including links from all 652 CommonMark 0.31.2
+examples; all 33,965 previously accepted inputs kept their form/target/embed data.
+
+HTML-contained links no longer undergo `<` replacement before parsing. Eighteen
+new regressions cover raw components, literal entities, code/marker boundaries,
+embeds, ordering and large inputs; one new golden vector verifies collection-root
+escape detection for an angle destination inside HTML. A guarded, copied-rule
+override removes only the dedicated lexer's quadratic HTML masking. The normal
+grammar and link/code masks remain unchanged. Independent review checked 30,331
+combinations and measured approximately linear 150/300/600 KB scaling at
+26/42/84 milliseconds. See the [source-preservation decision](../../docs/decisions/003-note-link-source-preservation.md).
+Physical CRLF/container body-span fidelity and encoded-anchor interpretation
+remain open; this is not complete cross-surface Note Links conformance.
+
 Artifact shape checks now use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
 objects, and suppressed schema failures cannot unlock dependent queries. The
@@ -181,17 +199,25 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 954 tooling tests locally and in CI, type checking, dependency
-audit, 336 specification tests, 284 fixture expectations, rule-ID checks, and the
+Validation covered 1,042 tooling tests locally and in CI, type checking, dependency
+audit, 336 specification tests, 285 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 954 tests with no failures, as did the
+The final local full suite passed all 1,042 tests with no failures, as did the
 pinned CI run. No existing test deadlines changed. The CommonMark dependency
 and its development types remain exact-pinned and passed the dependency audit.
 The three new specification build tests exercise LF, CRLF and CR source files.
 The [reading-path review](site-review.md) records the browser checks and retained
 prior-contract links; it is not a release approval.
+
+One earlier local run passed 1,041 tests and failed the importer's final directory
+rename with Windows `EPERM`. Its fixture contained no HTML, publication code was
+unchanged, and the temporary parent was cleaned up. The isolated test and twenty
+repeated test-file runs (60 tests) passed, followed by the complete 1,042-test
+rerun above. The denial's cause remains unestablished; no retry workaround or
+claimed file-lock fix was introduced. The successful example exercise also
+rechecked publication and offline validation.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
@@ -218,8 +244,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `15d193d` and specification
-`c869cb7e1830e1c826ee977d2fa89ef4f1025fb6`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `bcb19cc` and specification
+`6b91b0e6dbe3ae182eebc2590b623f43d819fdb7`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted

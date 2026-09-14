@@ -1,7 +1,7 @@
 {
-  "executed_at": "2026-09-14T17:42:39.925Z",
-  "specification_revision": "c869cb7e1830e1c826ee977d2fa89ef4f1025fb6",
-  "adapter_revision": "15d193d01ce74638ae2bc3da9728758cea6a0138",
+  "executed_at": "2026-09-14T18:31:32.289Z",
+  "specification_revision": "6b91b0e6dbe3ae182eebc2590b623f43d819fdb7",
+  "adapter_revision": "bcb19cc8b1db7fc13c731837af6386f7fb468a1f",
   "example_revision": "c55578d0ee6996cc82efeda80b7d60cae3ba591b",
   "source_scope": "tracked published files exported to an isolated temporary directory",
   "source_changed": false,
