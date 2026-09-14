@@ -2,7 +2,11 @@
 
 This record covers thirty-nine golden vectors at TypedMarkSpecification
 `4d61db140c045bc2f2a5d6af00f38ca3330000cd`, using adapter
-`51f0ed961d6aef160c00ee258feb5674ad3c0137` on 2026-09-14.
+`e48bc7ba71cec4263f0cfd5e6adfe6c5112f1777` on 2026-09-14.
+
+The recorded JSON is the unmodified conformance output from the successful
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34822253548),
+which ran the repository's conformance command against these exact revisions.
 
 Results:
 
@@ -48,6 +52,16 @@ numbers beyond JavaScript's safe integer range. Build metadata is ignored only
 for ordering; the final exact-version check remains unchanged. The positive and
 negative history-order vectors exercise this policy without rewriting history.
 
+Best-effort diagnostics for schemas, property sets, and history now require an
+actual, complete version string on the supported line with a newer patch.
+Malformed prefixes, suffixes, trailing line terminators, and non-string values
+cannot downgrade structural errors or crash validation through string coercion.
+Thirty additional regressions cover
+schemas, property sets, query eligibility, and history. Valid newer patches
+remain incomplete with warnings; unsupported lines remain unavailable. These
+are implementation corrections under the existing version contract, with no
+specification or schema changes and no additional golden vectors in this slice.
+
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
 Storage checks distinguish intrinsic pattern syntax from references resolved
@@ -81,23 +95,26 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 571 tooling tests, type checking, dependency audit,
+Validation covered 601 tooling tests in CI, type checking, dependency audit,
 321 specification tests, 264 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The initial local run passed 570 tests and hit the aggregate test's former
-90-second deadline. After increasing only that execution budget, all three
-suite tests passed, including the full vector/report comparison.
+The affected artifact/history suite passed all 77 tests independently. The
+local full-run attempt timed out in the unchanged query pilot and was stopped.
+That pilot then passed unchanged in isolation; the pinned CI run completed all
+601 tests with no failures. No test deadlines were changed for this slice.
+The specification verification counts above remain those established at the
+unchanged specification revision.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
 field-name matching, parser error boundaries, Core field invariants, deferred
 storage references, timezone failures, type-aware uniqueness, history version
-boundaries, strict snapshot readiness, release precedence, and the new golden
-reports. The ordering review also checked 193,600 pairs of 440 schema-valid
-versions against an independent BigInt/ASCII comparator, including 1001-digit
-identifiers; all comparisons agreed.
+boundaries, strict snapshot readiness, release precedence, malformed/non-string
+artifact version handling, and the golden reports. The earlier ordering review
+also checked 193,600 pairs of 440 schema-valid versions against an independent
+BigInt/ASCII comparator, including 1001-digit identifiers; all comparisons agreed.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in
 [specification #123](https://github.com/DeveloPassion/TypedMarkSpecification/issues/123);
 they do not establish coverage of every normative rule
