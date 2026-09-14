@@ -39,3 +39,18 @@ contract remains available at
 The historical inventory was subsequently reconstructed and independently
 verified. The full validator-effort assessment remains open in the
 [plan audit](plan-audit.md).
+
+## Validation-target wording follow-up
+
+The Conformance and Roadmap page was checked on 2026-09-14 against specification
+`c869cb7e1830e1c826ee977d2fa89ef4f1025fb6` using the same isolated browser method.
+The rendered `CR-14`, `CR-22` and draft-note example match the accepted
+artifact-only definition target. The rule anchor, page title and accessibility
+root were present; the inspected 1440-pixel screenshot had no horizontal
+overflow. No console warnings/errors or failed requests were observed. The
+browser and localhost server were stopped afterward. No user profile was used.
+
+The specification gates passed: 336 tests, 284 fixture expectations, 1,708 rule
+IDs and 31 built pages. The reading-path count is now 19,995/20,000 words;
+Core and Reuse rule counts remain 600/600 and 94/100. This is a text-change
+follow-up, not a repeat of the earlier responsive/keyboard audit.

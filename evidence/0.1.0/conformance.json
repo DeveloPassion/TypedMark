@@ -1,8 +1,8 @@
 {
-  "specification_revision": "214cf865e1782804778ee08ff3a86f71aacf6960",
-  "adapter_revision": "f25cf9084e0c835e860cff196a2d72061f24bbd6",
-  "started_at": "2026-09-14T15:48:16.038Z",
-  "finished_at": "2026-09-14T15:48:40.847Z",
+  "specification_revision": "c869cb7e1830e1c826ee977d2fa89ef4f1025fb6",
+  "adapter_revision": "15d193d01ce74638ae2bc3da9728758cea6a0138",
+  "started_at": "2026-09-14T17:45:50.210Z",
+  "finished_at": "2026-09-14T17:46:11.537Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 49,
-    "executed": 47,
-    "passed": 47,
+    "discovered": 56,
+    "executed": 54,
+    "passed": 54,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1108,6 +1108,95 @@
       "skip_reason": "Adapter capabilities do not satisfy the explicit negotiation preconditions"
     },
     {
+      "name": "nested-links-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "FDR-153",
+            "message": "FDR-153: Required note link does not resolve",
+            "note_type": "note",
+            "field": "details.reference"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "FDR-160",
+            "message": "FDR-160: Link target does not satisfy its field targets",
+            "note_type": "note",
+            "field": "details.references"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-16",
+            "message": "NL-16: Link escapes the selected collection root",
+            "note_type": "note",
+            "field": "sections.reference"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-33",
+            "message": "NL-33: A note-link field cannot target an asset",
+            "note_type": "note",
+            "field": "details.asset"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "nested-links-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
       "name": "optional-artifacts-valid",
       "status": "passed",
       "collection_changed": false,
@@ -1128,6 +1217,85 @@
         },
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "pending-template-references-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0",
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:systems": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_expansion",
+            "severity": "error",
+            "path": ".typedmark/templates/note.md",
+            "rule_id": "CM-369",
+            "message": "CM-369: Unknown ordered column missing",
+            "expansion": "query-order"
+          },
+          {
+            "code": "invalid_expansion",
+            "severity": "error",
+            "path": ".typedmark/templates/note.md",
+            "rule_id": "RHT-259",
+            "message": "Unknown expansion artifact source",
+            "expansion": "missing-view"
+          },
+          {
+            "code": "invalid_expansion",
+            "severity": "error",
+            "path": ".typedmark/templates/note.md",
+            "rule_id": "RHT-263",
+            "message": "Column is not presented by the view",
+            "expansion": "hidden-column"
+          },
+          {
+            "code": "invalid_expansion",
+            "severity": "error",
+            "path": ".typedmark/templates/note.md",
+            "rule_id": "RHT-274",
+            "message": "Unknown expansion artifact source",
+            "expansion": "missing-dataset"
+          },
+          {
+            "code": "invalid_expansion",
+            "severity": "error",
+            "path": ".typedmark/templates/note.md",
+            "rule_id": "RHT-277",
+            "message": "Unknown projected expansion column",
+            "expansion": "missing-column"
+          }
+        ]
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
@@ -1869,6 +2037,116 @@
       }
     },
     {
+      "name": "target-scope-both",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "both",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Draft.md",
+            "rule_id": "FDR-13",
+            "message": "due must satisfy the date value contract",
+            "note_type": "note",
+            "field": "due"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "target-scope-instantiated-collection",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Draft.md",
+            "rule_id": "FDR-13",
+            "message": "due must satisfy the date value contract",
+            "note_type": "note",
+            "field": "due"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "target-scope-system-definition",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
       "name": "template-placeholders-valid",
       "status": "passed",
       "collection_changed": false,
@@ -1949,6 +2227,67 @@
             "rule_id": "EXT-16",
             "message": "This construct requires typedmark:reuse",
             "extension": "typedmark:reuse"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "unknown-field-contexts",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": [
+          {
+            "code": "unknown_field",
+            "severity": "warn",
+            "path": "Notes/Source.md",
+            "rule_id": "MN-111",
+            "message": "literal.dot is not declared",
+            "note_type": "note"
+          },
+          {
+            "code": "unknown_field",
+            "severity": "warn",
+            "path": "Notes/Source.md",
+            "rule_id": "MN-111",
+            "message": "extra_field is not declared",
+            "note_type": "note",
+            "field": "extra_field"
+          },
+          {
+            "code": "unknown_field",
+            "severity": "warn",
+            "path": "Notes/Source.md",
+            "rule_id": "MN-112",
+            "message": "sections.1.display name is not declared",
+            "note_type": "note"
+          },
+          {
+            "code": "unknown_field",
+            "severity": "warn",
+            "path": "Notes/Source.md",
+            "rule_id": "MN-112",
+            "message": "sections.0.extra is not declared",
+            "note_type": "note",
+            "field": "sections.extra"
           }
         ]
       },

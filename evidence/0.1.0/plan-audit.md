@@ -50,7 +50,7 @@ the remaining completion checks in the last column.
 | D8 simplifications | Removed-shape fixtures, retained count/object constraints, migration checklist | Verify each intentional incompatibility has a migration or explicit manual-resolution outcome. |
 | D9 feature moves/removals | Reuse/Expressions/Authoring ownership; old folder-scope/generated forms rejected | Verify no undocumented equivalence or data-loss claim in the compatibility ledger. |
 | E1 useful system path | One-source staged instantiation, local provenance, strict readiness, and the 2026-09-14 published-example rerun after deleting its temporary source | Continue auditing remaining import boundaries; replay and multi-source/external resolution are not claimed. |
-| E2 conformance | Golden collection reports, query cases, tagged artifact-shape/prototype guards and tooling regressions | **Open:** complete the remaining Core audit and verify the required positive/negative scopes; no exhaustive claim yet. |
+| E2 conformance | Golden collection reports, query cases, nested-link traversal, portable diagnostic contexts, artifact-only target checks, pending static references and tooling regressions | **Open:** complete the remaining Core audit and verify the required positive/negative scopes; no exhaustive claim yet. |
 | E3 effort/spike | Executable implementation and historical bounded example exercise | **Open:** recorded hands-on effort before the current goal is not available; commit dates do not prove developer effort. Obtain the log/assessment or explicit ADR disposition. |
 | E4 release/readability | Generated site, audience metadata, budgets, fixed prior-contract links and the 2026-09-14 rendered reading-path review | **Open:** remaining compatibility/release-policy dispositions. No release is approved by this file. |
 
@@ -72,6 +72,22 @@ Snapshot metadata retains blocked link paths; import rejects metadata links.
 Strict validation and intended note-type association are checked before a staged
 target is published. Optional Authoring generators are explicitly rejected when
 generation is needed; this is not an optional-generator execution capability.
+
+The maintainer resolved definition-only scope on 2026-09-14: published artifacts
+only; `both` also validates existing notes. Artifact snapshots preserve empty
+metadata and explicit selected-path ancestors without including unrelated notes.
+Definition models never expose live notes to consumers. Static query contracts
+are distinct from evaluated rows; pending template references do not evaluate
+sources. Invalid mapping declarations retain independent artifact checks, while
+unread note semantics cannot claim complete coverage. Known-empty inventories
+remain interpretable, including actual zero-note counts. Import still strictly
+validates the completed target; source-note validity is not an import prerequisite.
+
+Nested link checks now traverse declared objects/lists while retaining stored
+presence and top-level relationship boundaries. Unknown-field findings omit an
+optional field context when a complete portable field path cannot represent its
+name; source names remain in messages. These corrections do not finish the
+remaining Markdown-consumer or schema-checker parity audits.
 
 ## Completion evidence still required
 

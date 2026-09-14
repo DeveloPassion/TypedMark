@@ -1,16 +1,16 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers forty-nine golden vectors at TypedMarkSpecification
-`214cf865e1782804778ee08ff3a86f71aacf6960`, using adapter
-`f25cf9084e0c835e860cff196a2d72061f24bbd6` on 2026-09-14.
+This record covers fifty-six golden vectors at TypedMarkSpecification
+`c869cb7e1830e1c826ee977d2fa89ef4f1025fb6`, using adapter
+`15d193d01ce74638ae2bc3da9728758cea6a0138` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34864151714),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34876387389),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- forty-seven eligible collection vectors passed;
+- fifty-four eligible collection vectors passed;
 - thirteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -118,12 +118,27 @@ The exact-pinned reference parser's internal raw-source seam is isolated,
 runtime-guarded and documented in the [heading adapter decision](../../docs/decisions/001-commonmark-heading-source.md).
 This does not claim conformance of other Markdown consumers.
 
-Definition-mode validation checks count declarations without requiring live
-notes before a system is instantiated. Instance and `both` modes enforce actual
-counts, and strict import validation rejects an insufficient scaffold before
-publication. Eleven regressions cover these boundaries, invalid declarations,
-and unchanged source bytes. Broader note-validation scope in definition-only
-mode remains a separate clarification; this correction changes only counts.
+The accepted target boundary is now implemented: `system_definition` checks
+published artifacts only; `both` includes existing notes. Artifact snapshots
+exclude unrelated notes while preserving empty metadata and explicitly selected
+paths. Import and strict version no-op readiness use that source scope; completed
+import targets still undergo strict note/count validation. Static query analysis
+is separate from row evaluation. Pending templates check artifact/column/type
+references, internal-link syntax and query field traversal without resolving
+notes or evaluating source values. Missing note evaluation after invalid mappings
+keeps coverage incomplete independently of severity, while known-empty inventories
+remain fully interpretable. Sixty-seven new focused tests plus four vector
+integrations cover this slice; the snapshot foundation added ten earlier tests.
+The [target-scope decision](../../docs/decisions/002-validation-target-scope.md)
+records the implementation boundary.
+
+Nested note-link validation now descends declared object/list containers, uses
+stored leaf presence instead of defaults, and keeps relationship semantics
+top-level. Twenty regressions and two new vectors cover this correction.
+Unknown-field diagnostics now retain a portable complete dotted context only
+when every segment is representable, leaving other source names in messages.
+Twenty-four regressions and one vector cover this report correction. All prior
+vector machine records remain unchanged in the refreshed CI output.
 
 Artifact shape checks now use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -166,12 +181,12 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 826 tooling tests locally and in CI, type checking, dependency
-audit, 336 specification tests, 277 fixture expectations, rule-ID checks, and the
+Validation covered 954 tooling tests locally and in CI, type checking, dependency
+audit, 336 specification tests, 284 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 826 tests with no failures, as did the
+The final local full suite passed all 954 tests with no failures, as did the
 pinned CI run. No existing test deadlines changed. The CommonMark dependency
 and its development types remain exact-pinned and passed the dependency audit.
 The three new specification build tests exercise LF, CRLF and CR source files.
@@ -188,7 +203,9 @@ YAML-alias preservation, malformed declaration projection, suppression-independe
 incompleteness, tagged YAML containers, scaffold target resolution, unavailable
 schema dependencies, template placeholder provenance, strict snapshot import,
 source/destination isolation, CommonMark heading source, definition-mode counts,
-site source-line-ending handling, tagged artifact-shape projection and the golden reports.
+site source-line-ending handling, tagged artifact-shape projection, recursive
+links, portable field contexts, definition scope, pending static references,
+mapping-failure coverage and the golden reports.
 The heading adapter also agreed with the reference on 229 relevant official
 CommonMark examples during independent review. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
@@ -201,9 +218,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `f25cf90` and specification
-`f0d883d1e4bef51f169fa4d61584d206ac4f0e0f`. That specification revision adds only
-the historical reference inventory to the conformance baseline above. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `15d193d` and specification
+`c869cb7e1830e1c826ee977d2fa89ef4f1025fb6`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
