@@ -80,6 +80,7 @@ test.each([
   "unknown-field-contexts",
   "target-scope-system-definition", "target-scope-instantiated-collection", "target-scope-both",
   "pending-template-references-invalid",
+  "html-body-links-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

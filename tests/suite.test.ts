@@ -17,7 +17,7 @@ test("records reproducible evidence for every golden vector", async () => {
     finishedAt: "2026-09-08T08:01:00.000Z",
   });
 
-  expect(evidence.summary).toEqual({ discovered: 56, executed: 54, passed: 54, failed: 0, skipped: 2, changed: 0 });
+  expect(evidence.summary).toEqual({ discovered: 57, executed: 55, passed: 55, failed: 0, skipped: 2, changed: 0 });
   expect(evidence.query_summary).toEqual({ executed: 13, passed: 13, failed: 0 });
   expect(evidence.specification_revision).toBe("spec-test-revision");
   expect(evidence.adapter_revision).toBe("adapter-test-revision");

@@ -73,6 +73,10 @@ Marked source-capture seam is guarded and covered by escaped/nested label,
 code-span, angle-destination, title and line-ending regressions. Body extraction
 still has separate source-fidelity work pending; its parser input is not a promise
 of an exact physical body span.
+HTML-contained links no longer undergo character replacement during extraction.
+The dedicated lexer preserves link/code masks while avoiding quadratic HTML-tag
+masking. See the [source-preservation decision](docs/decisions/003-note-link-source-preservation.md)
+for pinned dependency seams and the remaining physical-span boundary.
 
 Unknown-field findings retain their severity policy and authored names. Logical
 field contexts omit list positions; names that cannot be represented by the

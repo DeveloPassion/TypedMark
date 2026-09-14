@@ -1,5 +1,5 @@
 import { posix } from "node:path";
-import { Lexer, Marked } from "marked";
+import { Lexer, Marked, Tokenizer, type TokenizerExtension } from "marked";
 import type { CollectionModel, ManagedNote } from "./collection-model";
 import type { FieldDefinition } from "./field-values";
 import type { SchemaIssue } from "./reuse";
@@ -48,25 +48,69 @@ export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   catch { return undefined; }
 }
 
-const markdown = new Marked({ gfm: false });
-markdown.use({ extensions: [{
+const wikilinks: TokenizerExtension = {
   name: "typedmarkWikilink", level: "inline",
   start(source) { const index = source.indexOf("[["); return index < 0 ? undefined : Math.max(0, index - 1); },
   tokenizer(source) {
     const match = /^!?\[\[[^\]\r\n]+\]\]/u.exec(source);
     return match ? { type: "typedmarkWikilink", raw: match[0] } : undefined;
   },
+};
+const markdown = new Marked({ gfm: false });
+markdown.use({ extensions: [wikilinks] });
+
+// Inspect HTML-contained prose without replacing source characters or letting
+// HTML tags hide its links. Custom inline tokens run before the built-in tag rule.
+// https://marked.js.org/using_pro#extensions
+const htmlContent = new Marked({ gfm: false });
+htmlContent.use({ extensions: [{ ...wikilinks,
+  // One earliest-marker scan avoids searching the whole suffix for a distant
+  // wikilink at every literal HTML delimiter (and vice versa).
+  start(source) {
+    const index = source.search(/\[\[|</u);
+    return index < 0 ? undefined : source[index] === "<" ? index : Math.max(0, index - 1);
+  },
+}, {
+  name: "typedmarkLiteralHtmlOpen", level: "inline",
+  tokenizer(source) {
+    if (!source.startsWith("<")) return;
+    // This lexer only extracts links. Consume literal HTML prose in one chunk,
+    // stopping before link/embed starts, escapes or code spans, rather than
+    // making every tag delimiter re-enter Marked's full inline-rule pipeline.
+    const boundary = source.search(/[\\`\[]|!\[/u);
+    return { type: "typedmarkLiteralHtmlOpen", raw: boundary < 0 ? source : source.slice(0, boundary) };
+  },
 }] });
 
 export function extractBodyLinks(body: string): ParsedNoteLink[] {
+  return extractLinks(body, markdown);
+}
+
+function extractLinks(body: string, parser: Marked): ParsedNoteLink[] {
   const links: ParsedNoteLink[] = [];
-  markdown.walkTokens(markdown.lexer(body), (token) => {
+  const tokenizer = parser === htmlContent ? new Tokenizer(parser.defaults) : undefined;
+  const lexer = new Lexer({ ...parser.defaults, ...(tokenizer ? { tokenizer } : {}) });
+  if (tokenizer) {
+    tokenizer.html = () => undefined;
+    // Marked masks every HTML tag by repeatedly rebuilding the entire inline
+    // string. This extraction-only lexer treats HTML as literal prose, so skip
+    // that mask while retaining its link/code masks. Never mutate shared rules.
+    // https://github.com/markedjs/marked/blob/v18.0.5/src/Lexer.ts
+    // https://github.com/markedjs/marked/blob/v18.0.5/src/rules.ts
+    const rules = tokenizer.rules;
+    const htmlMask = "|<(?! )[^<>]*?>";
+    if (!rules.inline.blockSkip.source.endsWith(htmlMask)) throw new Error("Marked's HTML masking contract changed");
+    tokenizer.rules = { ...rules, inline: { ...rules.inline,
+      blockSkip: new RegExp(rules.inline.blockSkip.source.slice(0, -htmlMask.length), rules.inline.blockSkip.flags),
+    } };
+  }
+  parser.walkTokens(lexer.lex(body), (token) => {
     if (["typedmarkWikilink", "link", "image"].includes(token.type)) {
       const link = parseNoteLink(token.raw);
       if (link) links.push(link);
     } else if (token.type === "html" && token.raw.includes("<")) {
       const prose = token.raw.split("\n").filter((line) => !/^ {0,3}<!-- (?:typedmark:(?:expansion|template-region) \{.*\}|\/typedmark:(?:expansion|template-region)) -->(?![\s\S])/u.test(line)).join("\n");
-      links.push(...extractBodyLinks(prose.replaceAll("<", "&lt;")));
+      links.push(...extractLinks(prose, htmlContent));
     }
   });
   return links;
