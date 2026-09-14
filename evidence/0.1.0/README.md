@@ -1,16 +1,17 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers sixty-seven golden vectors at TypedMarkSpecification
-`24cbc5ebf7925981b677738efba191e638669a76`, using adapter
-`afc157f1ee0eaff6126a74aca1f8d5c0c51a8c5f` on 2026-09-14.
+This record covers sixty-nine golden vectors at TypedMarkSpecification
+`a6d240302c7769cef7b779a7d511080784a9ac0e`, using adapter
+`0bbb94ea364378ac0452946da05d60337856c746`. Exact UTC run timestamps are
+retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34898876888),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34903852728),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- sixty-five eligible collection vectors passed;
+- sixty-seven eligible collection vectors passed;
 - sixteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -203,16 +204,33 @@ Review caught a regex-engine limit that rejected valid million-character compone
 A linear scanner fixed it; 393,216 character/escape cases and valid components up to
 ten million characters passed independent review. See the
 [URI syntax decision](../../docs/decisions/007-rfc-uri-syntax.md).
-All sixty-four previous vector machine records remain unchanged in this CI output.
+That slice left all sixty-four previous vector machine records unchanged.
+
+The inline lexer is now extraction-only: emphasis delimiters remain text while
+link, image, escape, code-span and HTML tokenizers stay active. Scoped mask-phase
+suppression avoids rendering work without disabling URL/title unescaping. Redundant
+extension-start scans are removed. This corrects astral mask truncation, leaked
+code links and false exclusions after unmatched backtick runs while preserving
+logical components and physical source spans.
+
+Twenty-two regressions and two golden vectors cover the change. Review rejected
+an intermediate masking implementation, then compared the revised extractor with
+CommonMark across 63,778 generated cases and all 652 official examples. The measured
+600 KB destination/prose cases fell from about 17.8/30.1 seconds to below 0.1/0.2
+seconds; label/code cases also satisfy generous timing guards. See the
+[inline-lexer decision](../../docs/decisions/008-extraction-only-inline-lexer.md).
+All sixty-seven previous vector machine records remain unchanged in this CI output.
 
 URI-field fragment policy, Markdown anchor interpretation/general fragment-character
 checks and non-UTF-8 note-target octets remain unresolved. Existing URI-field fragment
 acceptance is preserved pending clarification, not treated as a settled FDR-140
-interpretation. The backslash-heavy Marked parsing slowdown remains separate:
-read-only profiling localized it to repeated escaped-character mask rebuilding,
-not URI syntax checks or destination source capture.
+interpretation. The measured mask/start-scan slowdown is fixed, not claimed as an
+exhaustive parser-performance audit. A separate checker-parity probe found native
+YAML sets/ordered maps accepted as structural configuration maps by the specification
+fixture checker but rejected by the runtime. Both preserve the opaque vendor-data
+control; checker alignment remains open.
 
-Artifact shape checks now use a prototype-safe, alias-preserving projection.
+Runtime artifact shape checks use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
 objects, and suppressed schema failures cannot unlock dependent queries. The
 parsed model and source bytes remain unchanged; tagged vendor metadata and
@@ -253,11 +271,12 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,515 tooling tests locally and in CI, type checking, dependency
-audit, 336 specification tests, 295 fixture expectations, rule-ID checks, and the
+Validation covered 1,539 tooling tests locally and in CI, type checking, dependency
+audit, 336 specification tests, 297 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
-these are correctness checks, not timing benchmarks.
+those timeouts are not performance budgets. The inline-lexer regression cases
+have separate three-second performance ceilings.
 The final local full suite passed all 1,113 tests with no failures, as did the
 pinned CI run. No existing test deadlines changed. The CommonMark dependency
 and its development types remain exact-pinned and passed the dependency audit.
@@ -298,9 +317,9 @@ or completion of the five-working-day full-validator measurement. The
 [plan completion audit](plan-audit.md) records the remaining evidence and work.
 
 General automation execution and writer operations remain follow-up work.
-The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `afc157f` and specification
-`24cbc5ebf7925981b677738efba191e638669a76`. Its
+The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `0bbb94e` and specification
+`a6d240302c7769cef7b779a7d511080784a9ac0e`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted

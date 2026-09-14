@@ -132,6 +132,12 @@ A suspected complete-field-name schema gap was checked against the actual curren
 registry: ordinary names/paths pass and their final-LF variants fail. No schema
 change was justified by that probe. Broader checker parity remains under audit.
 
+A separate parity probe confirmed that the specification fixture checker accepts
+native YAML `!!set {}` / `!!omap []` values in `validation_defaults` and `vocabularies`,
+while the runtime shape projection correctly rejects those mapping substitutes.
+Both accept the same values in opaque `x_vendor` metadata. Aligning the checker
+without restricting opaque values remains required work; no fix is claimed here.
+
 ## Completion evidence still required
 
 1. Resolve known implementation gaps and audit the plan's named Core concerns.
