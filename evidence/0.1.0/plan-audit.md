@@ -32,7 +32,7 @@ the remaining completion checks in the last column.
 
 | Package | Present evidence | Remaining completion check |
 | --- | --- | --- |
-| A1 baseline | Historical commit and recorded rule/word/page totals; fixed prior-contract links in the README, overview and migration checklist | Verify the recorded historical reference inventory is reproducible. |
+| A1 baseline | [Reconstructed historical inventory](https://github.com/DeveloPassion/TypedMarkSpecification/blob/f0d883d1e4bef51f169fa4d61584d206ac4f0e0f/schema/docs/baseline-0.0.1.json), all 31 source/schema hashes checked against Git blobs, original gates rerun, and fixed prior-contract links | Baseline verification is complete; do not infer developer effort from it. |
 | A2 rule identity | Spec rule registry/linter; moved, retired, missing and dangling-ID regression tests | Keep linter/report grammar aligned after subsequent changes. |
 | A3 examples | Explicit example annotations, dataset/golden integrity checks, fixture tests | Run the final exact-revision fixture gate. |
 | A4 runner contract | `src/adapter.ts`, `src/suite.ts`, version/capability context, machine-field comparisons and input hashes | Preserve the distinction between read-only vectors and write-operation tests. |
@@ -50,7 +50,7 @@ the remaining completion checks in the last column.
 | D8 simplifications | Removed-shape fixtures, retained count/object constraints, migration checklist | Verify each intentional incompatibility has a migration or explicit manual-resolution outcome. |
 | D9 feature moves/removals | Reuse/Expressions/Authoring ownership; old folder-scope/generated forms rejected | Verify no undocumented equivalence or data-loss claim in the compatibility ledger. |
 | E1 useful system path | One-source staged instantiation, local provenance, strict readiness, and the 2026-09-14 published-example rerun after deleting its temporary source | Continue auditing remaining import boundaries; replay and multi-source/external resolution are not claimed. |
-| E2 conformance | Golden collection reports, query cases and tooling regressions | **Open:** complete the remaining Core audit and verify the required positive/negative scopes; no exhaustive claim yet. |
+| E2 conformance | Golden collection reports, query cases, tagged artifact-shape/prototype guards and tooling regressions | **Open:** complete the remaining Core audit and verify the required positive/negative scopes; no exhaustive claim yet. |
 | E3 effort/spike | Executable implementation and historical bounded example exercise | **Open:** recorded hands-on effort before the current goal is not available; commit dates do not prove developer effort. Obtain the log/assessment or explicit ADR disposition. |
 | E4 release/readability | Generated site, audience metadata, budgets, fixed prior-contract links and the 2026-09-14 rendered reading-path review | **Open:** remaining compatibility/release-policy dispositions. No release is approved by this file. |
 

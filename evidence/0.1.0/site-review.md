@@ -36,5 +36,6 @@ rules and a 31-page site build passed. Budgets remain Core 600/600 rules,
 Reuse 94/100, and Core reading path 19,983/20,000 words. The accepted prior
 contract remains available at
 [`f995555`](https://github.com/DeveloPassion/TypedMarkSpecification/tree/f9955555928ab69573d5e8beb376e9e98c3813e2).
-Historical inventory reconstruction and the full validator-effort assessment
-remain open in the [plan audit](plan-audit.md).
+The historical inventory was subsequently reconstructed and independently
+verified. The full validator-effort assessment remains open in the
+[plan audit](plan-audit.md).

@@ -2,10 +2,10 @@
 
 This record covers forty-nine golden vectors at TypedMarkSpecification
 `214cf865e1782804778ee08ff3a86f71aacf6960`, using adapter
-`4604e7ba8884fe18dd1b381cfb9eb78d8e3724a2` on 2026-09-14.
+`f25cf9084e0c835e860cff196a2d72061f24bbd6` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34861676435),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34864151714),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
@@ -125,6 +125,14 @@ publication. Eleven regressions cover these boundaries, invalid declarations,
 and unchanged source bytes. Broader note-validation scope in definition-only
 mode remains a separate clarification; this correction changes only counts.
 
+Artifact shape checks now use a prototype-safe, alias-preserving projection.
+Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
+objects, and suppressed schema failures cannot unlock dependent queries. The
+parsed model and source bytes remain unchanged; tagged vendor metadata and
+unconstrained literal values remain accepted. Twenty-four additional regressions
+cover these boundaries, distinct native-value identity, cycles and own prototype
+keys. The golden corpus is unchanged; this is not a global YAML-tag prohibition.
+
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
 Storage checks distinguish intrinsic pattern syntax from references resolved
@@ -158,12 +166,12 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 802 tooling tests locally and in CI, type checking, dependency
+Validation covered 826 tooling tests locally and in CI, type checking, dependency
 audit, 336 specification tests, 277 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 802 tests with no failures, as did the
+The final local full suite passed all 826 tests with no failures, as did the
 pinned CI run. No existing test deadlines changed. The CommonMark dependency
 and its development types remain exact-pinned and passed the dependency audit.
 The three new specification build tests exercise LF, CRLF and CR source files.
@@ -180,7 +188,7 @@ YAML-alias preservation, malformed declaration projection, suppression-independe
 incompleteness, tagged YAML containers, scaffold target resolution, unavailable
 schema dependencies, template placeholder provenance, strict snapshot import,
 source/destination isolation, CommonMark heading source, definition-mode counts,
-site source-line-ending handling and the golden reports.
+site source-line-ending handling, tagged artifact-shape projection and the golden reports.
 The heading adapter also agreed with the reference on 229 relevant official
 CommonMark examples during independent review. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
@@ -193,8 +201,10 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with the specification and adapter
-revisions above. Its tracked published files were exported into a temporary
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `f25cf90` and specification
+`f0d883d1e4bef51f169fa4d61584d206ac4f0e0f`. That specification revision adds only
+the historical reference inventory to the conformance baseline above. Its
+tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
 publishing `version`/`scaffold`, recorded its composition source, retained the
@@ -208,5 +218,14 @@ still returned `manual_resolution_required`, with no migration attempted.
 This replaces the historical exercise record; it does not measure the Core
 validator's five-working-day implementation effort. History replay, target-aware
 impact analysis, and broader composition remain follow-up work.
+
+The [historical inventory](https://github.com/DeveloPassion/TypedMarkSpecification/blob/f0d883d1e4bef51f169fa4d61584d206ac4f0e0f/schema/docs/baseline-0.0.1.json)
+reconstructs A1 against the accepted `f995555` baseline: 14 root pages, 1,988
+identified rules and 53,441 whitespace-counted tokens, with 15 built pages,
+16 schemas and 358 schema references. All 31 inventoried source/schema hashes
+match raw Git blobs. The historical frozen install, 166-fixture gate, rule linter
+and site build were rerun successfully. This records baseline ownership and
+links, not developer effort or a new normative contract.
+
 Lossless note re-typing is separately tracked for future design in specification
 [#130](https://github.com/DeveloPassion/TypedMarkSpecification/issues/130).
