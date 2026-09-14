@@ -87,13 +87,15 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   }
 
   const declaredVersion = config.specification_version;
-  const requiredExtensions = isRecord(config.extensions) ? stringMap(config.extensions) : {};
+  const declaration = readExtensionDeclaration(config, registry);
+  const requiredExtensions = declaration.required;
+  const malformedDeclaration = declaration.issues.length > 0;
   const requestedExtensions = input.supportedExtensions ?? STANDARD_EXTENSIONS;
   const supportedExtensions = Object.fromEntries(
     Object.entries(STANDARD_EXTENSIONS).filter(([extension, version]) => requestedExtensions[extension] === version),
   );
   const evaluatedExtensions: ExtensionMap = {};
-  let evaluation: "complete" | "incomplete" = isBestEffortVersion(declaredVersion) ? "incomplete" : "complete";
+  let evaluation: "complete" | "incomplete" = isBestEffortVersion(declaredVersion) || malformedDeclaration ? "incomplete" : "complete";
 
   if (isSpecificationVersion(declaredVersion) && !sameCompatibilityLine(declaredVersion, IMPLEMENTED_CORE)) {
     unsupportedConfigurationVersion = declaredVersion;
@@ -102,7 +104,12 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     return model(report(version, mode, requiredExtensions, evaluatedExtensions, "incomplete", results));
   }
 
+  if (malformedDeclaration) configurationIssue = "Malformed extension declaration";
+  for (const issue of declaration.issues) add(results, config, "invalid_extension_declaration", "typedmark.md", issue.rule, issue.message,
+    issue.extension ? { extension: issue.extension } : {});
   const configShape = structuredClone(normalizedMandatoryTags(config));
+  // Declaration errors are reported separately; this copy checks other fields.
+  if (Object.hasOwn(config, "extensions")) configShape.extensions = requiredExtensions;
   if (!requiredExtensions["typedmark:reuse"] || supportedExtensions["typedmark:reuse"] !== requiredExtensions["typedmark:reuse"]) delete configShape.default_property_sets;
   if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"]) delete configShape.automation_defaults;
   const unknownConfigKeys: Array<{ path: string; key: string }> = [];
@@ -164,6 +171,8 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     const categories = new Set([...Object.keys(DEFAULT_SEVERITIES), ...Object.keys(config.validation_defaults ?? {})]);
     config = { ...config, validation_defaults: Object.fromEntries([...categories].map((code) => [code, "error"])) };
   }
+
+  if (malformedDeclaration) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
 
   for (const [extension, requiredVersion] of Object.entries(requiredExtensions).sort()) {
     if (supportedExtensions[extension] === requiredVersion) {
@@ -747,7 +756,8 @@ function matchesWhen(when: Data, path: string, frontmatter: Data, hasFrontmatter
 
 function add(results: ValidationResult[], config: Data, code: string, path: string, rule_id: string, message: string, context: Partial<ValidationResult> = {}, schema?: Data) {
   const configured = code === "unknown_field" && schema?.unknown_field ? schema.unknown_field : config.validation_defaults?.[code];
-  const severity = configured ?? DEFAULT_SEVERITIES[code] ?? "error";
+  const severity = ["error", "warn", "info", "off"].includes(configured)
+    ? configured : DEFAULT_SEVERITIES[code] ?? "error";
   if (severity === "off") return;
   results.push({ code, severity: severity as Severity, path: normalized(path), rule_id, message, ...context });
 }
@@ -828,8 +838,26 @@ function safeMetadataDirectory(value: unknown): string {
   return typeof value === "string" && value !== "." && value !== ".." && /^[^/\\]+$/.test(value) ? value : ".typedmark";
 }
 
-function stringMap(value: Data): ExtensionMap {
-  return Object.fromEntries(Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
+function readExtensionDeclaration(config: Data, registry: SchemaRegistry): {
+  required: ExtensionMap; issues: Array<{ rule: string; message: string; extension?: string }>;
+} {
+  if (!Object.hasOwn(config, "extensions")) return { required: {}, issues: [] };
+  // YAML tags can produce Map/Set objects whose Object.entries() looks empty.
+  if (!isRecord(config.extensions) || ![null, Object.prototype].includes(Object.getPrototypeOf(config.extensions))) {
+    return { required: {}, issues: [{ rule: "EXT-2", message: "extensions must be a mapping of identifiers to exact version strings" }] };
+  }
+  const entries: Array<[string, string]> = [];
+  const issues: Array<{ rule: string; message: string; extension?: string }> = [];
+  for (const [id, version] of Object.entries(config.extensions)) {
+    const errors = registry.validate("defs.schema.json#/$defs/extension_requirements", { [id]: version });
+    if (!errors.length && typeof version === "string") entries.push([id, version]);
+    else if (errors.some((error) => error.keyword === "propertyNames")) {
+      issues.push({ rule: "EXT-4", message: `Invalid extension identifier ${JSON.stringify(id)}` });
+    } else {
+      issues.push({ rule: "EXT-6", extension: id, message: `Extension ${JSON.stringify(id)} requires a complete exact version string` });
+    }
+  }
+  return { required: Object.fromEntries(entries), issues };
 }
 
 function arrayOfStrings(value: unknown): string[] {

@@ -44,6 +44,15 @@ compatible root remains best-effort/incomplete; an unsupported root prevents
 child interpretation and querying even when its diagnostic is suppressed.
 Declared artifact versions and source bytes are preserved.
 
+Malformed extension declarations retain their well-formed identifier/version
+entries in `required_extensions`, including unsupported exact contracts. Invalid
+entries receive separate findings; evaluation stays incomplete even when those
+findings are suppressed. An invalid container contributes an empty map. The
+adapter leaves `evaluated_extensions` empty and blocks model-dependent queries
+and system operations until the declaration is repaired, without rewriting it.
+See the specification's [validation report contract](https://github.com/DeveloPassion/TypedMarkSpecification/blob/main/conformance-and-roadmap.md#validation-reports)
+for the portable report rules.
+
 The optional library `referenceEdition` parameter accepts only `0.1.0` and
 throws `RangeError` for other requests. Expected conformance reports do not
 select this parameter or the actual report edition.
