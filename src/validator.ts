@@ -168,7 +168,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results, checkVersion);
   const shapeErrors = (schema: string, data: Data, path: string): { errors: ErrorObject[]; invalidUnknown: boolean } => {
     const errors = registry.validate(schema, data);
-    const bestEffort = String(data.specification_version).startsWith("0.1.") && data.specification_version !== IMPLEMENTED_CORE;
+    const bestEffort = isBestEffortVersion(data.specification_version);
     let invalidUnknown = false;
     const known = errors.filter((error) => {
       if (error.keyword !== "additionalProperties") return true;
@@ -428,10 +428,7 @@ function validateSystemContract(root: string, metadataDirectory: string, mode: V
     const history = parseMarkdown(readFileSync(historyPath)).data;
     const path = normalized(relative(root, historyPath));
     if (checkVersion(history, path)) { delete evaluated["typedmark:systems"]; return; }
-    const version = String(history.specification_version);
-    const validVersion = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version);
-    const bestEffort = validVersion && sameCompatibilityLine(version, IMPLEMENTED_CORE)
-      && BigInt(version.split(".")[2]!) > BigInt(IMPLEMENTED_CORE.split(".")[2]!);
+    const bestEffort = isBestEffortVersion(history.specification_version);
     const shape = validateHistoryShape(history, registry, bestEffort);
     for (const issue of shape.issues) {
       if (issue.severity) results.push({ code: issue.code, severity: issue.severity, path, rule_id: issue.rule, message: issue.message });
@@ -763,6 +760,13 @@ function extractHeadings(body: string) {
 
 function sameCompatibilityLine(left: string, right: string) {
   return left.split(".").slice(0, 2).join(".") === right.split(".").slice(0, 2).join(".");
+}
+
+function isBestEffortVersion(version: unknown): boolean {
+  return typeof version === "string"
+    && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version)
+    && sameCompatibilityLine(version, IMPLEMENTED_CORE)
+    && BigInt(version.split(".")[2]!) > BigInt(IMPLEMENTED_CORE.split(".")[2]!);
 }
 
 function safeMetadataDirectory(value: unknown): string {

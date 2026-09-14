@@ -163,6 +163,16 @@ test.each(["0.1.bad", "0.1.00"])("malformed history version %s cannot enable bes
   expect(report.results.some((finding) => finding.rule_id === "FND-11")).toBe(false);
 });
 
+test.each([
+  { version: ["0.1.1"] },
+  { version: { toString: 0, valueOf: 0 } },
+])("non-string history version %j cannot enable best effort or hide its shape error", ({ version }) => {
+  const report = run(system({ specification_version: version, future_key: true }));
+  expect(report.results).toContainEqual(expect.objectContaining({ code: "unknown_field", severity: "error", rule_id: "CM-534" }));
+  expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_history", rule_id: "FND-5" }));
+  expect(report.results.some((finding) => finding.rule_id === "FND-11")).toBe(false);
+});
+
 test("unknown operation diagnostics are specific rather than oneOf branch noise", () => {
   const report = run(system({ history: [{ version: "0.2.0", changes: [{ op: "unknown" }] }] }));
   expect(report.results[0]?.message).toContain("unknown");
