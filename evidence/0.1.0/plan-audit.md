@@ -119,14 +119,14 @@ URI-field fragment policy, Markdown anchor interpretation/general fragment-chara
 checks and non-UTF-8 note-target octets await maintainer answers. Reference-style
 outer links remain separate audit work. Existing URI-field fragment acceptance
 is retained without claiming that the formal FDR-140 ambiguity is resolved.
-Independent review also reproduced pre-existing quadratic parsing of large
-backslash-heavy inline destinations in pinned Marked (about 1.6 seconds at
-200 KB and 23 seconds at 800 KB). The new decoding pass scales linearly; the
-upstream parsing boundary remains a separate performance follow-up.
-Read-only profiling localized this to Marked's escaped-character mask loop, which
-rebuilds the complete source for each escape. At 120 KB, inline lexing took about
-683 ms, versus 0.13 ms for source capture and 18 ms for Markdown destination
-decoding. The new URI scanner is not the cause; no lexer optimization is claimed.
+The measured escaped-character/block-mask and extension-start bottlenecks are now
+fixed by an extraction-only lexer; it omits emphasis rendering work while retaining
+link, escape, code-span, HTML and unescaping behavior. This also corrects astral
+mask truncation and incorrect backtick boundaries. At 600 KB, the
+measured destination/prose cases fell from roughly 17.8/30.1 seconds to below
+0.1/0.2 seconds. Independent CommonMark/source review and timing guards cover the
+change; see the [inline-lexer decision](../../docs/decisions/008-extraction-only-inline-lexer.md).
+This is not an exhaustive parser-performance or remaining Core-conformance claim.
 
 A suspected complete-field-name schema gap was checked against the actual current
 registry: ordinary names/paths pass and their final-LF variants fail. No schema

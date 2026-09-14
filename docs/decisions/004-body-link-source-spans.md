@@ -2,6 +2,8 @@
 
 Status: accepted on 2026-09-14. Supersedes the physical-span limitation and
 secondary HTML block parsing in [decision 003](003-note-link-source-preservation.md).
+The later extraction-only lexer in [decision 008](008-extraction-only-inline-lexer.md)
+supersedes emphasis-tree traversal and masking without changing the source-span contract.
 
 ## Contract
 

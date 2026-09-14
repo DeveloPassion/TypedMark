@@ -97,6 +97,12 @@ transport policy is inferred. See the [URI syntax decision](docs/decisions/007-r
 URI-field fragment policy, non-UTF-8 note-target octets and encoded-anchor
 interpretation remain open clarifications.
 
+The inline lexer is now extraction-only: emphasis delimiters remain text, while
+link, escape, code-span and HTML tokenization stay active. Rendering-mask work and
+redundant extension-start scans no longer make escaped prose quadratic. This also
+corrects astral-symbol mask truncation and false code boundaries without changing
+source spans or URL/title unescaping. See the [inline-lexer decision](docs/decisions/008-extraction-only-inline-lexer.md).
+
 Unknown-field findings retain their severity policy and authored names. Logical
 field contexts omit list positions; names that cannot be represented by the
 report's dotted-path grammar remain in the message without optional `field`

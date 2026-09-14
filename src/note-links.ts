@@ -1,11 +1,12 @@
 import { posix } from "node:path";
-import { Lexer, Marked, Tokenizer, type Token, type TokenizerExtension } from "marked";
+import { Lexer, Marked, type Token, type TokenizerExtension } from "marked";
 import type { CollectionModel, ManagedNote } from "./collection-model";
 import type { FieldDefinition } from "./field-values";
 import type { SchemaIssue } from "./reuse";
 import { markdownBlockSources, type MarkdownBlockSource } from "./markdown-block-sources";
 import { markdownLinkDestination } from "./markdown-link-destination";
 import { hasUriScheme, isUriReference } from "./uri-syntax";
+import { createNoteLinkLexer } from "./markdown-inline-lexer";
 
 export interface ParsedNoteLink {
   /** Exact input supplied to parseNoteLink, not rendered Markdown. */
@@ -46,7 +47,7 @@ function inspectNoteLink(raw: string): NoteLinkInspection {
       ...(hash < 0 ? {} : { anchor: destination.slice(hash + 1) }),
       ...(pipe < 0 ? {} : { displayText: inner.slice(pipe + 1) }) } };
   }
-  const tokens = Lexer.lexInline(raw, { gfm: false });
+  const tokens = createNoteLinkLexer().inlineTokens(raw);
   if (tokens.length !== 1 || !["link", "image"].includes(tokens[0]!.type) || tokens[0]!.raw !== raw) return { kind: "ignored" };
   const token = tokens[0]!;
   // CommonMark autolinks are external URI/email forms, not inline note links.
@@ -80,7 +81,8 @@ function inspectNoteLink(raw: string): NoteLinkInspection {
 
 const wikilinks: TokenizerExtension = {
   name: "typedmarkWikilink", level: "inline",
-  start(source) { const index = source.indexOf("[["); return index < 0 ? undefined : Math.max(0, index - 1); },
+  // Marked's text rule already stops at '['/'!'; a start callback would
+  // repeatedly scan a long remaining suffix before every plain-text token.
   tokenizer(source) {
     const match = /^!?\[\[[^\]\r\n]+\]\]/u.exec(source);
     return match ? { type: "typedmarkWikilink", raw: match[0] } : undefined;
@@ -93,14 +95,7 @@ markdown.use({ extensions: [wikilinks] });
 // HTML tags hide its links. Custom inline tokens run before the built-in tag rule.
 // https://marked.js.org/using_pro#extensions
 const htmlContent = new Marked({ gfm: false });
-htmlContent.use({ extensions: [{ ...wikilinks,
-  // One earliest-marker scan avoids searching the whole suffix for a distant
-  // wikilink at every literal HTML delimiter (and vice versa).
-  start(source) {
-    const index = source.search(/\[\[|</u);
-    return index < 0 ? undefined : source[index] === "<" ? index : Math.max(0, index - 1);
-  },
-}, {
+htmlContent.use({ extensions: [wikilinks, {
   name: "typedmarkLiteralHtmlOpen", level: "inline",
   tokenizer(source) {
     if (!source.startsWith("<")) return;
@@ -155,11 +150,6 @@ export function inspectBodyLinks(body: string): BodyLinkInspection {
             collect(sliceSource(frame, begin, begin + label[1]!.length), parser, children);
           }
         }
-      } else if (["em", "strong", "del"].includes(token.type) && "text" in token && typeof token.text === "string") {
-        const inner = token.raw.indexOf(token.text);
-        if (inner < 0) throw new Error("Marked emphasis source coverage changed");
-        const children = "tokens" in token && Array.isArray(token.tokens) ? token.tokens : undefined;
-        collect(sliceSource(frame, offset + inner, offset + inner + token.text.length), parser, children);
       } else if (token.type === "html" && token.raw.includes("<")) {
         collect(sliceSource(frame, offset, end), htmlContent);
       }
@@ -192,22 +182,7 @@ function withoutMarkerLines(frame: MarkdownBlockSource): MarkdownBlockSource {
 }
 
 function inlineLexer(parser: Marked): Lexer {
-  const tokenizer = parser === htmlContent ? new Tokenizer(parser.defaults) : undefined;
-  const lexer = new Lexer({ ...parser.defaults, ...(tokenizer ? { tokenizer } : {}) });
-  if (tokenizer) {
-    // Marked masks every HTML tag by repeatedly rebuilding the entire inline
-    // string. This extraction-only lexer treats HTML as literal prose, so skip
-    // that mask while retaining its link/code masks. Never mutate shared rules.
-    // https://github.com/markedjs/marked/blob/v18.0.5/src/Lexer.ts
-    // https://github.com/markedjs/marked/blob/v18.0.5/src/rules.ts
-    const rules = tokenizer.rules;
-    const htmlMask = "|<(?! )[^<>]*?>";
-    if (!rules.inline.blockSkip.source.endsWith(htmlMask)) throw new Error("Marked's HTML masking contract changed");
-    tokenizer.rules = { ...rules, inline: { ...rules.inline,
-      blockSkip: new RegExp(rules.inline.blockSkip.source.slice(0, -htmlMask.length), rules.inline.blockSkip.flags),
-    } };
-  }
-  return lexer;
+  return createNoteLinkLexer(parser.defaults.extensions);
 }
 
 type Resolution = { kind: "note" | "asset"; path: string } | { kind: "unresolved" };
