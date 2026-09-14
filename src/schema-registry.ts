@@ -42,25 +42,34 @@ export class SchemaRegistry {
  * Validate their shape without changing the original model or opaque values.
  * A symbol matches no JSON type, but remains accepted by an unconstrained {}.
  */
-function shapeValue(value: unknown, seen = new WeakMap<object, unknown>()): unknown {
-  if (value === null || typeof value !== "object") return value;
-  if (seen.has(value)) return seen.get(value);
-  const array = Array.isArray(value);
-  const prototype = Object.getPrototypeOf(value);
-  if (!array && prototype !== null && prototype !== Object.prototype) {
-    // Preserve identity without making different native values false duplicates.
-    const marker = Symbol("non-JSON YAML value");
-    seen.set(value, marker);
-    return marker;
+function shapeValue(value: unknown): unknown {
+  const seen = new WeakMap<object, unknown>();
+  const pending: Array<{ source: object; target: object }> = [];
+  const project = (item: unknown): unknown => {
+    if (item === null || typeof item !== "object") return item;
+    if (seen.has(item)) return seen.get(item);
+    const array = Array.isArray(item);
+    const prototype = Object.getPrototypeOf(item);
+    if (!array && prototype !== null && prototype !== Object.prototype) {
+      const marker = Symbol("non-JSON YAML value");
+      seen.set(item, marker);
+      return marker;
+    }
+    // Retain ordinary-object prototypes for AJV's deep equality helpers.
+    const target = array ? new Array(item.length) : Object.create(prototype);
+    seen.set(item, target);
+    pending.push({ source: item, target });
+    return target;
+  };
+  const result = project(value);
+  // Avoid a call-stack limit on deep opaque metadata.
+  while (pending.length) {
+    const { source, target } = pending.pop()!;
+    for (const [key, child] of Object.entries(source)) {
+      Object.defineProperty(target, key, {
+        value: project(child), enumerable: true, writable: true, configurable: true,
+      });
+    }
   }
-  // Ordinary objects retain their prototype for AJV's deep equality helpers.
-  const projected = array ? new Array(value.length) : Object.create(prototype);
-  seen.set(value, projected);
-  for (const [key, child] of Object.entries(value)) {
-    // Assignment could interpret an authored __proto__ key as a prototype write.
-    Object.defineProperty(projected, key, {
-      value: shapeValue(child, seen), enumerable: true, writable: true, configurable: true,
-    });
-  }
-  return projected;
+  return result;
 }

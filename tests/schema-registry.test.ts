@@ -63,3 +63,21 @@ test("an own __proto__ key cannot disappear while projecting a mapping", () => {
   expect(Object.hasOwn(frontmatter, "__proto__")).toBe(true);
   expect(Object.getPrototypeOf(frontmatter)).toBe(Object.prototype);
 });
+
+test("deep opaque metadata does not introduce a projection call-stack limit", () => {
+  const opaque: Record<string, unknown> = {};
+  let leaf = opaque;
+  for (let index = 0; index < 20_000; index++) {
+    const child: Record<string, unknown> = {};
+    leaf.next = child;
+    leaf = child;
+  }
+  const native = new Set(["retained"]);
+  leaf.native = native;
+  leaf.root = opaque;
+  const value = { specification_version: "0.1.0", name: "deep-metadata", description: "Opaque metadata.", x_vendor: opaque };
+  expect(registry.validate("typedmark.schema.json", value)).toEqual([]);
+  expect(value.x_vendor).toBe(opaque);
+  expect(leaf.native).toBe(native);
+  expect(leaf.root).toBe(opaque);
+});

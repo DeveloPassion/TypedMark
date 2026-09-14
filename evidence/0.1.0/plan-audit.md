@@ -132,11 +132,20 @@ A suspected complete-field-name schema gap was checked against the actual curren
 registry: ordinary names/paths pass and their final-LF variants fail. No schema
 change was justified by that probe. Broader checker parity remains under audit.
 
-A separate parity probe confirmed that the specification fixture checker accepts
-native YAML `!!set {}` / `!!omap []` values in `validation_defaults` and `vocabularies`,
-while the runtime shape projection correctly rejects those mapping substitutes.
-Both accept the same values in opaque `x_vendor` metadata. Aligning the checker
-without restricting opaque values remains required work; no fix is claimed here.
+The specification fixture checker now rejects native YAML sets and ordered maps
+in structural mapping positions, matching the runtime without restricting opaque
+vendor metadata. Both use iterative shape projection; the runtime's reproduced
+20,000-level opaque-graph stack overflow is fixed. Thirty specification regressions,
+eight new tooling cases and four artifact fixtures cover tags, aliases, prototype
+keys, live diagnostics, examples, golden-vector bytes and deep graphs. See the
+[checker-parity decision](../../docs/decisions/009-yaml-shape-checker-parity.md).
+
+Independent review confirmed a separate, pre-existing AJV equality limitation in
+`allowed_values`: two mappings with authored `valueOf` properties or null prototypes
+can throw `TypeError`; distinct cyclic mappings can throw `RangeError`. Raw AJV and
+the previous runtime reproduce these failures. The projection terminates, but the
+subsequent `uniqueItems` comparison does not safely handle those inputs. This remains
+required Core-audit work; no equality fix is claimed by the tagged-shape correction.
 
 ## Completion evidence still required
 
