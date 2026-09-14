@@ -184,6 +184,12 @@ contracts with `getCapabilities`, and compare or run vectors through
 `src/adapter.ts`. Operational failures throw; they are never converted into an
 empty validation report.
 
+Read-only Systems validation checks scaffold targets
+against the resolved concrete schema inventory (`SCE-17`). Missing or abstract
+targets are system findings; unavailable target contracts prevent a full Systems
+evaluation claim. Strict version no-op readiness cannot bypass these findings
+through diagnostic suppression. Validation does not create scaffold content.
+
 Writer operations are intentionally out of scope until TypedMark defines a
 separate writer capability. System instantiation is the narrow exception defined
 by the system contract: it stages a new target, preserves the metadata artifacts,

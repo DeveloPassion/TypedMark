@@ -211,6 +211,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     add(results, config, "unsupported_specification_version", path, "FND-92", message);
     return { kind: "unavailable", path, message, specificationVersion: version };
   };
+  const systemsEnabled = !!evaluatedExtensions["typedmark:systems"];
   validateSystemContract(root, metadataDirectory, mode, config, requiredExtensions, evaluatedExtensions, registry, results, checkVersion);
   const shapeErrors = (schema: string, data: Data, path: string): { errors: ErrorObject[]; invalidUnknown: boolean } => {
     const errors = registry.validate(schema, data);
@@ -331,6 +332,22 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     if (!schema.abstract) failures.push(...validateConditions(schema.conditions ?? [], noteFieldDefinitions(schema)));
     reportFailures();
     if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config, templates);
+  }
+
+  if (systemsEnabled) {
+    let scaffoldUnavailable = false;
+    for (const [index, note] of (Array.isArray(config.scaffold?.notes) ? config.scaffold.notes : []).entries()) {
+      if (!isRecord(note) || typeof note.note_type !== "string") continue;
+      const issue = schemaIssues.get(note.note_type);
+      if (issue?.kind === "unavailable") { scaffoldUnavailable = true; continue; }
+      // An invalid schema already has its own findings. Unknown contracts do
+      // not establish that a scaffold reference is missing or abstract.
+      if (issue) continue;
+      const schema = schemas.get(note.note_type);
+      if (!schema || schema.abstract === true) add(results, config, "invalid_system", "typedmark.md", "SCE-17",
+        `scaffold.notes[${index}].note_type must resolve to a concrete note type: ${note.note_type}`, { note_type: note.note_type });
+    }
+    if (scaffoldUnavailable) { delete evaluatedExtensions["typedmark:systems"]; evaluation = "incomplete"; }
   }
 
   const mappingFailures = validateMappingDeclarations(config, schemas);
