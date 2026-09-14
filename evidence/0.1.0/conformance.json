@@ -1,8 +1,8 @@
 {
-  "specification_revision": "527d57cc068a98b2b447381c3cc4a685c9efa1c3",
-  "adapter_revision": "ad26b97f53aac8054f197b8302b2794228e46cc0",
-  "started_at": "2026-09-14T20:12:23.363Z",
-  "finished_at": "2026-09-14T20:12:45.360Z",
+  "specification_revision": "38295edd64d0598e0a227c3fd08e5be274a8aa85",
+  "adapter_revision": "6f0e7719d7bf2dbb9997d68ca39ae13b45cbfd5d",
+  "started_at": "2026-09-14T20:49:01.648Z",
+  "finished_at": "2026-09-14T20:49:25.407Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 61,
-    "executed": 59,
-    "passed": 59,
+    "discovered": 64,
+    "executed": 62,
+    "passed": 62,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1354,6 +1354,136 @@
       }
     },
     {
+      "name": "note-link-percent-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown destination contains a malformed percent escape",
+            "note_type": "source"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown destination contains a malformed percent escape",
+            "note_type": "source"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown destination contains a malformed percent escape",
+            "note_type": "source",
+            "field": "details.references"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown destination contains a malformed percent escape",
+            "note_type": "source",
+            "field": "details.references"
+          },
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "RHT-31",
+            "message": "related_to target target has 0 resolved instances",
+            "note_type": "source",
+            "relationship": "related_to"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "note-link-percent-suppressed",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "suppressed-malformed-links-block-query-model",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-307"
+        }
+      ]
+    },
+    {
+      "name": "note-link-percent-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
       "name": "optional-artifacts-valid",
       "status": "passed",
       "collection_changed": false,
@@ -2625,8 +2755,8 @@
     }
   ],
   "query_summary": {
-    "executed": 13,
-    "passed": 13,
+    "executed": 14,
+    "passed": 14,
     "failed": 0
   }
 }

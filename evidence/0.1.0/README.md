@@ -1,17 +1,17 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers sixty-one golden vectors at TypedMarkSpecification
-`527d57cc068a98b2b447381c3cc4a685c9efa1c3`, using adapter
-`ad26b97f53aac8054f197b8302b2794228e46cc0` on 2026-09-14.
+This record covers sixty-four golden vectors at TypedMarkSpecification
+`38295edd64d0598e0a227c3fd08e5be274a8aa85`, using adapter
+`6f0e7719d7bf2dbb9997d68ca39ae13b45cbfd5d` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34891167581),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34894856538),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- fifty-nine eligible collection vectors passed;
-- thirteen standalone query cases passed, including expected semantic failures;
+- sixty-two eligible collection vectors passed;
+- fourteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
 - no vector was skipped for an unsupported validation contract; and
@@ -177,12 +177,24 @@ Independent review caught and corrected HTML C1 remapping, then checked 57,617
 numeric boundary cases and all 2,125 named references. The valid golden fixture's
 real-target minimum and forbidden trap maximum fail independently when mutated.
 See the [decoding decision](../../docs/decisions/005-markdown-destination-decoding.md).
-All fifty-nine prior vector machine records remain unchanged in this CI output.
+That slice left all fifty-nine prior vector machine records unchanged.
 
-URI target-encoding checks, malformed-percent body diagnostics, non-UTF-8 percent
-octet handling and encoded-anchor interpretation remain open; decoding is not
-exhaustive conformance. Pre-existing quadratic parsing of backslash-heavy
-destinations in Marked is separately recorded in the plan audit.
+Malformed percent triplets in internal Markdown targets and fragments now produce
+retained, source-located failures instead of disappearing or contributing graph
+edges. Managed-field syntax uses `invalid_note_link` under `CM-54`, without a
+duplicate generic field-format error; other constraints and nested siblings remain
+checked. Standalone/template validation retains its strict syntax path. Suppressed
+diagnostics cannot unlock dependent query models. Sixty-three focused regressions
+and three new vectors cover this slice, including a suppressed-report query case.
+Independent review checked twenty extraction contexts and sixty model boundaries.
+See the [diagnostic decision](../../docs/decisions/006-note-link-diagnostics.md).
+All sixty-one previous vector machine records remain unchanged in this CI output.
+
+General RFC 3986 character checks for note-link targets and absolute URI fields,
+non-UTF-8 percent-octet handling and encoded-anchor interpretation remain open;
+malformed-triplet checking is not exhaustive URI conformance. Pre-existing
+quadratic parsing of backslash-heavy destinations in Marked is separately recorded
+in the plan audit.
 
 Artifact shape checks now use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -225,8 +237,8 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,198 tooling tests locally and in CI, type checking, dependency
-audit, 336 specification tests, 289 fixture expectations, rule-ID checks, and the
+Validation covered 1,264 tooling tests locally and in CI, type checking, dependency
+audit, 336 specification tests, 292 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
@@ -271,8 +283,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `ad26b97` and specification
-`527d57cc068a98b2b447381c3cc4a685c9efa1c3`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `6f0e771` and specification
+`38295edd64d0598e0a227c3fd08e5be274a8aa85`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
