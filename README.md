@@ -196,5 +196,21 @@ by the system contract: it stages a new target, preserves the metadata artifacts
 removes the source's publishing identity, records composition provenance, and
 validates the materialized collection before publishing the target directory.
 
+Instantiation selects a scaffold override or the type's effective explicit,
+conventional, or derived starter. It retains derived field omissions, fills
+template placeholders from defaults and declared Core generators, and keeps
+explicit caller nulls distinct. Mandatory tags are appended without removing
+authored tags. Unique generated values reserve concrete values across the whole
+scaffold before generation. Optional Authoring generators are not implemented by
+this importer and cause an explicit failure when generation is needed.
+
+Source validation, template reads, metadata copying, and preparation share one
+captured snapshot. Import preserves the configuration body and conventional
+licensing/attribution files even when note-discovery exclusions match them;
+arbitrary legal-file discovery is not defined by the specification. Source and
+destination cannot overlap, including through a junction alias. Files are staged
+with exclusive creation, checked under strict validation, and published only
+after the complete scaffold conforms. No existing collection is migrated.
+
 The checked-in [0.1.0 evidence](evidence/0.1.0/README.md) records the exact
 specification and adapter revisions used for the current conformance run.
