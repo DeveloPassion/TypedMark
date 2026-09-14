@@ -5,7 +5,7 @@ import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./front
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import { compareFieldValues, comparisonDomain, expandObjectDefaults, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
-import { aliasValueFailure, CORE_FIELDS, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
+import { aliasValueFailure, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
@@ -20,6 +20,7 @@ import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authorin
 import { validateTemplateTracking } from "./template-tracking";
 import { resolveStoragePath } from "./storage";
 import { validateHistoryOrder, validateHistoryShape } from "./history";
+import { resolveTemplate, validateTemplateFields } from "./templates";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
@@ -46,10 +47,10 @@ const RESULT_ORDER = [
 ] as const;
 
 export function validateCollection(input: ValidateCollectionInput): ValidationReport {
-  return readStableCollection(input.collectionRoot, (root) => readCollectionModel({ ...input, collectionRoot: root })).report;
+  return readStableCollection(input.collectionRoot, (root, info) => readCollectionModel({ ...input, collectionRoot: root }, { blockedPaths: info.blockedPaths })).report;
 }
 
-export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict" } = {}): CollectionModel {
+export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict"; blockedPaths?: ReadonlySet<string> } = {}): CollectionModel {
   if (input.referenceEdition !== undefined && input.referenceEdition !== IMPLEMENTED_CORE) {
     throw new RangeError(`Only referenceEdition ${IMPLEMENTED_CORE} is implemented`);
   }
@@ -331,7 +332,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     if (evaluatedExtensions["typedmark:expressions"]) failures.push(...validateComputedFields(fields, !schema.abstract));
     if (!schema.abstract) failures.push(...validateConditions(schema.conditions ?? [], noteFieldDefinitions(schema)));
     reportFailures();
-    if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, registry, results, config, templates);
+    if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, results, config, templates, undefined, options.blockedPaths);
   }
 
   if (systemsEnabled) {
@@ -346,6 +347,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
       const schema = schemas.get(note.note_type);
       if (!schema || schema.abstract === true) add(results, config, "invalid_system", "typedmark.md", "SCE-17",
         `scaffold.notes[${index}].note_type must resolve to a concrete note type: ${note.note_type}`, { note_type: note.note_type });
+      else if (typeof note.from_template === "string") validateTemplate(root, metadataDirectory, note.note_type, schema, results, config, templates, note.from_template, options.blockedPaths);
     }
     if (scaffoldUnavailable) { delete evaluatedExtensions["typedmark:systems"]; evaluation = "incomplete"; }
   }
@@ -534,31 +536,19 @@ function validateOptionalArtifacts(root: string, metadataDirectory: string, requ
   }
 }
 
-function validateTemplate(root: string, metadataDirectory: string, noteType: string, schema: Data, registry: SchemaRegistry, results: ValidationResult[], config: Data, templates: ExpansionTemplate[]) {
-  const explicit = schema.template && typeof schema.template.file === "string";
-  const templateName = explicit ? schema.template.file : `${noteType}.md`;
-  const path = join(root, metadataDirectory, "templates", templateName);
-  const unavailable = () => templates.push({ path: normalized(relative(root, path)), stored: {}, body: "", version: schema.specification_version, noteType, available: false });
-  if (!existsSync(path)) {
-    if (explicit) { unavailable(); add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-73", `Explicit template ${templateName} is missing`); }
+function validateTemplate(root: string, metadataDirectory: string, noteType: string, schema: Data, results: ValidationResult[], config: Data, templates: ExpansionTemplate[], overrideFile?: string, blockedPaths?: ReadonlySet<string>) {
+  const selected = resolveTemplate(root, metadataDirectory, noteType, schema, overrideFile, blockedPaths);
+  if (selected.kind === "derived" || templates.some((template) => template.path === selected.path && template.noteType === noteType)) return;
+  const context = { path: selected.path, version: schema.specification_version, noteType, canonical: overrideFile === undefined };
+  if (selected.kind === "invalid") {
+    templates.push({ ...context, stored: {}, body: "", available: false });
+    add(results, config, "invalid_template", selected.path, selected.rule, selected.message);
     return;
   }
-  if (lstatSync(path).isSymbolicLink()) {
-    unavailable();
-    add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-73", `Template ${templateName} must not be a symbolic link`);
-    return;
-  }
-  try {
-    const template = parseMarkdown(readFileSync(path));
-    templates.push({ path: normalized(relative(root, path)), stored: template.data, body: template.body, hasFrontmatter: template.hasFrontmatter, version: schema.specification_version, noteType });
-    if (template.hasFrontmatter) {
-      const declared = new Set([...Object.keys(CORE_FIELDS), ...Object.keys(schema.frontmatter ?? {})]);
-      const unknown = Object.keys(template.data).find((field) => !declared.has(field) && !(field === "template_regions" && config.extensions?.["typedmark:template-tracking"]));
-      if (unknown) add(results, config, "invalid_template", normalized(relative(root, path)), "RHT-76", `Template field ${unknown} is undeclared`);
-    }
-  } catch (error) {
-    unavailable();
-    add(results, config, "invalid_template", normalized(relative(root, path)), frontmatterFailureRule(error, "RHT-67"), errorMessage(error));
+  const template = selected.document;
+  templates.push({ ...context, stored: template.data, body: template.body, hasFrontmatter: template.hasFrontmatter });
+  for (const failure of validateTemplateFields(template.data, schema, config, noteType)) {
+    add(results, config, "invalid_template", selected.path, failure.rule, failure.message, { field: failure.field });
   }
 }
 

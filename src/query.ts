@@ -16,7 +16,7 @@ export function queryCollection(input: QueryInput): QueryResult {
   if (input.queryVersion !== QUERY_VERSION) throw new QueryError("QRY-2", "An explicit supported exact query-contract version is required");
   const query = parseQuery(input.query, new SchemaRegistry(input.schemaDirectory));
   try {
-    const model = readStableCollection(input.collectionRoot, (snapshotRoot) => readCollectionModel({ ...input, collectionRoot: snapshotRoot }));
+    const model = readStableCollection(input.collectionRoot, (snapshotRoot, info) => readCollectionModel({ ...input, collectionRoot: snapshotRoot }, { blockedPaths: info.blockedPaths }));
     return evaluateQuery(model, query);
   } catch (error) {
     if (error instanceof SnapshotChangedError) throw new QueryError("CM-305", error.message);

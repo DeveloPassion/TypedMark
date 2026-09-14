@@ -31,6 +31,11 @@ test("empty frontmatter remains distinct from no block and rejects duplicate key
   expect(() => parseMarkdown("---\na: 1\na: 2\n---\n")).toThrow();
 });
 
+test("writers can retain exact body line endings and Markdown hard breaks", () => {
+  const source = "---\r\nname: example\r\n---\r\nFirst  \r\nsecond\r\n";
+  expect(parseMarkdown(source, { preserveBodyLineEndings: true }).body).toBe("First  \r\nsecond\r\n");
+});
+
 const roots: string[] = [];
 const schemaDirectory = resolve(import.meta.dir, "../../TypedMarkSpecification/schema/json-schema");
 function write(root: string, path: string, data: unknown) {

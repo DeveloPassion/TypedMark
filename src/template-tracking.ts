@@ -68,10 +68,13 @@ export function validateTemplateTracking(model: CollectionModel, registry: Schem
   const canonical = new Map<string, ReturnType<typeof inspect>>();
   const cache = new Map<string, ReturnType<typeof inspect>>();
   for (const template of templates) {
-    if (template.available === false) { canonical.set(template.noteType, { regions: new Map(), invalid: new Set(), valid: false, used: false }); continue; }
+    if (template.available === false) {
+      if (template.canonical !== false) canonical.set(template.noteType, { regions: new Map(), invalid: new Set(), valid: false, used: false });
+      continue;
+    }
     const key = `${template.path}\0${template.version}`;
     if (!cache.has(key)) cache.set(key, inspect(template, template.version, true));
-    canonical.set(template.noteType, cache.get(key)!);
+    if (template.canonical !== false) canonical.set(template.noteType, cache.get(key)!);
   }
   for (const document of model.documents) {
     const type = document.candidates?.length === 1 ? document.candidates[0] : undefined;

@@ -1,4 +1,4 @@
-import { parseDocument } from "yaml";
+import { isMap, parseDocument } from "yaml";
 
 export interface MarkdownDocument {
   data: Record<string, unknown>;
@@ -16,7 +16,7 @@ export function frontmatterFailureRule(error: unknown, fallback: string): string
 
 // Filesystem consumers pass bytes so invalid UTF-8 cannot be silently replaced
 // before parsing. String callers supply already-decoded text.
-export function parseMarkdown(source: string | Uint8Array): MarkdownDocument {
+export function parseMarkdown(source: string | Uint8Array, options: { preserveBodyLineEndings?: boolean } = {}): MarkdownDocument {
   let decoded: string;
   try { decoded = typeof source === "string" ? source : new TextDecoder("utf-8", { fatal: true }).decode(source); }
   catch (error) {
@@ -31,17 +31,27 @@ export function parseMarkdown(source: string | Uint8Array): MarkdownDocument {
 
   const end = lines.findIndex((line, index) => index > 0 && (line === "---" || line === "..."));
   if (end < 0) return { data: {}, body: normalized, hasFrontmatter: false };
-  const body = lines.slice(end + 1).join("\n");
+  let body = lines.slice(end + 1).join("\n");
+  if (options.preserveBodyLineEndings) {
+    const endings = /\r\n|\r|\n/g;
+    let found = true;
+    for (let line = 0; line <= end; line++) if (!endings.exec(normalized)) { found = false; break; }
+    body = found ? normalized.slice(endings.lastIndex) : "";
+  }
 
   let value: unknown;
   try {
     const document = parseDocument(lines.slice(1, end).join("\n"), { uniqueKeys: true });
     if (document.errors.length > 0) throw new Error(document.errors.map((error) => error.message).join("; "));
-    value = document.toJS();
+    // An empty document has no content node; an explicit null is a scalar.
+    // https://eemeli.org/yaml/#parsing-documents
+    if (document.contents !== null && !isMap(document.contents)) throw new Error("frontmatter must be a mapping");
+    value = document.contents === null ? {} : document.toJS();
   } catch (error) {
     throw new FrontmatterError(error instanceof Error ? error.message : String(error), body);
   }
-  if (value !== null && (typeof value !== "object" || Array.isArray(value))) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)
+    || ![null, Object.prototype].includes(Object.getPrototypeOf(value))) {
     throw new FrontmatterError("frontmatter must be a mapping", body);
   }
   return {

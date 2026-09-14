@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { readStableCollection } from "../src/snapshot";
@@ -68,4 +68,23 @@ test("metadata protection compares NFC paths even when all content is excluded",
   writeFileSync(join(root, "typedmark.md"), "---\nmetadata_directory: é\nexclude_paths: ['**']\n---\n");
   mkdirSync(join(root, "e\u0301")); writeFileSync(join(root, "e\u0301", "schema.md"), "metadata");
   expect(readStableCollection(root, (snapshot) => existsSync(join(snapshot, "e\u0301", "schema.md")))).toBe(true);
+});
+
+test("snapshots retain rejected metadata-link paths without following them", () => {
+  const root = mkdtempSync(join(tmpdir(), "typedmark-snapshot-")); roots.push(root);
+  const outside = mkdtempSync(join(tmpdir(), "typedmark-snapshot-outside-")); roots.push(outside);
+  mkdirSync(join(root, ".typedmark"));
+  symlinkSync(outside, join(root, ".typedmark/templates"), "junction");
+  expect(readStableCollection(root, (snapshot, info) => {
+    expect(existsSync(join(snapshot, ".typedmark/templates"))).toBe(false);
+    return [...info.blockedPaths];
+  })).toEqual([".typedmark/templates"]);
+  expect(() => readStableCollection(root, () => null, { rejectMetadataLinks: true })).toThrow("symbolic link");
+});
+
+test("import preservation can explicitly capture excluded licensing files", () => {
+  const root = mkdtempSync(join(tmpdir(), "typedmark-snapshot-")); roots.push(root);
+  writeFileSync(join(root, "typedmark.md"), "---\nexclude_paths: [LICENSE]\n---\n");
+  writeFileSync(join(root, "LICENSE"), "Licensing text");
+  expect(readStableCollection(root, (snapshot) => readFileSync(join(snapshot, "LICENSE"), "utf8"), { includePaths: ["LICENSE"] })).toBe("Licensing text");
 });
