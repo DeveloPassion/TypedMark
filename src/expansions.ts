@@ -1,7 +1,7 @@
 import type { CollectionModel, CollectionNote } from "./collection-model";
 import { parseExpansions } from "./expansion-markers";
 import { compileExpression, evaluateExpression, ExpressionError } from "./expressions";
-import { expansionSources, ExpansionError, validateSourceContract } from "./expansion-sources";
+import { expansionSources, ExpansionError, validatePendingSource, validateSourceContract } from "./expansion-sources";
 import { NoteLinkError } from "./note-links";
 import { QueryError } from "./query-engine";
 import type { SchemaRegistry } from "./schema-registry";
@@ -69,13 +69,14 @@ export function validateExpansions(model: CollectionModel, registry: SchemaRegis
           return false;
         });
         if (errors.length) throw new ExpansionError("RHT-98", errors.map((error) => `${error.instancePath} ${error.message}`).join("; "));
-        validateSourceContract(descriptor.source, version, tables);
+        if (!template) validateSourceContract(descriptor.source, version, tables);
         if (!model.report.evaluated_extensions["typedmark:expressions"]) throw new QueryError("RHT-163", "Expansion rendering requires Expressions", { extension: "typedmark:expressions" });
         const expression = compileExpression(descriptor.render.item);
         if (expression.some((part) => "reference" in part && part.reference !== "value")) throw new ExpansionError("RHT-141", "Expansion rendering exposes only value");
         if (descriptor.state === "pending" && marker.region !== "") throw new ExpansionError("RHT-146", "Pending expansion region must be empty");
         if (template) {
           if (descriptor.state !== "pending") throw new ExpansionError("RHT-150", "Template expansions must be pending");
+          if (!validatePendingSource(descriptor.source, version, model, registry, tables)) incomplete = true;
           continue;
         }
         if (descriptor.state === "pending") throw new ExpansionError("RHT-162", "Persisted notes cannot contain pending expansions");

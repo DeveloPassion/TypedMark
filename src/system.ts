@@ -101,7 +101,7 @@ export function checkMigrationReadiness(input: { systemRoot: string; fromVersion
       const targetVersion = String(config.version ?? "");
       if (targetVersion === input.fromVersion) return { status: "ready", reasons: [] };
       const declaredMetadata = safeMetadataDirectory(config.metadata_directory).normalize("NFC");
-      const metadataDirectory = readdirSync(root, { withFileTypes: true }).find((entry) => entry.isDirectory() && entry.name.normalize("NFC") === declaredMetadata)!.name;
+      const metadataDirectory = readdirSync(root, { withFileTypes: true }).find((entry) => entry.isDirectory() && entry.name.normalize("NFC") === declaredMetadata)?.name ?? declaredMetadata;
       const historyPath = join(root, metadataDirectory, "history.md");
       if (!existsSync(historyPath)) return {
         status: "manual_resolution_required", reasons: [`The target system has no history.md for classifying the ${input.fromVersion} to ${targetVersion} update.`],
@@ -114,7 +114,7 @@ export function checkMigrationReadiness(input: { systemRoot: string; fromVersion
       // History is necessary evidence, not target-aware impact analysis. This
       // bounded adapter cannot approve an actual migration from versions alone.
       return { status: "manual_resolution_required", reasons: ["Target-collection migration impact analysis is not implemented; review is required before applying an update."] };
-    });
+    }, { artifactsOnly: true, rejectMetadataLinks: true });
   } catch {
     return { status: "manual_resolution_required", reasons: ["The target system could not be read as a stable, interpretable snapshot."] };
   }

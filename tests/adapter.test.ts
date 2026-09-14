@@ -78,6 +78,8 @@ test.each([
   "headings-commonmark-valid", "headings-constraints-invalid",
   "nested-links-valid", "nested-links-invalid",
   "unknown-field-contexts",
+  "target-scope-system-definition", "target-scope-instantiated-collection", "target-scope-both",
+  "pending-template-references-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

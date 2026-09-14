@@ -19,7 +19,8 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
     const config = document.data;
     if (typeof config.name !== "string" || typeof config.version !== "string" || !isMapping(config.scaffold)) throw new Error("Source is not a versioned system definition");
     const declaredMetadata = typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark";
-    const metadataDirectory = readdirSync(root, { withFileTypes: true }).find((entry) => entry.isDirectory() && entry.name.normalize("NFC") === declaredMetadata.normalize("NFC"))!.name;
+    const metadataEntry = readdirSync(root, { withFileTypes: true }).find((entry) => entry.isDirectory() && entry.name.normalize("NFC") === declaredMetadata.normalize("NFC"));
+    const metadataDirectory = metadataEntry?.name ?? declaredMetadata;
     const files = new Map<string, Buffer>();
     const directories = new Set<string>();
     const capture = (path: string) => {
@@ -29,7 +30,7 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
       else if (entry.isFile()) files.set(path, readFileSync(absolute));
       else throw new Error(`System import refuses non-file artifact: ${path}`);
     };
-    capture(metadataDirectory);
+    if (metadataEntry) capture(metadataDirectory);
     for (const path of includePaths) capture(path);
     const starters: StarterInput[] = [];
     const derivedBodies = new Set<string>();
@@ -65,5 +66,5 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
     }
     return { config, body: document.body, files, directories, notes, metadataDirectory,
       source: { name: config.name, version: config.version }, folders: Array.isArray(config.scaffold.folders) ? config.scaffold.folders as string[] : [] };
-  }, { includePaths, rejectMetadataLinks: true });
+  }, { includePaths, rejectMetadataLinks: true, artifactsOnly: true });
 }

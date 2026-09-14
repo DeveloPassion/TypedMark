@@ -49,7 +49,7 @@ test("a scaffold override is inspected without replacing the canonical drift bas
   write(root, ".typedmark/templates/note.md", {}, region("Canonical"));
   write(root, ".typedmark/templates/override.md", {}, region("Override") + '<!-- typedmark:template-region {"id":"bad","extra":true} -->\n<!-- /typedmark:template-region -->\n');
   write(root, "A.md", { note_type: "note", template_regions: { body: { baseline: regionDigest("Canonical") } } }, region("Canonical"));
-  const report = run(root);
+  const report = validateCollection({ collectionRoot: root, schemaDirectory, mode: "both" });
   expect(report.results.some((finding) => finding.code === "template_drift")).toBe(false);
   expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_template_region", path: ".typedmark/templates/override.md" }));
 });
@@ -58,5 +58,8 @@ test("a skipped template-directory link cannot masquerade as a missing conventio
   const root = fixture(), outside = mkdtempSync(join(tmpdir(), "typedmark-template-outside-")); roots.push(outside);
   writeFileSync(join(outside, "note.md"), "Outside content");
   symlinkSync(outside, join(root, ".typedmark/templates"), "junction");
-  expect(run(root).results).toContainEqual(expect.objectContaining({ code: "invalid_template", rule_id: "RHT-73" }));
+  expect(() => run(root)).toThrow("symbolic link");
+  expect(() => validateCollection({ collectionRoot: root, schemaDirectory, mode: "both" })).toThrow("symbolic link");
+  expect(validateCollection({ collectionRoot: root, schemaDirectory, mode: "instantiated_collection" }).results)
+    .toContainEqual(expect.objectContaining({ code: "invalid_template", rule_id: "RHT-73" }));
 });

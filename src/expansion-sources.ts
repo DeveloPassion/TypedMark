@@ -1,7 +1,7 @@
 import { posix } from "node:path";
 import type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 import { parseNoteLink, resolveNoteLink, buildRelationshipGraph, type RelationshipGraph } from "./note-links";
-import { evaluateQueryWithColumns, parseQuery, QueryError, requireSchemaModel } from "./query-engine";
+import { analyzeQuery, evaluateQueryWithColumns, parseQuery, QueryError, requireSchemaModel } from "./query-engine";
 import { matchesNoteType } from "./reuse";
 import { compareUnicodeCodePoints } from "./order";
 import type { FieldDefinition } from "./field-values";
@@ -38,6 +38,34 @@ export function validateSourceContract(source: Data, version: string, tables: Ma
     const table = tables.get(`${source.kind}:${source[source.kind]}`);
     if (table && table.version !== version) throw new ExpansionError(source.kind === "view" ? "RHT-260" : "RHT-275", "Source and expansion specification versions differ");
   }
+}
+
+/** Validate pending references, never values: RHT-168 defers source evaluation. */
+export function validatePendingSource(source: Data, version: string, model: CollectionModel, registry: SchemaRegistry, tables: Map<string, TabularSource>): boolean {
+  if (source.kind === "note_field" && !parseNoteLink(source.note)) throw new ExpansionError("RHT-122", "Unsupported note-field link");
+  if (source.kind === "relationship") {
+    for (const type of source.target_note_types ?? []) {
+      if (!model.schemas.has(type)) throw new ExpansionError("RHT-170", `Unknown relationship filter type ${type}`);
+      requireSchemaModel(model, type);
+    }
+  }
+  if (!["query", "dataset", "view"].includes(source.kind)) return true;
+  const dependencies = source.kind === "query" ? ["typedmark:queries"] : ["typedmark:queries", "typedmark:views"];
+  for (const extension of dependencies) {
+    if (!model.report.evaluated_extensions[extension]) throw new QueryError("RHT-163", `Required source contract ${extension} is unavailable`, { extension });
+  }
+  if (source.kind === "query") {
+    validateSourceContract(source, version, tables);
+    return analyzeQuery(model, parseQuery(source.query, registry)).evaluation === "complete";
+  }
+  const table = tables.get(`${source.kind}:${source[source.kind]}`);
+  if (!table) throw new ExpansionError(source.kind === "view" ? "RHT-259" : "RHT-274", "Unknown expansion artifact source");
+  if (table.contractError) throw table.contractError;
+  validateSourceContract(source, version, tables);
+  if (!table.contract) throw new QueryError("CM-421", "Source artifact has no interpreted contract");
+  if (!table.contract.columns.has(source.column)) throw new ExpansionError(source.kind === "view" ? "RHT-262" : "RHT-277", "Unknown projected expansion column");
+  if (source.kind === "view" && !table.presented?.has(source.column)) throw new ExpansionError("RHT-263", "Column is not presented by the view");
+  return table.contract.evaluation === "complete";
 }
 
 export function expansionSources(model: CollectionModel, registry: SchemaRegistry, tables: Map<string, TabularSource>) {

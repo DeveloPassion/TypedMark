@@ -48,7 +48,15 @@ const RESULT_ORDER = [
 ] as const;
 
 export function validateCollection(input: ValidateCollectionInput): ValidationReport {
-  return readStableCollection(input.collectionRoot, (root, info) => readCollectionModel({ ...input, collectionRoot: root }, { blockedPaths: info.blockedPaths })).report;
+  const mode = validationMode(input.mode);
+  return readStableCollection(input.collectionRoot, (root, info) => readCollectionModel({ ...input, mode, collectionRoot: root }, { blockedPaths: info.blockedPaths }),
+    { artifactsOnly: mode === "system_definition", rejectMetadataLinks: mode !== "instantiated_collection" }).report;
+}
+
+function validationMode(value: unknown): ValidationReport["mode"] {
+  if (value === undefined) return "instantiated_collection";
+  if (value === "system_definition" || value === "instantiated_collection" || value === "both") return value;
+  throw new RangeError("mode must be system_definition, instantiated_collection, or both");
 }
 
 export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict"; blockedPaths?: ReadonlySet<string> } = {}): CollectionModel {
@@ -57,7 +65,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   }
   const version = IMPLEMENTED_CORE;
   const root = input.collectionRoot;
-  const mode = input.mode ?? "instantiated_collection";
+  const mode = validationMode(input.mode);
   const registry = new SchemaRegistry(input.schemaDirectory);
   const results: ValidationResult[] = [];
   const configPath = join(root, "typedmark.md");
@@ -187,7 +195,8 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
 
   validateExtensionDependencies(requiredExtensions, config, results);
   const declaredMetadata = safeMetadataDirectory(config.metadata_directory);
-  const metadataEntries = readdirSync(root, { withFileTypes: true }).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink() && entry.name.normalize("NFC") === declaredMetadata.normalize("NFC"));
+  const metadataNames = readdirSync(root, { withFileTypes: true }).filter((entry) => entry.name.normalize("NFC") === declaredMetadata.normalize("NFC"));
+  const metadataEntries = metadataNames.filter((entry) => entry.isDirectory() && !entry.isSymbolicLink());
   const metadataDirectory = metadataEntries[0]?.name ?? declaredMetadata;
   if (metadataEntries.length === 1) validateReuseDeclaration(root, metadataDirectory, config, requiredExtensions, results);
   else if (Object.hasOwn(config, "default_property_sets")) requireExtension("typedmark:reuse", "typedmark.md", requiredExtensions, config, results);
@@ -195,7 +204,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   // Reuse consumes collection-controlled names, vocabularies and severities.
   // Invalid shapes are not safe inputs to composition or semantic evaluation.
   if (configurationIssue) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
-  if (metadataEntries.length !== 1) {
+  if (metadataEntries.length !== 1 && !(mode === "system_definition" && metadataNames.length === 0)) {
     configurationIssue = "The metadata directory must resolve unambiguously to the collection's schema artifacts";
     add(results, config, "invalid_collection_configuration", "typedmark.md", metadataEntries.length ? "CM-24" : "FND-76", "The metadata directory must resolve unambiguously to the collection's schema artifacts");
     return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
@@ -357,13 +366,14 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   for (const failure of mappingFailures) add(results, config, "invalid_note_type_mapping", "typedmark.md", failure.rule, failure.message);
   if (mappingFailures.length) {
     associationIssue = mappingFailures[0]!.message;
-    return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
   }
 
-  const files = discoverFiles(root, metadataDirectory, exclusionPatterns(config.exclude_paths));
+  // Publishing checks do not read collection notes. Broken mapping declarations
+  // also cannot safely associate notes, but do not prevent static artifact checks.
+  const files = mode === "system_definition" ? [] : discoverFiles(root, metadataDirectory, exclusionPatterns(config.exclude_paths));
   const notes = files.filter((path) => path.endsWith(".md"));
   for (const path of files) if (!path.endsWith(".md")) assets.add(path.normalize("NFC"));
-  for (const notePath of notes) {
+  for (const notePath of associationIssue ? [] : notes) {
     let document;
     try {
       document = parseMarkdown(readFileSync(join(root, notePath)));
@@ -397,7 +407,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   // CR-14: a definition declares cardinality; its scaffold is not live notes.
   // Declaration validity is checked above, and imports validate actual counts
   // against the materialized target in instantiated_collection mode.
-  if (mode !== "system_definition") validateCounts(effectiveNotes, concreteSchemas, config, results);
+  if (mode !== "system_definition" && (!associationIssue || notes.length === 0)) validateCounts(effectiveNotes, concreteSchemas, config, results);
   for (const finding of validateRelationships(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)))) {
     add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { note_type: finding.note_type, ...(finding.field ? { field: finding.field } : {}), ...(finding.relationship ? { relationship: finding.relationship } : {}) });
   }
@@ -420,6 +430,14 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   results.push(...tracking.results);
   if (tracking.incomplete) evaluation = "incomplete";
   if (tracking.blocked) delete evaluatedExtensions["typedmark:template-tracking"];
+  if (associationIssue && notes.length > 0) {
+    // Static interpretation above is still useful, but it cannot certify the
+    // Core note model or extension semantics that depend on associated notes.
+    evaluation = "incomplete";
+    for (const extension of ["typedmark:reuse", "typedmark:expressions", "typedmark:queries", "typedmark:views", "typedmark:expansion", "typedmark:template-tracking"]) {
+      delete evaluatedExtensions[extension];
+    }
+  }
   sortResults(results);
   return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
 }

@@ -207,10 +207,20 @@ targets are system findings; unavailable target contracts prevent a full Systems
 evaluation claim. Strict version no-op readiness cannot bypass these findings
 through diagnostic suppression. Validation does not create scaffold content.
 
-Count declarations are checked in every mode. `system_definition` does not
-require live notes to satisfy those counts before instantiation; actual note
-counts are enforced in `instantiated_collection` and `both` modes. The importer
-checks the completed target, so an insufficient scaffold still cannot publish.
+`system_definition` validates published artifacts without reading existing notes;
+use `both` to include current notes as well. Definition snapshots include metadata
+and configuration, and imports also retain explicitly selected licensing files.
+Unread metadata links fail operationally instead of appearing to be absent.
+Count declarations are checked in every mode, but only note-reading modes enforce
+actual counts. The importer strictly checks its completed target, so an
+insufficient scaffold still cannot publish. See [validation target scope](docs/decisions/002-validation-target-scope.md).
+
+Pending template sources receive static query, artifact, column, and internal-link
+checks without evaluating source values. Dataset/view contracts are separate from
+their live rows. Invalid mappings do not stop independent artifact checks; when
+they leave existing notes uninterpreted, coverage remains incomplete even if the
+mapping diagnostics are suppressed. A known-empty inventory can still be fully
+interpreted as invalid.
 
 Writer operations are intentionally out of scope until TypedMark defines a
 separate writer capability. System instantiation is the narrow exception defined

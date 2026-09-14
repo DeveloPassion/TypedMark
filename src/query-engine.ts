@@ -47,6 +47,13 @@ export interface QueryEvaluation {
   admittedTypes: string[];
   rowDefinitions: Array<Record<string, FieldDefinition | undefined>>;
 }
+/** A descriptor's published contract, without reading notes or evaluating rows. */
+export interface QueryAnalysis {
+  columns: Map<string, FieldDefinition[]>;
+  admittedTypes: string[];
+  usedTypes: ReadonlySet<string>;
+  evaluation: "complete" | "incomplete";
+}
 export type QueryUnavailability = { extension: string } | { specificationVersion: string; path?: string };
 export class QueryError extends Error {
   constructor(readonly rule_id: string, message: string, readonly unavailable?: QueryUnavailability) { super(`${rule_id}: ${message}`); }
@@ -144,41 +151,41 @@ export function evaluateQuery(model: CollectionModel, query: Descriptor): QueryR
   return evaluateQueryWithColumns(model, query).result;
 }
 
-export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor): QueryEvaluation {
-  const timezone = model.config.timezone ?? "UTC";
+export function analyzeQuery(model: CollectionModel, query: Descriptor): QueryAnalysis {
   if (model.configurationIssue) fail("CM-308", model.configurationIssue, model.unsupportedConfigurationVersion
     ? { specificationVersion: model.unsupportedConfigurationVersion, path: "typedmark.md" } : undefined);
-  if (model.associationIssue) fail("CM-308", model.associationIssue);
   const invalid = model.report.results.find((result) => result.severity === "error" && result.path === "typedmark.md"
     && ["invalid_collection_configuration", "unsupported_specification_version"].includes(result.code));
   if (invalid) fail("CM-308", invalid.message, invalid.code === "unsupported_specification_version" ? { specificationVersion: String(model.config.specification_version), path: invalid.path } : undefined);
   const checkTypes = (types?: string[]) => { for (const type of types ?? []) requireSchemaModel(model, type); };
   const matchesType = (type: string, requested: string) => matchesNoteType(model.schemas, type, requested);
   const admitted = (type: string, types?: string[]) => !types || types.some((requested) => matchesType(type, requested));
-  const checkPredicate = (predicate: Predicate): void => {
-    if (predicate.kind === "all" || predicate.kind === "any") predicate.predicates.forEach(checkPredicate);
-    else if (predicate.kind === "not") checkPredicate(predicate.predicate);
+  const admittedSchemas = (types?: string[]) => [...model.schemas].filter(([type, schema]) => !schema.abstract && admitted(type, types)).map(([type]) => type);
+  const checkPredicate = (predicate: Predicate, scope: string[]): void => {
+    if (predicate.kind === "all" || predicate.kind === "any") predicate.predicates.forEach((child) => checkPredicate(child, scope));
+    else if (predicate.kind === "not") checkPredicate(predicate.predicate, scope);
     else if (predicate.kind === "relationship") {
       checkTypes(predicate.note_types);
       if ((predicate.count?.min ?? 0) > (predicate.count?.max ?? Infinity)) fail("CM-356", "Relationship minimum exceeds maximum");
-      if (predicate.where) checkPredicate(predicate.where);
-    } else if (predicate.operator === "regex") {
-      try { fullPattern(String(predicate.value)); } catch { fail("CM-339", "Invalid Unicode regular expression"); }
+      if (predicate.where) checkPredicate(predicate.where, admittedSchemas(predicate.note_types));
+    } else {
+      if (predicate.kind === "field") for (const type of scope) {
+        requireSchemaModel(model, type);
+        usedTypes.add(type);
+        definitionAt(noteFieldDefinitions(model.schemas.get(type)!), predicate.field);
+      }
+      if (predicate.operator === "regex") {
+        try { fullPattern(String(predicate.value)); } catch { fail("CM-339", "Invalid Unicode regular expression"); }
+      }
     }
   };
   checkTypes(query.note_types);
-  if (query.where) checkPredicate(query.where);
   const aliases = new Set<string>();
-  const concreteTypes = [...model.schemas].filter(([, schema]) => !schema.abstract).map(([type]) => type).filter((type) => admitted(type, query.note_types));
+  const concreteTypes = admittedSchemas(query.note_types);
   concreteTypes.forEach((type) => requireSchemaModel(model, type));
   const usedTypes = new Set(concreteTypes);
+  if (query.where) checkPredicate(query.where, concreteTypes);
   const typeFields = new Map(concreteTypes.map((type) => [type, noteFieldDefinitions(model.schemas.get(type)!)]));
-  const modeledPaths = new Set(model.notes.map((note) => note.path));
-  for (const document of model.documents) {
-    if (!modeledPaths.has(document.path) && document.candidates?.some((type) => model.schemas.has(type) && !model.schemas.get(type)!.abstract && admitted(type, query.note_types))) {
-      fail("CM-308", `${document.path} cannot provide an admitted effective model`);
-    }
-  }
   const columnDefinitions = new Map<string, FieldDefinition[]>();
   for (const column of query.select) {
     if (aliases.has(column.as)) fail("CM-361", `Duplicate projection alias ${column.as}`);
@@ -214,6 +221,29 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     ordered.add(order.column);
   }
   for (const name of query.group_by ?? []) if (!aliases.has(name)) fail("CM-380", `Unknown grouped column ${name}`);
+
+  return { columns: columnDefinitions, admittedTypes: concreteTypes, usedTypes, evaluation: queryCompleteness(model, query, usedTypes) };
+}
+
+function queryCompleteness(model: CollectionModel, query: Descriptor, usedTypes: ReadonlySet<string>): "complete" | "incomplete" {
+  return query.specification_version === "0.1.0" && model.config.specification_version === "0.1.0"
+    && [...usedTypes].every((type) => model.schemas.get(type)?.specification_version === "0.1.0"
+      && (model.schemaSources?.get(type) ?? []).every((source) => source.version === "0.1.0")) ? "complete" : "incomplete";
+}
+
+export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor): QueryEvaluation {
+  const analysis = analyzeQuery(model, query);
+  if (model.associationIssue) fail("CM-308", model.associationIssue);
+  const timezone = model.config.timezone ?? "UTC";
+  const matchesType = (type: string, requested: string) => matchesNoteType(model.schemas, type, requested);
+  const admitted = (type: string, types?: string[]) => !types || types.some((requested) => matchesType(type, requested));
+  const usedTypes = new Set(analysis.usedTypes);
+  const modeledPaths = new Set(model.notes.map((note) => note.path));
+  for (const document of model.documents) {
+    if (!modeledPaths.has(document.path) && document.candidates?.some((type) => model.schemas.has(type) && !model.schemas.get(type)!.abstract && admitted(type, query.note_types))) {
+      fail("CM-308", `${document.path} cannot provide an admitted effective model`);
+    }
+  }
 
   const graph = buildRelationshipGraph(model, matchesType);
   const graphFailure = (failure: NoteLinkError): never => {
@@ -335,10 +365,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const retained = entries.slice(0, query.limit ?? entries.length);
   const rows = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, structuredClone(entry.cells[column.as]!.value)])));
   const provenance = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.source])));
-  const complete = query.specification_version === "0.1.0" && model.config.specification_version === "0.1.0"
-    && [...usedTypes].every((type) => model.schemas.get(type)?.specification_version === "0.1.0"
-      && (model.schemaSources?.get(type) ?? []).every((source) => source.version === "0.1.0"));
-  const result: QueryResult = { evaluation: complete ? "complete" : "incomplete", rows, provenance };
+  const result: QueryResult = { evaluation: queryCompleteness(model, query, usedTypes), rows, provenance };
   if (query.group_by) {
     const groups: Array<{ key: unknown[]; rows: Row[]; cells: Cell[] }> = [];
     retained.forEach((entry, index) => {
@@ -351,5 +378,5 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     result.groups = groups.map(({ key, rows }) => ({ key, rows }));
   }
   const rowDefinitions = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.definition])));
-  return { result, columns: columnDefinitions, admittedTypes: concreteTypes, rowDefinitions };
+  return { result, columns: analysis.columns, admittedTypes: analysis.admittedTypes, rowDefinitions };
 }
