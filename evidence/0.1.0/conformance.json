@@ -1,8 +1,8 @@
 {
-  "specification_revision": "2e4e0f22187e9b015da55088544a6ee5ee83da83",
-  "adapter_revision": "e1f4663a8638a83f3df1a122e91dd93db54cf744",
-  "started_at": "2026-09-14T12:39:02.875Z",
-  "finished_at": "2026-09-14T12:39:20.897Z",
+  "specification_revision": "eaa356e99c1e148b729d74731b5e3ae036d45bf5",
+  "adapter_revision": "a09e861612e36e11808451aa59ef27ea6316888e",
+  "started_at": "2026-09-14T14:19:05.500Z",
+  "finished_at": "2026-09-14T14:19:23.604Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 44,
-    "executed": 42,
-    "passed": 42,
+    "discovered": 47,
+    "executed": 45,
+    "passed": 45,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1527,6 +1527,45 @@
       }
     },
     {
+      "name": "scaffold-template-override-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_template",
+            "severity": "error",
+            "path": ".typedmark/templates/overrides/start.md",
+            "rule_id": "RHT-80",
+            "message": "is not in the allowed values",
+            "field": "status"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
       "name": "storage-declarations-invalid",
       "status": "passed",
       "collection_changed": false,
@@ -1721,6 +1760,67 @@
         },
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "template-placeholders-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "template-values-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_template",
+            "severity": "error",
+            "path": ".typedmark/templates/note.md",
+            "rule_id": "RHT-80",
+            "message": "must satisfy the integer value contract",
+            "field": "amount"
+          }
+        ]
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",

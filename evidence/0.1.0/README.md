@@ -1,16 +1,16 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers forty-four golden vectors at TypedMarkSpecification
-`2e4e0f22187e9b015da55088544a6ee5ee83da83`, using adapter
-`e1f4663a8638a83f3df1a122e91dd93db54cf744` on 2026-09-14.
+This record covers forty-seven golden vectors at TypedMarkSpecification
+`eaa356e99c1e148b729d74731b5e3ae036d45bf5`, using adapter
+`a09e861612e36e11808451aa59ef27ea6316888e` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34844351143),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34854550550),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- forty-two eligible collection vectors passed;
+- forty-five eligible collection vectors passed;
 - thirteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -88,10 +88,26 @@ findings; unavailable target contracts prevent a full Systems evaluation claim
 without becoming false missing-reference errors. Independent scaffold findings
 remain visible beside unavailable history or sibling targets, and strict version
 no-op readiness cannot bypass known failures through diagnostic suppression.
-Twenty-two focused regressions and the three `scaffold-references-*` vector
-integrations cover this slice. These checks do not materialize starter notes or
-implement migration operations; the importer implementation, normative rules,
-and artifact schemas remain unchanged.
+The earlier reference-check slice added twenty-two focused regressions and
+three `scaffold-references-*` vector integrations. It did not materialize starter
+notes or implement migration operations; normative rules and artifact schemas
+were unchanged.
+
+Template validation and import now share explicit, conventional, scaffold-override,
+and derived starter selection. Concrete template values are checked before caller
+values are applied; nested placeholders cannot hide invalid aliases or enum values.
+Explicit YAML null and incompatible tagged mappings do not become empty mappings.
+Snapshot isolation retains blocked metadata-link paths, including for templates.
+
+The importer materializes declared fields, mandatory tags, deterministic defaults,
+and Core clock/UUID generators from one validated source snapshot. Literal caller
+values and values inside declared defaults retain their provenance. A shared batch
+reserves concrete values before unique generation, and strict target validation
+prevents suppressed failures from publishing an invalid scaffold. Source/target
+overlap and artifact overwrites are refused; source bytes, configuration body,
+and conventional licensing material are preserved. Optional Authoring generators
+and arbitrary legal-file discovery are not claimed. The three template vectors
+remain read-only; runtime regressions exercise actual temporary imports.
 
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
@@ -126,12 +142,12 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 692 tooling tests locally and in CI, type checking, dependency
-audit, 333 specification tests, 272 fixture expectations, rule-ID checks, and the
+Validation covered 759 tooling tests locally and in CI, type checking, dependency
+audit, 333 specification tests, 275 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 692 tests with no failures, as did the
+The final local full suite passed all 759 tests with no failures, as did the
 pinned CI run. No test deadlines or dependencies were changed for this slice.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
@@ -142,13 +158,15 @@ boundaries, strict snapshot readiness, release precedence, malformed/non-string
 artifact version handling, root report editions, branch-aware diagnostics,
 YAML-alias preservation, malformed declaration projection, suppression-independent
 incompleteness, tagged YAML containers, scaffold target resolution, unavailable
-schema dependencies, and the golden reports. The earlier ordering review
+schema dependencies, template placeholder provenance, strict snapshot import,
+source/destination isolation, and the golden reports. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
 BigInt/ASCII comparator, including 1001-digit identifiers; all comparisons agreed.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in
 [specification #123](https://github.com/DeveloPassion/TypedMarkSpecification/issues/123);
 they do not establish coverage of every normative rule
-or completion of the five-working-day full-validator measurement.
+or completion of the five-working-day full-validator measurement. The
+[plan completion audit](plan-audit.md) records the remaining evidence and work.
 
 General automation execution and writer operations remain follow-up work.
 The [2026-09-11 bounded system exercise](system-exercise.json) used TypedMarkExample
@@ -158,7 +176,7 @@ with no findings. The instance omitted publishing `version`/`scaffold`, recorded
 its composition source, and materialized `Notes/Welcome.md`. The source snapshot
 was unchanged; the temporary instance was removed after verification. Missing
 history still returned `manual_resolution_required`, with no migration attempted.
-That historical exercise was not rerun for this slice; current readiness changes
+That historical exercise was not rerun for this slice; current import and readiness changes
 are covered by the tooling regression suite. History replay, target-aware impact
 analysis, and broader composition remain follow-up work.
 Lossless note re-typing is separately tracked for future design in specification
