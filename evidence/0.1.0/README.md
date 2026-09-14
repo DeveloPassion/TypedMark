@@ -1,17 +1,17 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers thirty-nine golden vectors at TypedMarkSpecification
-`4d61db140c045bc2f2a5d6af00f38ca3330000cd`, using adapter
-`e48bc7ba71cec4263f0cfd5e6adfe6c5112f1777` on 2026-09-14.
+This record covers forty-one golden vectors at TypedMarkSpecification
+`108a72b387994dce140fc315dc2e7a37ad9af287`, using adapter
+`7705e74e02f7f65fb1633d7cb66bc945f253bbab` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34822253548),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34827423510),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- thirty-seven eligible collection vectors passed;
-- eleven standalone query cases passed, including expected semantic failures;
+- thirty-nine eligible collection vectors passed;
+- thirteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
 - no vector was skipped for an unsupported validation contract; and
@@ -56,11 +56,20 @@ Best-effort diagnostics for schemas, property sets, and history now require an
 actual, complete version string on the supported line with a newer patch.
 Malformed prefixes, suffixes, trailing line terminators, and non-string values
 cannot downgrade structural errors or crash validation through string coercion.
-Thirty additional regressions cover
-schemas, property sets, query eligibility, and history. Valid newer patches
-remain incomplete with warnings; unsupported lines remain unavailable. These
-are implementation corrections under the existing version contract, with no
-specification or schema changes and no additional golden vectors in this slice.
+Thirty regressions from the earlier artifact-guard slice cover schemas, property
+sets, query eligibility, and history. Valid newer patches remain incomplete
+with warnings; unsupported lines remain unavailable.
+
+Root reports now identify the actually implemented edition under `CR-25`.
+Newer roots remain incomplete under `CR-102`; unsupported roots cannot supply
+child models or bypass query blocking through diagnostic suppression.
+The explicit `referenceEdition` API accepts only the implemented edition, and
+expected reports no longer select actual evaluation metadata. Root structural
+diagnostics select the known mapping branch; path-copy projection preserves
+opaque vendor and literal values that share YAML aliases with structural data.
+This slice adds thirty-three tests, plus the `root-best-effort` and
+`root-unsupported` vectors with one query case each. Normative rules and
+artifact schemas are unchanged.
 
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
@@ -95,24 +104,21 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 601 tooling tests in CI, type checking, dependency audit,
-321 specification tests, 264 fixture expectations, rule-ID checks, and the
+Validation covered 634 tooling tests locally and in CI, type checking, dependency
+audit, 321 specification tests, 266 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The affected artifact/history suite passed all 77 tests independently. The
-local full-run attempt timed out in the unchanged query pilot and was stopped.
-That pilot then passed unchanged in isolation; the pinned CI run completed all
-601 tests with no failures. No test deadlines were changed for this slice.
-The specification verification counts above remain those established at the
-unchanged specification revision.
+The final local full suite passed all 634 tests with no failures, as did the
+pinned CI run. No test deadlines or dependencies were changed for this slice.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
 order, declaration availability, stored/effective predicate separation, Unicode
 field-name matching, parser error boundaries, Core field invariants, deferred
 storage references, timezone failures, type-aware uniqueness, history version
 boundaries, strict snapshot readiness, release precedence, malformed/non-string
-artifact version handling, and the golden reports. The earlier ordering review
+artifact version handling, root report editions, branch-aware diagnostics,
+YAML-alias preservation, and the golden reports. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
 BigInt/ASCII comparator, including 1001-digit identifiers; all comparisons agreed.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in

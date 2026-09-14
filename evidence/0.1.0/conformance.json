@@ -1,8 +1,8 @@
 {
-  "specification_revision": "4d61db140c045bc2f2a5d6af00f38ca3330000cd",
-  "adapter_revision": "e48bc7ba71cec4263f0cfd5e6adfe6c5112f1777",
-  "started_at": "2026-09-14T08:22:59.871Z",
-  "finished_at": "2026-09-14T08:23:16.348Z",
+  "specification_revision": "108a72b387994dce140fc315dc2e7a37ad9af287",
+  "adapter_revision": "7705e74e02f7f65fb1633d7cb66bc945f253bbab",
+  "started_at": "2026-09-14T09:22:41.863Z",
+  "finished_at": "2026-09-14T09:22:56.869Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 39,
-    "executed": 37,
-    "passed": 37,
+    "discovered": 41,
+    "executed": 39,
+    "passed": 39,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1320,6 +1320,96 @@
       }
     },
     {
+      "name": "root-best-effort",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "incomplete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "newer-root-retains-incomplete-query",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "incomplete",
+            "rows": [
+              {
+                "path": "Note.md"
+              }
+            ],
+            "provenance": [
+              {
+                "path": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "root-unsupported",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:reuse": "0.1.0"
+        },
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "unsupported_specification_version",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "FND-92",
+            "message": "Unsupported specification version 9.0.0"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "unsupported-root-blocks-query",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-308"
+        }
+      ]
+    },
+    {
       "name": "storage-declarations-invalid",
       "status": "passed",
       "collection_changed": false,
@@ -1727,8 +1817,8 @@
     }
   ],
   "query_summary": {
-    "executed": 11,
-    "passed": 11,
+    "executed": 13,
+    "passed": 13,
     "failed": 0
   }
 }
