@@ -1,8 +1,8 @@
 {
-  "specification_revision": "03ab623e8cee5b364e78cad1c82a34e227d89c38",
-  "adapter_revision": "f331567e8cc3d668fc39afccf62a68b1522741ed",
-  "started_at": "2026-09-14T11:52:44.531Z",
-  "finished_at": "2026-09-14T11:53:00.000Z",
+  "specification_revision": "2e4e0f22187e9b015da55088544a6ee5ee83da83",
+  "adapter_revision": "e1f4663a8638a83f3df1a122e91dd93db54cf744",
+  "started_at": "2026-09-14T12:39:02.875Z",
+  "finished_at": "2026-09-14T12:39:20.897Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 41,
-    "executed": 39,
-    "passed": 39,
+    "discovered": 44,
+    "executed": 42,
+    "passed": 42,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1408,6 +1408,123 @@
           "error_rule": "CM-308"
         }
       ]
+    },
+    {
+      "name": "scaffold-references-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:reuse": "0.1.0",
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:reuse": "0.1.0",
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_system",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "SCE-17",
+            "message": "scaffold.notes[1].note_type must resolve to a concrete note type: base",
+            "note_type": "base"
+          },
+          {
+            "code": "invalid_system",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "SCE-17",
+            "message": "scaffold.notes[0].note_type must resolve to a concrete note type: missing",
+            "note_type": "missing"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "scaffold-references-unavailable",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "incomplete",
+        "required_extensions": {
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "unsupported_specification_version",
+            "severity": "error",
+            "path": ".typedmark/schemas/future.md",
+            "rule_id": "FND-92",
+            "message": "Unsupported specification version 9.0.0"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "scaffold-references-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "system_definition",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:reuse": "0.1.0",
+          "typedmark:systems": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:reuse": "0.1.0",
+          "typedmark:systems": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "storage-declarations-invalid",

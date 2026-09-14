@@ -1,16 +1,16 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers forty-one golden vectors at TypedMarkSpecification
-`03ab623e8cee5b364e78cad1c82a34e227d89c38`, using adapter
-`f331567e8cc3d668fc39afccf62a68b1522741ed` on 2026-09-14.
+This record covers forty-four golden vectors at TypedMarkSpecification
+`2e4e0f22187e9b015da55088544a6ee5ee83da83`, using adapter
+`e1f4663a8638a83f3df1a122e91dd93db54cf744` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34840241444),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34844351143),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- thirty-nine eligible collection vectors passed;
+- forty-two eligible collection vectors passed;
 - thirteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -79,8 +79,19 @@ Invalid containers, including explicitly tagged YAML sets and ordered maps,
 contribute an empty map without becoming valid empty declarations. Invalid
 severity settings fall back safely, and all source bytes remain unchanged.
 The report schema, fixtures, source-aware checker, and adapter are aligned.
-This slice adds thirty-three runtime and twelve specification regressions;
-it does not add golden vectors or claim new executor/writer capabilities.
+That earlier slice added thirty-three runtime and twelve specification regressions,
+without adding golden vectors or executor/writer capabilities.
+
+Scaffold target resolution now follows `SCE-17` against the resolved concrete
+schema inventory. Missing and abstract targets produce configurable system
+findings; unavailable target contracts prevent a full Systems evaluation claim
+without becoming false missing-reference errors. Independent scaffold findings
+remain visible beside unavailable history or sibling targets, and strict version
+no-op readiness cannot bypass known failures through diagnostic suppression.
+Twenty-two focused regressions and the three `scaffold-references-*` vector
+integrations cover this slice. These checks do not materialize starter notes or
+implement migration operations; the importer implementation, normative rules,
+and artifact schemas remain unchanged.
 
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
@@ -115,12 +126,12 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 667 tooling tests locally and in CI, type checking, dependency
-audit, 333 specification tests, 269 fixture expectations, rule-ID checks, and the
+Validation covered 692 tooling tests locally and in CI, type checking, dependency
+audit, 333 specification tests, 272 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 667 tests with no failures, as did the
+The final local full suite passed all 692 tests with no failures, as did the
 pinned CI run. No test deadlines or dependencies were changed for this slice.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
@@ -130,7 +141,8 @@ storage references, timezone failures, type-aware uniqueness, history version
 boundaries, strict snapshot readiness, release precedence, malformed/non-string
 artifact version handling, root report editions, branch-aware diagnostics,
 YAML-alias preservation, malformed declaration projection, suppression-independent
-incompleteness, tagged YAML containers, and the golden reports. The earlier ordering review
+incompleteness, tagged YAML containers, scaffold target resolution, unavailable
+schema dependencies, and the golden reports. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
 BigInt/ASCII comparator, including 1001-digit identifiers; all comparisons agreed.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in
