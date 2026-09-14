@@ -1,8 +1,8 @@
 {
-  "specification_revision": "44088b5b9c4ca6145fc3cfe6e23589722cbd00e0",
-  "adapter_revision": "6c60002f5bdf85a22f04d433c807a83cfac7efbb",
-  "started_at": "2026-09-14T19:28:29.992Z",
-  "finished_at": "2026-09-14T19:28:48.053Z",
+  "specification_revision": "527d57cc068a98b2b447381c3cc4a685c9efa1c3",
+  "adapter_revision": "ad26b97f53aac8054f197b8302b2794228e46cc0",
+  "started_at": "2026-09-14T20:12:23.363Z",
+  "finished_at": "2026-09-14T20:12:45.360Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 59,
-    "executed": 57,
-    "passed": 57,
+    "discovered": 61,
+    "executed": 59,
+    "passed": 59,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1268,6 +1268,67 @@
     },
     {
       "name": "nested-links-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "note-link-entities-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-16",
+            "message": "NL-16: Link escapes the selected collection root",
+            "note_type": "note"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "note-link-entities-valid",
       "status": "passed",
       "collection_changed": false,
       "differences": [],

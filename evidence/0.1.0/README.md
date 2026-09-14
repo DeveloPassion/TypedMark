@@ -1,16 +1,16 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers fifty-nine golden vectors at TypedMarkSpecification
-`44088b5b9c4ca6145fc3cfe6e23589722cbd00e0`, using adapter
-`6c60002f5bdf85a22f04d433c807a83cfac7efbb` on 2026-09-14.
+This record covers sixty-one golden vectors at TypedMarkSpecification
+`527d57cc068a98b2b447381c3cc4a685c9efa1c3`, using adapter
+`ad26b97f53aac8054f197b8302b2794228e46cc0` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34886834167),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34891167581),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- fifty-seven eligible collection vectors passed;
+- fifty-nine eligible collection vectors passed;
 - thirteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -142,8 +142,8 @@ vector machine records remain unchanged in the refreshed CI output.
 
 Direct note-link parsing now retains exact input and authored label/fragment
 components, including explicit empty values, Unicode, escapes, nested labels,
-angle destinations and optional titles. Target processing and resolver inputs
-remain unchanged. Sixty-nine new focused tests cover this boundary. Independent
+angle destinations and optional titles. That slice left target processing and
+resolver inputs unchanged. Sixty-nine new focused tests cover this boundary. Independent
 review compared 61,899 inputs, including links from all 652 CommonMark 0.31.2
 examples; all 33,965 previously accepted inputs kept their form/target/embed data.
 
@@ -167,9 +167,22 @@ invented reference/code blocks. Unchanged inline subtrees are reused, reducing
 the reproduced 320-level emphasis case from 4.8 seconds to about 57 milliseconds.
 Independent review checked 5,000 generated bodies, 11,783 maps, 12,667 spans,
 1,304 official/injected CommonMark examples and 84 additional nested-span cases.
-The next audit has confirmed missing URI target-encoding checks, Markdown entity
-processing and malformed-percent body diagnostics. Those and encoded-anchor
-interpretation remain open; source preservation is not exhaustive conformance.
+
+Markdown destination processing now decodes CommonMark escapes and character
+references once before ASCII scheme classification, fragment separation and one
+target percent-decoding pass. Authored labels/anchors and physical spans are
+preserved; entity-encoded external URLs cannot invent note relationships.
+Eighty-three focused regressions and two new vector integrations cover this slice.
+Independent review caught and corrected HTML C1 remapping, then checked 57,617
+numeric boundary cases and all 2,125 named references. The valid golden fixture's
+real-target minimum and forbidden trap maximum fail independently when mutated.
+See the [decoding decision](../../docs/decisions/005-markdown-destination-decoding.md).
+All fifty-nine prior vector machine records remain unchanged in this CI output.
+
+URI target-encoding checks, malformed-percent body diagnostics, non-UTF-8 percent
+octet handling and encoded-anchor interpretation remain open; decoding is not
+exhaustive conformance. Pre-existing quadratic parsing of backslash-heavy
+destinations in Marked is separately recorded in the plan audit.
 
 Artifact shape checks now use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -212,8 +225,8 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,113 tooling tests locally and in CI, type checking, dependency
-audit, 336 specification tests, 287 fixture expectations, rule-ID checks, and the
+Validation covered 1,198 tooling tests locally and in CI, type checking, dependency
+audit, 336 specification tests, 289 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
@@ -258,8 +271,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [2026-09-14 bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `6c60002` and specification
-`44088b5b9c4ca6145fc3cfe6e23589722cbd00e0`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `ad26b97` and specification
+`527d57cc068a98b2b447381c3cc4a685c9efa1c3`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
