@@ -1,11 +1,11 @@
 # TypedMark 0.1.0 conformance evidence
 
 This record covers forty-one golden vectors at TypedMarkSpecification
-`108a72b387994dce140fc315dc2e7a37ad9af287`, using adapter
-`7705e74e02f7f65fb1633d7cb66bc945f253bbab` on 2026-09-14.
+`03ab623e8cee5b364e78cad1c82a34e227d89c38`, using adapter
+`f331567e8cc3d668fc39afccf62a68b1522741ed` on 2026-09-14.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34827423510),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34840241444),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
@@ -67,9 +67,20 @@ The explicit `referenceEdition` API accepts only the implemented edition, and
 expected reports no longer select actual evaluation metadata. Root structural
 diagnostics select the known mapping branch; path-copy projection preserves
 opaque vendor and literal values that share YAML aliases with structural data.
-This slice adds thirty-three tests, plus the `root-best-effort` and
-`root-unsupported` vectors with one query case each. Normative rules and
-artifact schemas are unchanged.
+That earlier slice added thirty-three tests, plus the `root-best-effort` and
+`root-unsupported` vectors with one query case each, without changing normative
+rules or artifact schemas.
+
+Malformed extension declarations now retain exactly the well-formed declared
+requirements, including unsupported exact contracts, under the clarified
+`CR-99`/`CR-102` policy. Invalid entries have separate findings; suppressed
+findings cannot make evaluation complete or unlock query/system models.
+Invalid containers, including explicitly tagged YAML sets and ordered maps,
+contribute an empty map without becoming valid empty declarations. Invalid
+severity settings fall back safely, and all source bytes remain unchanged.
+The report schema, fixtures, source-aware checker, and adapter are aligned.
+This slice adds thirty-three runtime and twelve specification regressions;
+it does not add golden vectors or claim new executor/writer capabilities.
 
 Core field coverage now includes stored identifier nullability, intrinsic alias
 restrictions and defaults, and normalized mandatory-tag declarations/membership.
@@ -104,12 +115,12 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 634 tooling tests locally and in CI, type checking, dependency
-audit, 321 specification tests, 266 fixture expectations, rule-ID checks, and the
+Validation covered 667 tooling tests locally and in CI, type checking, dependency
+audit, 333 specification tests, 269 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 these are correctness checks, not timing benchmarks.
-The final local full suite passed all 634 tests with no failures, as did the
+The final local full suite passed all 667 tests with no failures, as did the
 pinned CI run. No test deadlines or dependencies were changed for this slice.
 
 Independent review covered exclusion pruning, metadata resolution, mapping
@@ -118,7 +129,8 @@ field-name matching, parser error boundaries, Core field invariants, deferred
 storage references, timezone failures, type-aware uniqueness, history version
 boundaries, strict snapshot readiness, release precedence, malformed/non-string
 artifact version handling, root report editions, branch-aware diagnostics,
-YAML-alias preservation, and the golden reports. The earlier ordering review
+YAML-alias preservation, malformed declaration projection, suppression-independent
+incompleteness, tagged YAML containers, and the golden reports. The earlier ordering review
 also checked 193,600 pairs of 440 schema-valid versions against an independent
 BigInt/ASCII comparator, including 1001-digit identifiers; all comparisons agreed.
 These results advance B4/E1/E2 and the bounded system-exercise part of E3 in
