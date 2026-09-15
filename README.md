@@ -44,6 +44,12 @@ compatible root remains best-effort/incomplete; an unsupported root prevents
 child interpretation and querying even when its diagnostic is suppressed.
 Declared artifact versions and source bytes are preserved.
 
+Markdown byte and text inputs now consume exactly one leading BOM and retain any
+second BOM as content. The specification fixture checker also recognizes CR-only
+frontmatter and rejects malformed UTF-8 instead of replacing bytes. Its optional
+frontmatter check rejects top-level tagged sets while retaining nested opaque
+values. See the [input-boundary decision](docs/decisions/011-text-input-boundaries.md).
+
 Malformed extension declarations retain their well-formed identifier/version
 entries in `required_extensions`, including unsupported exact contracts. Invalid
 entries receive separate findings; evaluation stays incomplete even when those

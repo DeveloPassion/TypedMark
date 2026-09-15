@@ -18,7 +18,9 @@ export function frontmatterFailureRule(error: unknown, fallback: string): string
 // before parsing. String callers supply already-decoded text.
 export function parseMarkdown(source: string | Uint8Array, options: { preserveBodyLineEndings?: boolean } = {}): MarkdownDocument {
   let decoded: string;
-  try { decoded = typeof source === "string" ? source : new TextDecoder("utf-8", { fatal: true }).decode(source); }
+  // Retain the decoded BOM here so the grammar below consumes it exactly once.
+  // https://nodejs.org/api/util.html#new-textdecoderencoding-options
+  try { decoded = typeof source === "string" ? source : new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(source); }
   catch (error) {
     if (error instanceof TypeError) throw new FrontmatterError("Markdown is not valid UTF-8", "", "FND-28");
     throw error;

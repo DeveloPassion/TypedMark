@@ -152,12 +152,28 @@ see the [boundary decision](../../docs/decisions/010-scalar-allowed-values.md).
 This is not a general cyclic-equality implementation or completion of the remaining
 Core audit, checker input-boundary audit or open URI-policy dispositions.
 
-A separate source-byte probe now confirms the next checker mismatch: CR-only
-frontmatter is accepted by the runtime but rejected by the fixture checker, while
-an invalid UTF-8 byte in a governed artifact's body is rejected by the runtime but
-accepted after the checker's replacement decoding. An actual UTF-8 replacement
-character passes both controls. All probe bytes stayed unchanged. Correcting
-this input boundary remains required work; the allowed-value fix does not change it.
+The subsequent input-boundary correction aligns CR-only frontmatter and strict
+UTF-8 reads in the fixture checker, including artifact bodies and JSON strings.
+Top-level tagged sets no longer masquerade as optional frontmatter mappings.
+Runtime byte/text parsing now consumes one leading BOM consistently, without
+hiding a delimiter behind a second BOM. Thirty checker and fifteen runtime
+regressions retain exact delimiters, opaque nested tags, binary assets, interior
+BOMs and source bytes. JSON BOM behavior and discovery are unchanged; see the
+[input-boundary decision](../../docs/decisions/011-text-input-boundaries.md).
+The original three-case byte probe now agrees across both readers. The remaining
+Core, compatibility and effort audits are not closed by these parser corrections.
+
+Independent review confirmed a pre-existing FND-25 gap: an explicit `%YAML 1.1`
+directive still switches scalar resolution, so `yes` becomes `true` in both
+parsers. Setting only the parser's default version does not prevent this.
+Enforcing the pinned YAML 1.2 Core baseline remains the next Core correction.
+
+A separate runtime JSON probe also remains open: the query CLI accepts a descriptor
+containing a raw invalid UTF-8 byte, and the vector runner accepts an expected-report
+message after silently replacing that byte with U+FFFD. Both JSON input files remain
+byte-unchanged, and the vector reports zero differences/collection changes; accepting
+repaired input is still incorrect. Runtime JSON ingress needs its own strict-decoding
+audit, distinct from the corrected specification checker.
 
 ## Completion evidence still required
 
