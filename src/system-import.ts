@@ -1,6 +1,6 @@
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
-import { parseMarkdown } from "./frontmatter";
+import { parseMarkdownWithNodes } from "./frontmatter";
 import { expandObjectDefaults, isMapping } from "./field-values";
 import { noteFieldDefinitions } from "./collection-model";
 import { materializeStarters, MaterializationError, type StarterInput } from "./materialization";
@@ -15,9 +15,9 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
   return readStableCollection(sourceRoot, (root, info) => {
     const model = readCollectionModel({ collectionRoot: root, schemaDirectory, mode: "system_definition" }, { diagnosticPolicy: "strict", blockedPaths: info.blockedPaths });
     if (!model.report.valid || model.configurationIssue || model.associationIssue) throw new Error(`Source system is not conforming: ${JSON.stringify(model.report.results)}`);
-    const document = parseMarkdown(readFileSync(join(root, "typedmark.md")), { preserveBodyLineEndings: true });
+    const document = parseMarkdownWithNodes(readFileSync(join(root, "typedmark.md")), { preserveBodyLineEndings: true });
     const config = document.data;
-    if (typeof config.name !== "string" || typeof config.version !== "string" || !isMapping(config.scaffold)) throw new Error("Source is not a versioned system definition");
+    if (!document.frontmatter || typeof config.name !== "string" || typeof config.version !== "string" || !isMapping(config.scaffold)) throw new Error("Source is not a versioned system definition");
     const declaredMetadata = typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark";
     const metadataEntry = readdirSync(root, { withFileTypes: true }).find((entry) => entry.isDirectory() && entry.name.normalize("NFC") === declaredMetadata.normalize("NFC"));
     const metadataDirectory = metadataEntry?.name ?? declaredMetadata;
@@ -64,7 +64,7 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
       if (occupied.has(note.path.normalize("NFC"))) throw new MaterializationError("NTS-152", `Scaffold path is occupied: ${note.path}`);
       occupied.add(note.path.normalize("NFC"));
     }
-    return { config, body: document.body, files, directories, notes, metadataDirectory,
+    return { configuration: document.frontmatter, body: document.body, files, directories, notes, metadataDirectory,
       source: { name: config.name, version: config.version }, folders: Array.isArray(config.scaffold.folders) ? config.scaffold.folders as string[] : [] };
   }, { includePaths, rejectMetadataLinks: true, artifactsOnly: true });
 }

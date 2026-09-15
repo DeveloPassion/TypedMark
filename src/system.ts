@@ -8,6 +8,7 @@ import type { ValidationReport } from "./types";
 import { readCollectionModel, validateCollection } from "./validator";
 import { readStableCollection } from "./snapshot";
 import { prepareSystem } from "./system-import";
+import { instantiateConfiguration } from "./system-configuration";
 
 export interface InstantiateSystemInput {
   sourceRoot: string;
@@ -51,13 +52,8 @@ export async function instantiateSystem(input: InstantiateSystemInput): Promise<
     for (const path of prepared.directories) await mkdir(safeTarget(stagingRoot, path), { recursive: true });
     for (const [path, bytes] of prepared.files) await writeFile(safeTarget(stagingRoot, path), bytes, { flag: "wx" });
 
-    const targetConfig = structuredClone(prepared.config);
-    targetConfig.name = input.collectionName;
-    if (input.description !== undefined) targetConfig.description = input.description;
-    delete targetConfig.version;
-    delete targetConfig.scaffold;
-    targetConfig.composition = { sources: [prepared.source] };
-    await writeFile(join(stagingRoot, "typedmark.md"), serializeMarkdown(targetConfig, prepared.body), { flag: "wx" });
+    const configuration = instantiateConfiguration(prepared.configuration, { name: input.collectionName, description: input.description, source: prepared.source });
+    await writeFile(join(stagingRoot, "typedmark.md"), `---\n${configuration}---\n${prepared.body}`, { flag: "wx" });
 
     const createdPaths = ["typedmark.md"];
     for (const folder of prepared.folders) {

@@ -180,13 +180,20 @@ loader failures; a regression proves malformed schema bytes cannot approve a no-
 The full Core, capability, compatibility and measured-effort completion checks remain
 open; these input corrections do not substitute for the requirement ledger.
 
-A focused E1/EXT-27 probe confirms a remaining import preservation gap. Root
-configuration vendor metadata parsed as Set, ordered Map, Date and binary data is
-serialized into sequences, ordinary mappings and text during instantiation. The
-source remains byte-unchanged and the target report is valid, but the metadata
-values change type. The bounded example has no such values, so its passing result
-does not close this gap. Preserve tagged root metadata through the publishing-
-identity rewrite before claiming general metadata fidelity.
+The E1/EXT-27 root rewrite now retains parsed YAML nodes instead of round-tripping
+through JavaScript. Native tagged values, unknown tags, complex mapping keys and
+source-root aliases survive the identity change. Root merge entries are expanded
+before removing publishing fields; source bytes, copied artifacts and body remain
+unchanged. Dedicated regression tests, not a successful target report or the
+ordinary example, establish these cases. See the
+[root-preservation decision](../../docs/decisions/014-root-yaml-preservation.md).
+Scalar source text also survives native Number/Date precision limits. A remaining
+E1 operability gap affects highly shared source-root graphs: the new aliases can
+exceed the reader's expansion budget. Imports fail closed with source unchanged
+and no target published; the safety limit is not disabled. Resolve that interaction
+without corrupting metadata or weakening resource protection. This is not general
+writer fidelity: scaffold serialization and the exact terminal YAML line-break
+boundary remain separate audit targets.
 
 ## Completion evidence still required
 

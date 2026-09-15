@@ -304,11 +304,16 @@ authored tags. Unique generated values reserve concrete values across the whole
 scaffold before generation. Optional Authoring generators are not implemented by
 this importer and cause an explicit failure when generation is needed.
 
-A known import-fidelity gap remains for native tagged values in root `x_*`
-metadata: instantiation currently changes their YAML types while reserializing
-the root configuration. Source files are unchanged, but a valid target report
-does not prove metadata fidelity. This is tracked in the
-[plan audit](evidence/0.1.0/plan-audit.md).
+Root `x_*` metadata now retains its YAML nodes through instantiation, including
+native tagged values, unknown tags, complex keys and aliases to source values.
+Publishing fields are removed even when inherited through an explicit YAML merge;
+source-root aliases retain the original identity inside metadata. A valid target
+report alone is not preservation proof: dedicated round-trip tests cover this
+writer. See the [root-preservation decision](docs/decisions/014-root-yaml-preservation.md).
+Numeric and timestamp scalar text is retained beyond native Number/Date precision.
+Highly shared source-root graphs can still exceed the reader's alias budget after
+rewriting; these imports abort without publishing a target. This operability gap
+remains open in the [plan audit](evidence/0.1.0/plan-audit.md).
 
 Source validation, template reads, metadata copying, and preparation share one
 captured snapshot. Import preserves the configuration body and conventional
