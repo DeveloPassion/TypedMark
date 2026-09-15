@@ -10,7 +10,7 @@ import { aliasValueFailure, noteFieldDefinitions, type CollectionModel, type Col
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
-import { resolveSchemas, type SchemaIssue } from "./reuse";
+import { resolveSchemas, type SchemaIssue, type FieldSources } from "./reuse";
 import { conditionFailures, matchesFrontmatterPredicates, validateConditions } from "./conditions";
 import { validateReusableBlocks } from "./schema-semantics";
 import { validateRelationships } from "./relationships";
@@ -59,13 +59,14 @@ function validationMode(value: unknown): ValidationReport["mode"] {
   throw new RangeError("mode must be system_definition, instantiated_collection, or both");
 }
 
-export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict"; blockedPaths?: ReadonlySet<string> } = {}): CollectionModel {
+export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict"; blockedPaths?: ReadonlySet<string>; fieldSources?: FieldSources } = {}): CollectionModel {
   if (input.referenceEdition !== undefined && input.referenceEdition !== IMPLEMENTED_CORE) {
     throw new RangeError(`Only referenceEdition ${IMPLEMENTED_CORE} is implemented`);
   }
   const version = IMPLEMENTED_CORE;
   const root = input.collectionRoot;
   const mode = validationMode(input.mode);
+  options.fieldSources?.clear();
   const registry = new SchemaRegistry(input.schemaDirectory);
   const results: ValidationResult[] = [];
   const configPath = join(root, "typedmark.md");
@@ -312,7 +313,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
       propertySetIssues.set(name, { kind: "invalid", path, message: failure.message });
     }
   }
-  const resolved = resolveSchemas({ schemas, propertySets, config, metadataDirectory, enabled: !!evaluatedExtensions["typedmark:reuse"], schemaIssues, propertySetIssues });
+  const resolved = resolveSchemas({ schemas, propertySets, config, metadataDirectory, enabled: !!evaluatedExtensions["typedmark:reuse"], schemaIssues, propertySetIssues, fieldSources: options.fieldSources });
   schemas = resolved.schemas; schemaIssues = resolved.issues; schemaSources = resolved.sources;
   for (const finding of resolved.results) add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { ...(finding.note_type ? { note_type: finding.note_type } : {}) });
   if ([...schemaIssues.values()].some((issue) => issue.kind === "unavailable" && issue.specificationVersion)) evaluation = "incomplete";
