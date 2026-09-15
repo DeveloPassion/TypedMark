@@ -41,12 +41,22 @@ export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
  * Interpret a parsed anchor without changing its authored spelling or resolving it.
  * Markdown escapes/entities and UTF-8 percent escapes each decode once; wikilinks
  * stay literal. Block values omit the leading caret. Missing anchors return undefined.
- * @throws NoteLinkError (NL-6 for malformed escapes; NL-11 for non-UTF-8 bytes).
+ * @throws NoteLinkError (NL-6 for invalid fragment syntax; NL-11 for non-UTF-8 bytes).
  */
 export function interpretNoteLinkAnchor(link: Pick<ParsedNoteLink, "form" | "anchor">): { kind: "heading" | "block"; value: string } | undefined {
   if (link.anchor === undefined) return undefined;
-  const value = link.form === "markdown"
-    ? decodeMarkdownComponent(markdownLinkDestination(link.anchor).uri, "anchor") : link.anchor;
+  let value = link.anchor;
+  if (link.form === "markdown") {
+    const encoded = markdownLinkDestination(link.anchor).uri;
+    // Check RFC fragment characters before percent decoding. Only the leading
+    // TypedMark block marker is exempt; encoded punctuation remains data.
+    // https://www.rfc-editor.org/rfc/rfc3986#section-3.5
+    const fragment = encoded.startsWith("^") ? encoded.slice(1) : encoded;
+    if (!isUriReference(`#${fragment}`)) {
+      throw new NoteLinkError("NL-6", "Markdown anchor requires RFC 3986 percent encoding");
+    }
+    value = decodeMarkdownComponent(encoded, "anchor");
+  }
   return value.startsWith("^") ? { kind: "block", value: value.slice(1) } : { kind: "heading", value };
 }
 

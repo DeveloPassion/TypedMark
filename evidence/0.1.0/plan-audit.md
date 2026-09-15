@@ -5,6 +5,11 @@ This is non-normative implementation evidence for
 replacement specification. The active objective remains **finish implementing
 the rest of the plan**. A passing test count is not proof of full completion.
 
+Session wrap-up: the [complete resume map](session-handoff-2026-09-15.md)
+supersedes older in-progress paragraphs below. Anchor encoding is now decided
+and saved in specification #131/tooling #4; scaffold and root-budget work are
+saved in tooling #5/#6. All are drafts, not completed or merged requirements.
+
 ## Scope and decisions
 
 The accepted target is an unreleased `0.1.0` draft, preserving the prior `0.0.1`

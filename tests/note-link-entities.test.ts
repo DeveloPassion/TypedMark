@@ -34,7 +34,7 @@ test.each([
   { destination: "N&period;md&num;Head&#33;", target: "N.md", anchor: "Head&#33;" },
   { destination: "N.md&#35;Head&amp;Tail", target: "N.md", anchor: "Head&amp;Tail" },
   { destination: "N.md&#x23;^block", target: "N.md", anchor: "^block" },
-  { destination: "N.md&num;Head#Tail", target: "N.md", anchor: "Head#Tail" },
+  { destination: "N.md&num;Head%23Tail", target: "N.md", anchor: "Head%23Tail" },
   { destination: "N.md&num;", target: "N.md", anchor: "" },
   { destination: "N.md\\#Head&amp;Tail", target: "N.md", anchor: "Head&amp;Tail" },
   { destination: "N.md\\&#35;Head", target: "N.md&", anchor: "35;Head" },
