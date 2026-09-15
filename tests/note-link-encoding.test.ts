@@ -70,11 +70,11 @@ test.each([
   expect(inspectBodyLinks(raw).failures).toEqual([]);
 });
 
-test("leaves authored labels and fragments intact when checking only target character syntax", () => {
-  const raw = "![a\\[b\\] &amp; 📝](<N%20note.md&num;Head {draft}|[x]\\!&amp;Tail> 'title with spaces')";
+test("leaves authored labels and encoded fragments intact during URI syntax checks", () => {
+  const raw = "![a\\[b\\] &amp; 📝](<N%20note.md&num;Head%20%7Bdraft%7D%7C%5Bx%5D\\!&amp;Tail> 'title with spaces')";
   expect(parseNoteLink(raw)).toEqual({
     raw, form: "markdown", target: "N note.md", embed: true,
-    displayText: "a\\[b\\] &amp; 📝", anchor: "Head {draft}|[x]\\!&amp;Tail",
+    displayText: "a\\[b\\] &amp; 📝", anchor: "Head%20%7Bdraft%7D%7C%5Bx%5D\\!&amp;Tail",
   });
   expect(inspectBodyLinks(raw).failures).toEqual([]);
 });

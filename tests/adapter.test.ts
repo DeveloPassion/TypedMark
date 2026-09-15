@@ -85,6 +85,7 @@ test.each([
   "note-link-entities-valid", "note-link-entities-invalid",
   "note-link-percent-valid", "note-link-percent-invalid", "note-link-percent-suppressed",
   "note-link-unicode-valid", "note-link-unicode-invalid", "note-link-unicode-suppressed",
+  "note-link-fragment-valid", "note-link-fragment-invalid", "note-link-fragment-suppressed",
   "uri-syntax-valid", "uri-syntax-invalid", "uri-syntax-defaults-invalid",
   "inline-lexer-unicode-valid", "inline-lexer-backticks-invalid",
   "yaml-core-valid", "yaml-core-invalid", "yaml-terminal-valid", "yaml-terminal-invalid",

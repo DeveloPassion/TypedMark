@@ -34,7 +34,7 @@ const examples: Array<{ name: string; link: ParsedNoteLink }> = [
   },
   {
     name: "authored literal entity text in a Markdown label and anchor",
-    link: { raw: "[Label&lt;D](N.md#Heading&lt;C)", form: "markdown", target: "N.md", anchor: "Heading&lt;C", displayText: "Label&lt;D", embed: false },
+    link: { raw: "[Label&lt;D](N.md#Heading&percnt;3CC)", form: "markdown", target: "N.md", anchor: "Heading&percnt;3CC", displayText: "Label&lt;D", embed: false },
   },
   {
     name: "less-than signs beside literal entities in wiki components",
