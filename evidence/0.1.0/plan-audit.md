@@ -46,7 +46,7 @@ the remaining completion checks in the last column.
 | C4 Systems ownership | Systems/history/migration contracts; local provenance and offline validation | Do not claim history replay, target-aware migration or external composition resolution where absent. |
 | D5 values/templates/Core fields | Effective-record tests; template resolution, placeholder checks and import materialization work | Final integrated template/import verification, including explicit values and source preservation. |
 | D6 boundaries/paths/headings/time | Discovery, path, storage and timezone suites; pinned CommonMark heading adapter, 30 heading regressions and two golden vectors | Heading correction is implemented; continue auditing other Markdown consumers against their own contracts. |
-| D7 identity/merge/tags/archive/untyped | Core field, uniqueness, association, Reuse and storage suites | Audit each concern against its owner; the existence of tests alone does not close this row. |
+| D7 identity/merge/tags/archive/untyped | Core field, uniqueness, association, Reuse and storage suites; [read-only lifecycle consumer matrix](lifecycle-read-audit.md) | Deletion/archive source and target states now have explicit integrated evidence. Continue the remaining identity/merge/tag/untyped audit; this does not establish writer behavior or close the row. |
 | D8 simplifications | Removed-shape fixtures, retained count/object constraints, migration checklist | Verify each intentional incompatibility has a migration or explicit manual-resolution outcome. |
 | D9 feature moves/removals | Reuse/Expressions/Authoring ownership; old folder-scope/generated forms rejected | Verify no undocumented equivalence or data-loss claim in the compatibility ledger. |
 | E1 useful system path | One-source staged instantiation, local provenance, strict readiness, and the 2026-09-14 published-example rerun after deleting its temporary source | Continue auditing remaining import boundaries; replay and multi-source/external resolution are not claimed. |
@@ -204,8 +204,13 @@ The shared-root graph budget still requires work. A separate valid-source scaffo
 probe confirms native-value loss in declared `any` fields: Set, ordered Map, Date
 and binary inputs become arrays, ordinary mappings or text in an accepted target.
 The source bytes remain unchanged, but this is not a faithful materialization.
-Correct scaffold value/tag/alias preservation next; the broader Core/capability,
-effort and release audit remains open.
+Scaffold value/tag/alias preservation remains uncommitted: three review cycles
+still leave merge-context failures, including an import reporting success while
+leaving an intended child default unchanged. That implementation is paused for
+maintainer direction under the review bound; it is not included in published
+runtime evidence. The independent [read-only lifecycle audit](lifecycle-read-audit.md)
+adds integrated deletion/archive checks against the committed runtime. The broader
+Core/capability, effort and release audit remains open.
 
 ## Completion evidence still required
 
