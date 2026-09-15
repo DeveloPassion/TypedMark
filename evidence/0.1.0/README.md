@@ -1,17 +1,17 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers seventy-one golden vectors at TypedMarkSpecification
-`074f4fa2a55bfda9f64fb35593ec680d5d009ebd`, using adapter
-`9719feac2298ff893b916d478f22c98f43a016cf`. Exact UTC run timestamps are
+This record covers seventy-three golden vectors at TypedMarkSpecification
+`82d020073cbc32aabcc0693f7311f99521b62459`, using adapter
+`025dfc130c0c3a5f53a122f2247a83fdfa0c2815`. Exact UTC run timestamps are
 retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34918793425),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34921195247),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- sixty-nine eligible collection vectors passed;
+- seventy-one eligible collection vectors passed;
 - sixteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -303,12 +303,29 @@ the precision loss was fixed, with no additional findings on the second review.
 Highly shared source-root graphs can still exceed the reader's alias-expansion
 budget after rewriting. A regression proves this valid-source case aborts without
 publishing a target or changing source bytes. The resource guard remains intact;
-this E1 operability gap stays open. A separate six-case probe confirms that runtime
-and fixture-checker extraction drop one terminal newline from a final YAML `|+`
-value. Quoting multiline values prevents additional writer loss, but does not fix
-that earlier reader loss. Both remain in the [plan ledger](plan-audit.md).
+this E1 operability gap stays open in the [plan ledger](plan-audit.md).
 The ordinary published example does not exercise these exceptional graph/value
 cases, so its success is not exhaustive metadata-fidelity evidence.
+
+The subsequent newline correction retains the final YAML content line break in
+both readers and restores the final content newline in classified YAML/YML fences.
+Twenty checker and twenty-seven runtime regressions/control cases retain keep,
+clip and strip semantics, exact delimiters, bodies and source bytes. Scaffold
+serialization also stops trimming content and quotes multiline strings. Review
+reproduced loss of spaces in blank lines; the corrected serializer passed 1,464
+independent string roundtrips, including nested values, with unchanged bodies.
+See the [terminal-newline decision](../../docs/decisions/015-terminal-yaml-newlines.md).
+
+Two new golden vectors prove correct and incorrect constant matches differing by
+one trailing newline. All seventy-one prior vector records are unchanged in the
+refreshed exact-source output. The original six-case reader probe now agrees
+across both readers, three line-ending styles and both closing delimiters.
+
+A separate valid-source scaffold probe confirms the next fidelity defect: Set,
+ordered Map, Date and binary values in declared `any` fields become arrays,
+ordinary mappings or text in a valid target. Source bytes stay unchanged, but
+the values change type. Neither the newline fix nor target validation establishes
+general native-value preservation; that correction remains open in the ledger.
 
 Runtime artifact shape checks use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -351,9 +368,9 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,662 tooling tests locally and in CI, type checking and
-dependency audit. The unchanged specification baseline's verified gates cover
-451 specification tests, 312 fixture expectations, rule-ID checks, and the
+Validation covered 1,691 tooling tests locally and in CI, type checking and
+dependency audit. The matching specification checkpoint passed
+471 specification tests, 314 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
@@ -398,8 +415,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `9719fea` and specification
-`074f4fa2a55bfda9f64fb35593ec680d5d009ebd`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `025dfc1` and specification
+`82d020073cbc32aabcc0693f7311f99521b62459`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted

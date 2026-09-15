@@ -1,8 +1,8 @@
 {
-  "specification_revision": "074f4fa2a55bfda9f64fb35593ec680d5d009ebd",
-  "adapter_revision": "9719feac2298ff893b916d478f22c98f43a016cf",
-  "started_at": "2026-09-15T01:53:14.464Z",
-  "finished_at": "2026-09-15T01:53:39.923Z",
+  "specification_revision": "82d020073cbc32aabcc0693f7311f99521b62459",
+  "adapter_revision": "025dfc130c0c3a5f53a122f2247a83fdfa0c2815",
+  "started_at": "2026-09-15T02:30:27.438Z",
+  "finished_at": "2026-09-15T02:30:55.273Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 71,
-    "executed": 69,
-    "passed": 69,
+    "discovered": 73,
+    "executed": 71,
+    "passed": 71,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -3056,6 +3056,68 @@
     },
     {
       "name": "yaml-core-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "yaml-terminal-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Notes/Example.md",
+            "rule_id": "FDR-213",
+            "message": "text does not equal const_value",
+            "note_type": "note",
+            "field": "text"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "yaml-terminal-valid",
       "status": "passed",
       "collection_changed": false,
       "differences": [],
