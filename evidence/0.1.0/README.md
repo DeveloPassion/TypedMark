@@ -1,18 +1,18 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers seventy-three golden vectors at TypedMarkSpecification
-`82d020073cbc32aabcc0693f7311f99521b62459`, using adapter
-`025dfc130c0c3a5f53a122f2247a83fdfa0c2815`. Exact UTC run timestamps are
+This record covers seventy-six golden vectors at TypedMarkSpecification
+`8e7929b9191bf4494dd1a51482043a2784078afe`, using adapter
+`7583ab170cbbfa78d57808081f749e1c83288b0d`. Exact UTC run timestamps are
 retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34921195247),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34931789904),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- seventy-one eligible collection vectors passed;
-- sixteen standalone query cases passed, including expected semantic failures;
+- seventy-four eligible collection vectors passed;
+- seventeen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
 - no vector was skipped for an unsupported validation contract; and
@@ -221,10 +221,10 @@ seconds; label/code cases also satisfy generous timing guards. See the
 [inline-lexer decision](../../docs/decisions/008-extraction-only-inline-lexer.md).
 All sixty-seven previous vector machine records remain unchanged in this CI output.
 
-URI-field fragment policy, Markdown anchor interpretation/general fragment-character
-checks and non-UTF-8 note-target octets remain unresolved. Existing URI-field fragment
-acceptance is preserved pending clarification, not treated as a settled FDR-140
-interpretation. The measured mask/start-scan slowdown is fixed, not claimed as an
+The maintainer has now resolved URI-field fragments, decoded Markdown-anchor
+interpretation and non-UTF-8 note-target rejection; see
+[decision 016](../../docs/decisions/016-unicode-note-link-components.md).
+General raw-fragment character enforcement remains separately unresolved. The measured mask/start-scan slowdown is fixed, not claimed as an
 exhaustive parser-performance audit. A separate checker-parity probe found native
 YAML sets/ordered maps accepted as structural configuration maps by the specification
 fixture checker but rejected by the runtime. The fixture checker is now aligned:
@@ -321,6 +321,20 @@ one trailing newline. All seventy-one prior vector records are unchanged in the
 refreshed exact-source output. The original six-case reader probe now agrees
 across both readers, three line-ending styles and both closing delimiters.
 
+Forty [read-only lifecycle checks](lifecycle-read-audit.md) now cover deletion and
+archiving across validation, counts, identifiers, links, relationships and query
+selection. They do not establish archive/delete writer behavior.
+
+The Unicode-link increment adds fifty-four focused regressions and three golden
+vectors. `interpretNoteLinkAnchor` supplies decoded heading/block values without
+changing the authored `anchor`, raw link or physical body span. Non-UTF-8 internal
+components remain located `invalid_note_link` failures under NL-11, including when
+query/model use is blocked behind suppressed diagnostics. URI fields retain
+fragments and arbitrary well-formed percent octets. All seventy-three prior vector
+records are unchanged; the three new vectors and suppressed query case pass.
+The raw-fragment character-validation conflict remains open, with NL-6 unchanged.
+See [decision 016](../../docs/decisions/016-unicode-note-link-components.md).
+
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
 ordinary mappings or text in a valid target. Source bytes stay unchanged, but
@@ -368,9 +382,10 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,691 tooling tests locally and in CI, type checking and
-dependency audit. The matching specification checkpoint passed
-471 specification tests, 314 fixture expectations, rule-ID checks, and the
+Validation covered 1,788 tooling tests locally and in CI, type checking and
+dependency audit. The final local source run completed 4,943 assertions across
+77 files in 683.31 seconds. The matching specification checkpoint passed
+471 specification tests, 317 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
@@ -415,8 +430,9 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `025dfc1` and specification
-`82d020073cbc32aabcc0693f7311f99521b62459`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `7583ab1` and specification
+`8e7929b9191bf4494dd1a51482043a2784078afe`, executed at
+`2026-09-15T05:12:43.615Z`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted

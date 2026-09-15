@@ -1,8 +1,8 @@
 {
-  "specification_revision": "82d020073cbc32aabcc0693f7311f99521b62459",
-  "adapter_revision": "025dfc130c0c3a5f53a122f2247a83fdfa0c2815",
-  "started_at": "2026-09-15T02:30:27.438Z",
-  "finished_at": "2026-09-15T02:30:55.273Z",
+  "specification_revision": "8e7929b9191bf4494dd1a51482043a2784078afe",
+  "adapter_revision": "7583ab170cbbfa78d57808081f749e1c83288b0d",
+  "started_at": "2026-09-15T05:16:32.036Z",
+  "finished_at": "2026-09-15T05:17:03.111Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 73,
-    "executed": 71,
-    "passed": 71,
+    "discovered": 76,
+    "executed": 74,
+    "passed": 74,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1520,6 +1520,136 @@
     },
     {
       "name": "note-link-percent-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "note-link-unicode-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-11",
+            "message": "NL-11: Markdown target contains malformed or non-UTF-8 percent encoding",
+            "note_type": "source"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-11",
+            "message": "NL-11: Markdown anchor contains malformed or non-UTF-8 percent encoding",
+            "note_type": "source"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-11",
+            "message": "NL-11: Markdown target contains malformed or non-UTF-8 percent encoding",
+            "note_type": "source",
+            "field": "references"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-11",
+            "message": "NL-11: Markdown anchor contains malformed or non-UTF-8 percent encoding",
+            "note_type": "source",
+            "field": "references"
+          },
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "RHT-31",
+            "message": "related_to target target has 0 resolved instances",
+            "note_type": "source",
+            "relationship": "related_to"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "note-link-unicode-suppressed",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "suppressed-non-utf8-links-block-query-model",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-307"
+        }
+      ]
+    },
+    {
+      "name": "note-link-unicode-valid",
       "status": "passed",
       "collection_changed": false,
       "differences": [],
@@ -3144,8 +3274,8 @@
     }
   ],
   "query_summary": {
-    "executed": 16,
-    "passed": 16,
+    "executed": 17,
+    "passed": 17,
     "failed": 0
   }
 }
