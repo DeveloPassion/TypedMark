@@ -163,10 +163,12 @@ BOMs and source bytes. JSON BOM behavior and discovery are unchanged; see the
 The original three-case byte probe now agrees across both readers. The remaining
 Core, compatibility and effort audits are not closed by these parser corrections.
 
-Independent review confirmed a pre-existing FND-25 gap: an explicit `%YAML 1.1`
-directive still switches scalar resolution, so `yes` becomes `true` in both
-parsers. Setting only the parser's default version does not prevent this.
-Enforcing the pinned YAML 1.2 Core baseline remains the next Core correction.
+The FND-25 directive gap is now corrected with explicit Core resolution settings,
+not just a default version. Legacy words/numeric forms, implicit merge-looking
+keys and duplicate detection retain their Core meanings even with `%YAML 1.1`.
+Explicit known tags, aliases and source bytes remain supported. Thirty checker
+and thirty-three runtime regressions, two golden vectors and two artifact fixtures
+cover the correction; see the [fixed-Core decision](../../docs/decisions/012-fixed-yaml-core.md).
 
 A separate runtime JSON probe also remains open: the query CLI accepts a descriptor
 containing a raw invalid UTF-8 byte, and the vector runner accepts an expected-report

@@ -86,6 +86,7 @@ test.each([
   "note-link-percent-valid", "note-link-percent-invalid", "note-link-percent-suppressed",
   "uri-syntax-valid", "uri-syntax-invalid", "uri-syntax-defaults-invalid",
   "inline-lexer-unicode-valid", "inline-lexer-backticks-invalid",
+  "yaml-core-valid", "yaml-core-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);

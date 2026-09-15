@@ -50,6 +50,12 @@ frontmatter and rejects malformed UTF-8 instead of replacing bytes. Its optional
 frontmatter check rejects top-level tagged sets while retaining nested opaque
 values. See the [input-boundary decision](docs/decisions/011-text-input-boundaries.md).
 
+YAML version directives no longer switch TypedMark frontmatter away from Core
+resolution. Boolean-like words, numeric forms, implicit merge-looking keys and
+duplicate checks keep their YAML 1.2 meanings across validation and import.
+Explicit known tags and aliases remain supported without rewriting source files;
+see the [fixed-Core decision](docs/decisions/012-fixed-yaml-core.md).
+
 Malformed extension declarations retain their well-formed identifier/version
 entries in `required_extensions`, including unsupported exact contracts. Invalid
 entries receive separate findings; evaluation stays incomplete even when those
