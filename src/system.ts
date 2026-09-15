@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { stringify } from "yaml";
+import type { YamlValue } from "./yaml-values";
 import { getCapabilities } from "./adapter";
 import { parseMarkdown } from "./frontmatter";
 import type { ValidationReport } from "./types";
@@ -64,7 +64,7 @@ export async function instantiateSystem(input: InstantiateSystemInput): Promise<
     for (const note of prepared.notes) {
       const destination = safeTarget(stagingRoot, note.path);
       await mkdir(dirname(destination), { recursive: true });
-      await writeFile(destination, serializeMarkdown(note.data, note.body), { flag: "wx" });
+      await writeFile(destination, serializeMarkdown(note.yaml, note.body), { flag: "wx" });
       createdPaths.push(normalized(relative(stagingRoot, destination)));
     }
 
@@ -116,10 +116,8 @@ export function checkMigrationReadiness(input: { systemRoot: string; fromVersion
   }
 }
 
-function serializeMarkdown(frontmatter: Record<string, unknown>, body: string): string {
-  // Keep all content; quoted multiline strings also preserve all-space lines
-  // that the library's block-scalar serializer otherwise drops.
-  return `---\n${stringify(frontmatter, { lineWidth: 0, blockQuote: false })}---\n${body}`;
+function serializeMarkdown(frontmatter: YamlValue, body: string): string {
+  return `---\n${frontmatter.toString()}---\n${body}`;
 }
 
 function safeTarget(root: string, requestedPath: string): string {

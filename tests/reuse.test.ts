@@ -24,6 +24,29 @@ test("composes defaults, ancestors, removal, opt-ins, then local fields by full 
   expect(result.schemas.get("note")).toMatchObject({ note_type: "note", abstract: false, label: "note", description: "Schema." });
 });
 
+test("optional writer origins follow the same winning definitions without changing semantic output", () => {
+  const fieldSources = new Map<string, Map<string, { path: string; field: string }>>();
+  const input = {
+    schemas: new Map<string, Record<string, unknown>>([
+      ["base", { ...version, abstract: true, frontmatter: { inherited: { type: "any" }, removed: { type: "any" }, local: { type: "any", default_value: "old" } } }],
+      ["note", { ...version, extends: "base", storage, property_sets: ["opt"], frontmatter_remove: ["removed"], frontmatter: { local: { type: "any", nullable: true } } }],
+    ]),
+    propertySets: new Map<string, Record<string, unknown>>([
+      ["default", { ...version, frontmatter: { shared: { type: "any" }, inherited: { type: "text" } } }],
+      ["opt", { ...version, frontmatter: { selected: { type: "any" } } }],
+    ]),
+    config: { default_property_sets: ["default"] }, metadataDirectory: ".metadata", enabled: true,
+  };
+  expect(resolveSchemas({ ...input, fieldSources })).toEqual(resolveSchemas(input));
+  expect(Object.fromEntries(fieldSources.get("note")!)).toEqual({
+    shared: { path: ".metadata/property-sets/default.md", field: "shared" },
+    inherited: { path: ".metadata/schemas/base.md", field: "inherited" },
+    selected: { path: ".metadata/property-sets/opt.md", field: "selected" },
+    local: { path: ".metadata/schemas/note.md", field: "local" },
+  });
+  expect(fieldSources.get("base")?.has("shared")).toBe(false);
+});
+
 test("uses whole-key metadata replacement and merges relationship targets and heading members", () => {
   const result = resolve({
     base: { abstract: true, storage: { ...storage, archive: storage }, mandatory_tags: ["base"], count: { min: 1, max: 5 },

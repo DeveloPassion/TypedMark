@@ -9,6 +9,8 @@ export interface SchemaIssue {
   extension?: string;
 }
 export interface SchemaSource { path: string; version: string }
+export interface FieldSource { path: string; field: string }
+export type FieldSources = Map<string, Map<string, FieldSource>>;
 export interface ResolvedSchemas {
   schemas: Map<string, Data>;
   issues: Map<string, SchemaIssue>;
@@ -23,6 +25,8 @@ interface ResolveInput {
   enabled: boolean;
   schemaIssues?: Map<string, SchemaIssue>;
   propertySetIssues?: Map<string, SchemaIssue>;
+  /** Optional writer-only provenance for the final whole-field replacement. */
+  fieldSources?: FieldSources;
 }
 const inheritedKeys = ["storage", "template", "mandatory_tags", "guidance", "unknown_field", "conditions", "count"];
 
@@ -41,6 +45,8 @@ export function matchesNoteType(schemas: Map<string, Data>, actual: string, requ
 export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
   const result: ResolvedSchemas = { schemas: new Map(), issues: structuredClone(input.schemaIssues ?? new Map()), sources: new Map(), results: [] };
   const contributions = new Map<string, Data>();
+  const contributionSources: FieldSources | undefined = input.fieldSources && new Map();
+  input.fieldSources?.clear();
   const pathOf = (name: string) => `${input.metadataDirectory}/schemas/${name}.md`;
   const defaults: string[] = Array.isArray(input.config.default_property_sets) ? input.config.default_property_sets : [];
   const mark = (name: string, issue: SchemaIssue) => {
@@ -71,6 +77,7 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
     if (local.extends && result.issues.has(local.extends)) mark(name, result.issues.get(local.extends)!);
     if (result.issues.has(name)) { result.schemas.set(name, structuredClone(local)); return; }
     const parent = contributions.get(local.extends);
+    const fieldSources = input.fieldSources && new Map<string, FieldSource>();
     const effective: Data = { ...structuredClone(local), note_type: name, abstract: local.abstract === true, label: local.label ?? name,
       frontmatter: {}, relationships: { belongs_to: { allowed_note_types: {} }, related_to: { allowed_note_types: {} } }, headings: {},
     };
@@ -78,8 +85,13 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
     // is not a provenance inventory. Full ancestry lists would be quadratic.
     const sources = [...(result.sources.get(local.extends) ?? [])];
     if (!sources.length && local.specification_version !== "0.1.0") sources.push({ path: pathOf(name), version: String(local.specification_version) });
-    const apply = (layer: Data) => {
+    const apply = (layer: Data, origin?: string | Map<string, FieldSource>) => {
       Object.assign(effective.frontmatter, structuredClone(layer.frontmatter ?? {}));
+      if (fieldSources) for (const field of Object.keys(layer.frontmatter ?? {})) {
+        const source = typeof origin === "string" ? { path: origin, field } : origin?.get(field);
+        if (!source) throw new Error(`Missing field origin for ${field}`);
+        fieldSources.set(field, source);
+      }
       for (const kind of ["belongs_to", "related_to"]) Object.assign(effective.relationships[kind].allowed_note_types, structuredClone(layer.relationships?.[kind]?.allowed_note_types ?? {}));
       Object.assign(effective.headings, structuredClone(layer.headings ?? {}));
     };
@@ -91,7 +103,7 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
       const source = { path: `${input.metadataDirectory}/property-sets/${id}.md`, version: String(set.specification_version) };
       if (!sources.length && source.version !== "0.1.0") sources.push(source);
       if (!source.version.startsWith("0.1.")) { unavailable(name, source); return; }
-      apply(set);
+      apply(set, source.path);
     };
     const excluded: string[] = local.exclude_property_sets ?? [];
     const selected: string[] = local.property_sets ?? [];
@@ -104,19 +116,23 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
       for (const id of selected) if (appliedDefaults.includes(id)) problem(name, "CM-167", `Property set ${id} is both default and opt-in`, true);
       for (const id of appliedDefaults) applySet(id, true);
     }
-    if (parent) apply(parent);
+    if (parent) apply(parent, contributionSources?.get(local.extends));
     if (!effective.abstract && input.enabled) {
       for (const field of local.frontmatter_remove ?? []) {
         if (!Object.hasOwn(effective.frontmatter, field)) problem(name, "CM-171", `Removed field ${field} has no inherited contribution`, true);
-        else delete effective.frontmatter[field];
+        else { delete effective.frontmatter[field]; fieldSources?.delete(field); }
       }
       for (const id of selected) applySet(id, false);
     }
-    apply(local);
+    apply(local, pathOf(name));
     for (const layer of [parent, local]) if (layer) for (const key of inheritedKeys) if (Object.hasOwn(layer, key)) effective[key] = structuredClone(layer[key]);
     // Cache the composed contribution before omission defaults. An absent
     // ancestor heading member must not erase a property-set contribution.
     contributions.set(name, structuredClone(effective));
+    if (fieldSources) {
+      contributionSources!.set(name, new Map(fieldSources));
+      input.fieldSources!.set(name, new Map(fieldSources));
+    }
     effective.headings = { required_h2: [], optional_h2: [], allow_other_h2: true, require_order: false, require_h1_title: false, ...effective.headings };
     effective.mandatory_tags ??= [];
     if (!result.issues.has(name) && !effective.abstract && !effective.storage) problem(name, "NTS-23", "Concrete type has no effective storage block");

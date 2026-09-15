@@ -8,12 +8,15 @@ import { readStableCollection } from "./snapshot";
 import { resolveStoragePath } from "./storage";
 import { deriveStarter, resolveTemplate } from "./templates";
 import { readCollectionModel } from "./validator";
+import type { FieldSources } from "./reuse";
+import { YamlValue } from "./yaml-values";
 
 /** Prepare source-owned bytes and new notes before creating a destination. */
 export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
   const includePaths = readdirSync(sourceRoot).filter((name) => /^(?:licen[cs]es?|notices?|copying|copyright|authors|attribution)(?:$|[._-])/iu.test(name));
   return readStableCollection(sourceRoot, (root, info) => {
-    const model = readCollectionModel({ collectionRoot: root, schemaDirectory, mode: "system_definition" }, { diagnosticPolicy: "strict", blockedPaths: info.blockedPaths });
+    const fieldSources: FieldSources = new Map();
+    const model = readCollectionModel({ collectionRoot: root, schemaDirectory, mode: "system_definition" }, { diagnosticPolicy: "strict", blockedPaths: info.blockedPaths, fieldSources });
     if (!model.report.valid || model.configurationIssue || model.associationIssue) throw new Error(`Source system is not conforming: ${JSON.stringify(model.report.results)}`);
     const document = parseMarkdownWithNodes(readFileSync(join(root, "typedmark.md")), { preserveBodyLineEndings: true });
     const config = document.data;
@@ -32,18 +35,52 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
     };
     if (metadataEntry) capture(metadataDirectory);
     for (const path of includePaths) capture(path);
+    const capturedPaths = new Map<string, string | null>();
+    for (const path of files.keys()) {
+      const normalized = path.normalize("NFC");
+      capturedPaths.set(normalized, capturedPaths.has(normalized) ? null : path);
+    }
+    const configuration = YamlValue.from(document.frontmatter);
+    const yamlDocuments = new Map<string, YamlValue | undefined>([["typedmark.md", configuration]]);
+    const sourceDocument = (path: string): YamlValue | undefined => {
+      const normalized = path.normalize("NFC");
+      if (yamlDocuments.has(normalized)) return yamlDocuments.get(normalized);
+      const captured = capturedPaths.get(normalized);
+      if (!captured) throw new Error(`YAML source is missing or ambiguous: ${path}`);
+      // Read captured snapshot bytes, never the live source after preparation.
+      const parsed = parseMarkdownWithNodes(files.get(captured)!);
+      const value = parsed.frontmatter ? YamlValue.from(parsed.frontmatter) : undefined;
+      yamlDocuments.set(normalized, value);
+      return value;
+    };
+    const definitions = new Map<string, Map<string, YamlValue>>();
+    for (const [type, origins] of fieldSources) {
+      const values = new Map<string, YamlValue>();
+      for (const [field, origin] of origins) {
+        const value = sourceDocument(origin.path)?.field("frontmatter")?.field(origin.field);
+        if (!value) throw new Error(`Missing YAML field source: ${origin.path}#${origin.field}`);
+        values.set(field, value);
+      }
+      definitions.set(type, values);
+    }
     const starters: StarterInput[] = [];
     const derivedBodies = new Set<string>();
-    for (const entry of Array.isArray(config.scaffold.notes) ? config.scaffold.notes : []) {
+    for (const [index, entry] of (Array.isArray(config.scaffold.notes) ? config.scaffold.notes : []).entries()) {
       if (!isMapping(entry) || typeof entry.note_type !== "string" || typeof entry.path !== "string") throw new MaterializationError("SCE-15", "Malformed scaffold note");
       if (Object.hasOwn(entry, "values") && !isMapping(entry.values)) throw new MaterializationError("SCE-128", "Scaffold values must be a mapping");
       const schema = model.schemas.get(entry.note_type)!;
       const selected = resolveTemplate(root, metadataDirectory, entry.note_type, schema, typeof entry.from_template === "string" ? entry.from_template : undefined, info.blockedPaths);
       if (selected.kind === "invalid") throw new MaterializationError(selected.rule, selected.message);
       if (selected.kind === "derived") derivedBodies.add(entry.path);
-      starters.push({ noteType: entry.note_type, path: entry.path, starter: deriveStarter(schema, model.config, selected.kind === "file" ? selected.document : undefined), values: entry.values as Record<string, unknown> | undefined });
+      const values = configuration.field("scaffold")?.field("notes")?.at(index)?.field("values");
+      if (Object.hasOwn(entry, "values") && !values) throw new Error(`Missing YAML scaffold source for ${entry.path}`);
+      starters.push({ noteType: entry.note_type, path: entry.path, starter: deriveStarter(schema, model.config, selected.kind === "file" ? selected.document : undefined), values: entry.values as Record<string, unknown> | undefined,
+        yaml: { starter: selected.kind === "file" ? sourceDocument(selected.path) : undefined, values, definitions: definitions.get(entry.note_type) ?? new Map() } });
     }
-    const notes = materializeStarters(starters, model.schemas, model.config);
+    const notes = materializeStarters(starters, model.schemas, model.config).map(note => {
+      if (!note.yaml) throw new Error(`Missing materialized YAML for ${note.path}`);
+      return { ...note, yaml: note.yaml };
+    });
     const occupied = new Set(["typedmark.md", ...files.keys()].map((path) => path.normalize("NFC")));
     for (const note of notes) {
       const schema = model.schemas.get(note.noteType)!, fields = noteFieldDefinitions(schema);
