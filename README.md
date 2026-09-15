@@ -130,8 +130,13 @@ Shared RFC 3986 checks now validate URI fields and pre-fragment Markdown targets
 without repairing characters or changing source strings. Authorities, percent
 triplets and component-specific punctuation follow generic URI syntax; no DNS or
 transport policy is inferred. See the [URI syntax decision](docs/decisions/007-rfc-uri-syntax.md).
-URI-field fragment policy, non-UTF-8 note-target octets and encoded-anchor
-interpretation remain open clarifications.
+URI fields retain fragments under the clarified RFC 3986 `URI` grammar.
+Internal Markdown target/anchor octets instead decode strictly as UTF-8, with
+undecodable values reported as `invalid_note_link` under `NL-11`.
+`interpretNoteLinkAnchor` supplies a decoded heading/block value while existing
+`anchor`, `raw`, and physical source spans retain authored spelling. It performs
+no target-anchor lookup. See the [Unicode-component decision](docs/decisions/016-unicode-note-link-components.md).
+General raw-fragment character validation remains a separate open boundary.
 
 The inline lexer is now extraction-only: emphasis delimiters remain text, while
 link, escape, code-span and HTML tokenization stay active. Rendering-mask work and

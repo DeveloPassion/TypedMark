@@ -13,7 +13,7 @@ export interface ParsedNoteLink {
   raw: string;
   form: "wikilink" | "markdown";
   target: string;
-  /** Authored fragment spelling; anchor interpretation is separate. */
+  /** Authored fragment spelling; use interpretNoteLinkAnchor for its meaning. */
   anchor?: string;
   /** Authored label content, including any inline Markdown or escapes. */
   displayText?: string;
@@ -35,6 +35,31 @@ type NoteLinkInspection =
 export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   const inspected = inspectNoteLink(raw);
   return inspected.kind === "parsed" ? inspected.link : undefined;
+}
+
+/**
+ * Interpret a parsed anchor without changing its authored spelling or resolving it.
+ * Markdown escapes/entities and UTF-8 percent escapes each decode once; wikilinks
+ * stay literal. Block values omit the leading caret. Missing anchors return undefined.
+ * @throws NoteLinkError (NL-6 for malformed escapes; NL-11 for non-UTF-8 bytes).
+ */
+export function interpretNoteLinkAnchor(link: Pick<ParsedNoteLink, "form" | "anchor">): { kind: "heading" | "block"; value: string } | undefined {
+  if (link.anchor === undefined) return undefined;
+  const value = link.form === "markdown"
+    ? decodeMarkdownComponent(markdownLinkDestination(link.anchor).uri, "anchor") : link.anchor;
+  return value.startsWith("^") ? { kind: "block", value: value.slice(1) } : { kind: "heading", value };
+}
+
+function decodeMarkdownComponent(value: string, component: "target" | "anchor"): string {
+  // NL-11 decodes internal Unicode targets/anchors as UTF-8; URI fields are separate.
+  // decodeURIComponent performs one strict UTF-8 pass and leaves '+' literal.
+  // https://tc39.es/ecma262/#sec-decodeuricomponent-encodeduricomponent
+  try { return decodeURIComponent(value); }
+  catch (error) {
+    if (!(error instanceof URIError)) throw error;
+    const rule = /%(?![0-9A-Fa-f]{2})/u.test(value) ? "NL-6" : "NL-11";
+    throw new NoteLinkError(rule, `Markdown ${component} contains malformed or non-UTF-8 percent encoding`);
+  }
 }
 
 function inspectNoteLink(raw: string): NoteLinkInspection {
@@ -74,9 +99,15 @@ function inspectNoteLink(raw: string): NoteLinkInspection {
   if (!isUriReference(parsed.target)) {
     return { kind: "invalid", error: new NoteLinkError("NL-6", "Markdown target must use valid RFC 3986 URI-reference syntax; encode reserved or non-ASCII filename characters") };
   }
-  try { return { kind: "parsed", link: { raw, form: "markdown", target: decodeURIComponent(parsed.target), embed: token.type === "image",
-    displayText: source[1], ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }) } }; }
-  catch { return { kind: "ignored" }; }
+  try {
+    const link: ParsedNoteLink = { raw, form: "markdown", target: decodeMarkdownComponent(parsed.target, "target"), embed: token.type === "image",
+      displayText: source[1], ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }) };
+    interpretNoteLinkAnchor(link);
+    return { kind: "parsed", link };
+  } catch (error) {
+    if (!(error instanceof NoteLinkError)) throw error;
+    return { kind: "invalid", error };
+  }
 }
 
 const wikilinks: TokenizerExtension = {

@@ -84,6 +84,7 @@ test.each([
   "body-links-escaped-labels-valid", "body-links-html-context-invalid",
   "note-link-entities-valid", "note-link-entities-invalid",
   "note-link-percent-valid", "note-link-percent-invalid", "note-link-percent-suppressed",
+  "note-link-unicode-valid", "note-link-unicode-invalid", "note-link-unicode-suppressed",
   "uri-syntax-valid", "uri-syntax-invalid", "uri-syntax-defaults-invalid",
   "inline-lexer-unicode-valid", "inline-lexer-backticks-invalid",
   "yaml-core-valid", "yaml-core-invalid", "yaml-terminal-valid", "yaml-terminal-invalid",

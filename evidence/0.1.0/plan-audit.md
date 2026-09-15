@@ -115,10 +115,11 @@ Markdown targets, including authorities, encoded octets and component-specific
 punctuation. URI fields no longer rely on WHATWG repairs or transport port bounds.
 A linear scanner removes the review's reproduced regex-engine size limit; see the
 [URI syntax decision](../../docs/decisions/007-rfc-uri-syntax.md).
-URI-field fragment policy, Markdown anchor interpretation/general fragment-character
-checks and non-UTF-8 note-target octets await maintainer answers. Reference-style
-outer links remain separate audit work. Existing URI-field fragment acceptance
-is retained without claiming that the formal FDR-140 ambiguity is resolved.
+The maintainer subsequently resolved URI-field fragments, decoded Markdown-anchor
+interpretation and non-UTF-8 note-target rejection; see
+[decision 016](../../docs/decisions/016-unicode-note-link-components.md).
+General raw-fragment character checks and reference-style outer links remain
+separate work; the new decoding step does not claim those boundaries are complete.
 The measured escaped-character/block-mask and extension-start bottlenecks are now
 fixed by an extraction-only lexer; it omits emphasis rendering work while retaining
 link, escape, code-span, HTML and unescaping behavior. This also corrects astral
@@ -211,6 +212,20 @@ maintainer direction under the review bound; it is not included in published
 runtime evidence. The independent [read-only lifecycle audit](lifecycle-read-audit.md)
 adds integrated deletion/archive checks against the committed runtime. The broader
 Core/capability, effort and release audit remains open.
+
+The separate root-budget investigation now has a valid source with 98 flat
+aliases that needs a budget of 99 before import and 198 afterward under the
+current identity-preserving emitter. Reordering fixes some DAG examples but
+cannot remove that emitter's duplicated references across the two roots.
+Merge hoisting passed the guard only by splitting cross-root object identity.
+These are bounded findings, not a proof against every YAML encoding; no resource
+guard was changed and no ordering-only fix is claimed complete.
+
+The accepted Unicode/URI decisions now have a source-preserving interpretation
+helper, strict internal component decoding, and valid/invalid/suppressed golden
+vectors. URI-field fragments and arbitrary well-formed encoded octets remain
+valid. The existing raw-fragment character-validation conflict is explicitly
+still open, as are the unrelated YAML writer and measured-effort requirements.
 
 ## Completion evidence still required
 
