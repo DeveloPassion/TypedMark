@@ -1,12 +1,12 @@
 # TypedMark 0.1.0 conformance evidence
 
 This record covers sixty-nine golden vectors at TypedMarkSpecification
-`d5b7a3434ad64ba132352d64cdfa50cf93e5040f`, using adapter
-`84186b32a1b65f6067ea812150667bf163c27414`. Exact UTC run timestamps are
+`5be19e0516936c9cb9c4b9ae74958818be1c1a9f`, using adapter
+`80d32ff42ea671cbac77c62192590b6961e6266f`. Exact UTC run timestamps are
 retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34909551153),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34912064861),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
@@ -253,12 +253,25 @@ mixed invalid values without finding further issues. See the
 [allowed-value boundary decision](../../docs/decisions/010-scalar-allowed-values.md).
 This is not a general cyclic-equality or performance improvement claim.
 
-A separate byte-preservation probe confirmed the next input-boundary mismatch:
-the fixture checker rejects valid CR-only frontmatter but accepts malformed UTF-8
-in an artifact body after replacement decoding. The runtime accepts CR-only input
-and rejects those malformed bytes.
-A valid UTF-8 replacement character passes both controls. Correcting that reader
-boundary remains required work and is not claimed by this slice.
+The subsequent reader correction now accepts CR-only frontmatter and rejects
+malformed UTF-8 at every existing checker text-file read, including artifact bodies
+and JSON strings. Optional frontmatter rejects top-level native sets after YAML
+materialization while keeping nested opaque values intact. Runtime byte and text
+inputs consume one leading BOM consistently; extra/interior BOMs stay content.
+
+Thirty checker and fifteen runtime regressions cover delimiters, encodings, optional
+blocks, native tags, byte preservation and the doubled-BOM configuration case.
+Independent review checked 1,836 grammar combinations and all 65,536 two-byte
+sequences without finding an introduced defect. The original three-case parity
+probe now agrees. JSON BOM behavior, file discovery and semantic target scope are
+unchanged; see the [reader decision](../../docs/decisions/011-text-input-boundaries.md).
+
+Two pre-existing input issues remain open. An explicit `%YAML 1.1` directive can
+override scalar resolution (`yes` becomes `true`) despite FND-25. Separately, runtime
+JSON readers still replacement-decode malformed bytes: a corrupted CLI query was
+accepted and a corrupted expected-report message was accepted as U+FFFD by the vector
+runner. The JSON files stayed byte-unchanged and the vector reported no differences.
+The pinned YAML Core baseline and runtime JSON ingress need further corrections.
 
 Runtime artifact shape checks use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -301,8 +314,8 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,567 tooling tests locally and in CI, type checking, dependency
-audit, 391 specification tests, 308 fixture expectations, rule-ID checks, and the
+Validation covered 1,582 tooling tests locally and in CI, type checking, dependency
+audit, 421 specification tests, 308 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
@@ -347,8 +360,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `84186b3` and specification
-`d5b7a3434ad64ba132352d64cdfa50cf93e5040f`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `80d32ff` and specification
+`5be19e0516936c9cb9c4b9ae74958818be1c1a9f`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
