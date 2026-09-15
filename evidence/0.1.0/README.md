@@ -1,17 +1,17 @@
 # TypedMark 0.1.0 conformance evidence
 
-This record covers sixty-nine golden vectors at TypedMarkSpecification
-`5be19e0516936c9cb9c4b9ae74958818be1c1a9f`, using adapter
-`80d32ff42ea671cbac77c62192590b6961e6266f`. Exact UTC run timestamps are
+This record covers seventy-one golden vectors at TypedMarkSpecification
+`074f4fa2a55bfda9f64fb35593ec680d5d009ebd`, using adapter
+`37f965478fc2cdb3751a18939a08d633f550530a`. Exact UTC run timestamps are
 retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34912064861),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34915579523),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
 
-- sixty-seven eligible collection vectors passed;
+- sixty-nine eligible collection vectors passed;
 - sixteen standalone query cases passed, including expected semantic failures;
 - zero collection path or byte changes;
 - zero unexpected validation or query failures;
@@ -234,7 +234,7 @@ forwarded without mutating the parsed model. Both checkers use iterative project
 fixing the runtime's stack overflow on a 20,000-level opaque graph. Thirty new
 specification tests, eight tooling tests and four artifact fixtures cover the slice;
 see the [checker-parity decision](../../docs/decisions/009-yaml-shape-checker-parity.md).
-All sixty-nine vector machine records remain unchanged in this exact-source CI run.
+All sixty-nine prior vector machine records remain unchanged in this exact-source CI run.
 
 The separate `allowed_values` crash is now corrected by enforcing FDR-197's existing
 scalar-only item shape and guarding uniqueness in a separate subschema. Invalid
@@ -266,12 +266,32 @@ sequences without finding an introduced defect. The original three-case parity
 probe now agrees. JSON BOM behavior, file discovery and semantic target scope are
 unchanged; see the [reader decision](../../docs/decisions/011-text-input-boundaries.md).
 
-Two pre-existing input issues remain open. An explicit `%YAML 1.1` directive can
-override scalar resolution (`yes` becomes `true`) despite FND-25. Separately, runtime
-JSON readers still replacement-decode malformed bytes: a corrupted CLI query was
-accepted and a corrupted expected-report message was accepted as U+FFFD by the vector
-runner. The JSON files stayed byte-unchanged and the vector reported no differences.
-The pinned YAML Core baseline and runtime JSON ingress need further corrections.
+The YAML directive gap is now corrected by explicit Core schema settings. Scalar
+and key resolution, duplicate detection and implicit merge-looking keys retain their
+Core meanings across no-directive, YAML 1.1 and YAML 1.2 inputs. Explicit known tags
+and aliases keep their existing support. Thirty checker and thirty-three runtime
+regressions cover configuration, notes, templates and import; two new golden vectors
+distinguish conforming Core values from a legacy boolean word in a checkbox field.
+Independent review added 37 mixed-tag/directive, alias/cycle and preservation probes.
+See the [fixed-Core decision](../../docs/decisions/012-fixed-yaml-core.md).
+
+All five runtime JSON file inputs now use fatal UTF-8 decoding before JSON.parse.
+Corrupt query predicates, expected reports, query cases, contexts and schema values
+cannot be repaired into successful interpretation. Twenty-six regression/control
+cases preserve valid Unicode, BOM/syntax/shape policy, source bytes and the in-memory
+query API. Loader failures identify their input; migration readiness deliberately
+retains its generic manual-resolution wrapper and cannot approve a no-op with an
+unreadable schema. Review reconciled that existing adapter contract without changing
+it. See the [JSON-input decision](../../docs/decisions/013-strict-json-inputs.md).
+
+These input corrections do not complete the requirement-by-requirement Core audit,
+outstanding URI policies, compatibility/release review or measured effort assessment.
+
+A separate E1/EXT-27 instantiation probe found a remaining root vendor-metadata
+serialization gap: native Set/ordered Map/Date/binary values become different YAML
+types in the new configuration even though the source is unchanged and target
+validation succeeds. The ordinary published example does not exercise those values.
+That preservation fix remains required and is not part of the reader corrections.
 
 Runtime artifact shape checks use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -314,8 +334,8 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,582 tooling tests locally and in CI, type checking, dependency
-audit, 421 specification tests, 308 fixture expectations, rule-ID checks, and the
+Validation covered 1,643 tooling tests locally and in CI, type checking, dependency
+audit, 451 specification tests, 312 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
@@ -360,8 +380,8 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `80d32ff` and specification
-`5be19e0516936c9cb9c4b9ae74958818be1c1a9f`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `37f9654` and specification
+`074f4fa2a55bfda9f64fb35593ec680d5d009ebd`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted

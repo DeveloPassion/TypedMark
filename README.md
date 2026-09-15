@@ -304,6 +304,12 @@ authored tags. Unique generated values reserve concrete values across the whole
 scaffold before generation. Optional Authoring generators are not implemented by
 this importer and cause an explicit failure when generation is needed.
 
+A known import-fidelity gap remains for native tagged values in root `x_*`
+metadata: instantiation currently changes their YAML types while reserializing
+the root configuration. Source files are unchanged, but a valid target report
+does not prove metadata fidelity. This is tracked in the
+[plan audit](evidence/0.1.0/plan-audit.md).
+
 Source validation, template reads, metadata copying, and preparation share one
 captured snapshot. Import preserves the configuration body and conventional
 licensing/attribution files even when note-discovery exclusions match them;

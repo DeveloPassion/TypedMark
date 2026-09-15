@@ -180,6 +180,14 @@ loader failures; a regression proves malformed schema bytes cannot approve a no-
 The full Core, capability, compatibility and measured-effort completion checks remain
 open; these input corrections do not substitute for the requirement ledger.
 
+A focused E1/EXT-27 probe confirms a remaining import preservation gap. Root
+configuration vendor metadata parsed as Set, ordered Map, Date and binary data is
+serialized into sequences, ordinary mappings and text during instantiation. The
+source remains byte-unchanged and the target report is valid, but the metadata
+values change type. The bounded example has no such values, so its passing result
+does not close this gap. Preserve tagged root metadata through the publishing-
+identity rewrite before claiming general metadata fidelity.
+
 ## Completion evidence still required
 
 1. Resolve known implementation gaps and audit the plan's named Core concerns.
