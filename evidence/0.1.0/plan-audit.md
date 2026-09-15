@@ -192,8 +192,15 @@ E1 operability gap affects highly shared source-root graphs: the new aliases can
 exceed the reader's expansion budget. Imports fail closed with source unchanged
 and no target published; the safety limit is not disabled. Resolve that interaction
 without corrupting metadata or weakening resource protection. This is not general
-writer fidelity: scaffold serialization and the exact terminal YAML line-break
-boundary remain separate audit targets.
+writer fidelity: scaffold serialization remains a separate audit target.
+
+A follow-up six-case probe confirms that both runtime and fixture-checker
+frontmatter extraction omit the final YAML content line break. A final `|+`
+value containing `retained\n\n` becomes `retained\n` with either closing delimiter
+and LF, CRLF or CR source endings; the artifact body remains correct. The new
+root writer quotes multiline values to avoid additional serialization loss, but
+does not repair this earlier read loss. Correct the shared reader boundary next,
+then continue the remaining graph-budget and full-plan audit.
 
 ## Completion evidence still required
 

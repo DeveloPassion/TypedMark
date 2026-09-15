@@ -2,11 +2,11 @@
 
 This record covers seventy-one golden vectors at TypedMarkSpecification
 `074f4fa2a55bfda9f64fb35593ec680d5d009ebd`, using adapter
-`37f965478fc2cdb3751a18939a08d633f550530a`. Exact UTC run timestamps are
+`9719feac2298ff893b916d478f22c98f43a016cf`. Exact UTC run timestamps are
 retained in the recorded JSON.
 
 The recorded JSON is the unmodified conformance output from the successful
-[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34915579523),
+[pinned CI run](https://github.com/DeveloPassion/TypedMark/actions/runs/34918793425),
 which ran the repository's conformance command against these exact revisions.
 
 Results:
@@ -287,11 +287,28 @@ it. See the [JSON-input decision](../../docs/decisions/013-strict-json-inputs.md
 These input corrections do not complete the requirement-by-requirement Core audit,
 outstanding URI policies, compatibility/release review or measured effort assessment.
 
-A separate E1/EXT-27 instantiation probe found a remaining root vendor-metadata
-serialization gap: native Set/ordered Map/Date/binary values become different YAML
-types in the new configuration even though the source is unchanged and target
-validation succeeds. The ordinary published example does not exercise those values.
-That preservation fix remains required and is not part of the reader corrections.
+The E1/EXT-27 root writer now preserves parsed YAML graphs rather than converting
+opaque values through JavaScript. Tagged Set/ordered Map/Date/binary values,
+unknown tags, complex keys, aliases to changed/removed fields and ordinary
+source-root self-aliases retain their values. Root merge expansion prevents
+publishing fields from reappearing. Source scalar text protects integer/float and
+timestamp precision beyond native Number/Date. Nineteen new cases include source,
+body and artifact preservation, tag directives and fail-closed publication; see
+the [root-preservation decision](../../docs/decisions/014-root-yaml-preservation.md).
+All seventy-one vector machine records are unchanged from the preceding checkpoint;
+the new tests exercise the writer, not a new read-only validation contract.
+Independent review found the precision loss and the graph-budget limitation below;
+the precision loss was fixed, with no additional findings on the second review.
+
+Highly shared source-root graphs can still exceed the reader's alias-expansion
+budget after rewriting. A regression proves this valid-source case aborts without
+publishing a target or changing source bytes. The resource guard remains intact;
+this E1 operability gap stays open. A separate six-case probe confirms that runtime
+and fixture-checker extraction drop one terminal newline from a final YAML `|+`
+value. Quoting multiline values prevents additional writer loss, but does not fix
+that earlier reader loss. Both remain in the [plan ledger](plan-audit.md).
+The ordinary published example does not exercise these exceptional graph/value
+cases, so its success is not exhaustive metadata-fidelity evidence.
 
 Runtime artifact shape checks use a prototype-safe, alias-preserving projection.
 Native YAML sets/ordered maps cannot masquerade as empty schema or configuration
@@ -334,8 +351,9 @@ Run the suite with:
 bun run conformance --spec ..\TypedMarkSpecification
 ```
 
-Validation covered 1,643 tooling tests locally and in CI, type checking, dependency
-audit, 451 specification tests, 312 fixture expectations, rule-ID checks, and the
+Validation covered 1,662 tooling tests locally and in CI, type checking and
+dependency audit. The unchanged specification baseline's verified gates cover
+451 specification tests, 312 fixture expectations, rule-ID checks, and the
 31-page site build. The test command allows 30 seconds per
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
@@ -380,7 +398,7 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `37f9654` and specification
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `9719fea` and specification
 `074f4fa2a55bfda9f64fb35593ec680d5d009ebd`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
