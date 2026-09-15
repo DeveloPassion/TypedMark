@@ -170,12 +170,15 @@ Explicit known tags, aliases and source bytes remain supported. Thirty checker
 and thirty-three runtime regressions, two golden vectors and two artifact fixtures
 cover the correction; see the [fixed-Core decision](../../docs/decisions/012-fixed-yaml-core.md).
 
-A separate runtime JSON probe also remains open: the query CLI accepts a descriptor
-containing a raw invalid UTF-8 byte, and the vector runner accepts an expected-report
-message after silently replacing that byte with U+FFFD. Both JSON input files remain
-byte-unchanged, and the vector reports zero differences/collection changes; accepting
-repaired input is still incorrect. Runtime JSON ingress needs its own strict-decoding
-audit, distinct from the corrected specification checker.
+Runtime JSON ingress now uses fatal decoding at all five file-read sites: CLI
+queries, expected reports, query cases, negotiation contexts and schema registration.
+Twenty-six regressions/control cases reject repaired-input false positives while
+preserving valid Unicode, source bytes, JSON syntax/BOM behavior and operational versus
+semantic errors; see the [JSON-input decision](../../docs/decisions/013-strict-json-inputs.md).
+Migration readiness retains its existing generic manual-resolution wrapper for
+loader failures; a regression proves malformed schema bytes cannot approve a no-op.
+The full Core, capability, compatibility and measured-effort completion checks remain
+open; these input corrections do not substitute for the requirement ledger.
 
 ## Completion evidence still required
 

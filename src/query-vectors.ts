@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { queryCollection, QueryError, type QueryResult } from "./query";
 import type { SchemaRegistry } from "./schema-registry";
 import type { ExtensionMap } from "./types";
+import { decodeUtf8 } from "./utf8";
 
 export interface QueryCaseResult {
   name: string;
@@ -23,7 +24,7 @@ export function runQueryCases(vectorDirectory: string, collectionRoot: string, s
   const path = join(vectorDirectory, "query-cases.json");
   if (!existsSync(path)) return [];
   if (enabled["typedmark:queries"] !== "0.1.0") throw new Error("Query cases require the enabled typedmark:queries contract");
-  const input: unknown = JSON.parse(readFileSync(path, "utf8"));
+  const input: unknown = JSON.parse(decodeUtf8(readFileSync(path), path));
   const errors = registry.validate("conformance-query.schema.json", input);
   if (errors.length) throw new Error(`Invalid query cases: ${errors.map((error) => error.message).join("; ")}`);
   const cases = input as QueryCase[];

@@ -4,6 +4,7 @@ import { getCapabilities, runConformanceVector } from "./adapter";
 import { checkMigrationReadiness, instantiateSystem } from "./system";
 import { validateCollection } from "./validator";
 import { queryCollection, QueryError } from "./query";
+import { decodeUtf8 } from "./utf8";
 
 const [command, target, ...rest] = Bun.argv.slice(2);
 
@@ -15,7 +16,7 @@ if (command === "capabilities") {
   const queryVersion = option(rest, "--query-version");
   if (!schemaDirectory || !queryPath || !queryVersion) fail("query requires --query <descriptor.json> --query-version <exact-version> --schemas <directory>");
   try {
-    const result = queryCollection({ collectionRoot: resolve(target), schemaDirectory: resolve(schemaDirectory), queryVersion, query: JSON.parse(readFileSync(queryPath, "utf8")) });
+    const result = queryCollection({ collectionRoot: resolve(target), schemaDirectory: resolve(schemaDirectory), queryVersion, query: JSON.parse(decodeUtf8(readFileSync(queryPath), queryPath)) });
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     if (!(error instanceof QueryError)) throw error;

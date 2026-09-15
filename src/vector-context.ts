@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { decodeUtf8 } from "./utf8";
 import { join } from "node:path";
 import type { SchemaRegistry } from "./schema-registry";
 import type { ExtensionMap } from "./types";
@@ -20,7 +21,7 @@ export interface VectorSelection {
 export function readVectorContext(directory: string, registry: SchemaRegistry): VectorContext {
   const path = join(directory, "vector.json");
   if (!existsSync(path)) return {};
-  const context: unknown = JSON.parse(readFileSync(path, "utf8"));
+  const context: unknown = JSON.parse(decodeUtf8(readFileSync(path), path));
   const errors = registry.validate("conformance-vector.schema.json", context);
   if (errors.length > 0) throw new Error(`${path}: invalid negotiation context: ${errors.map((error) => error.message).join("; ")}`);
   return context as VectorContext;

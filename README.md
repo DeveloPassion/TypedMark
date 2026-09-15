@@ -56,6 +56,14 @@ duplicate checks keep their YAML 1.2 meanings across validation and import.
 Explicit known tags and aliases remain supported without rewriting source files;
 see the [fixed-Core decision](docs/decisions/012-fixed-yaml-core.md).
 
+JSON file inputs now reject malformed UTF-8 before parsing or evaluation, including
+query descriptors, vector reports/context/query cases and loaded schemas. Encoding
+failures are loader-level operational errors naming the input, not semantic query
+failures. Migration readiness retains its existing fail-closed manual-resolution
+result when loading fails.
+Valid Unicode and existing JSON syntax/BOM behavior are unchanged; see the
+[JSON-input decision](docs/decisions/013-strict-json-inputs.md).
+
 Malformed extension declarations retain their well-formed identifier/version
 entries in `required_extensions`, including unsupported exact contracts. Invalid
 entries receive separate findings; evaluation stays incomplete even when those

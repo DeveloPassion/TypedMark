@@ -6,6 +6,7 @@ import { SchemaRegistry } from "./schema-registry";
 import { compareUnicodeCodePoints } from "./order";
 import { STANDARD_EXTENSIONS, validateCollection } from "./validator";
 import { FrontmatterError, parseMarkdown } from "./frontmatter";
+import { decodeUtf8 } from "./utf8";
 import { readVectorContext, selectVectorCapabilities } from "./vector-context";
 import { runQueryCases, type QueryCaseResult } from "./query-vectors";
 import { QUERY_VERSION } from "./query";
@@ -48,7 +49,8 @@ export async function runConformanceVector(input: RunVectorInput): Promise<Vecto
   try {
     await cp(join(input.vectorDirectory, "collection"), collectionRoot, { recursive: true });
     const before = await snapshot(collectionRoot);
-    const expected = JSON.parse(await readFile(join(input.vectorDirectory, "expected-validation-report.json"), "utf8")) as ValidationReport;
+    const expectedPath = join(input.vectorDirectory, "expected-validation-report.json");
+    const expected = JSON.parse(decodeUtf8(await readFile(expectedPath), expectedPath)) as ValidationReport;
     const registry = new SchemaRegistry(input.schemaDirectory);
     const expectedErrors = registry.validate("validation-report.schema.json", expected);
     if (expectedErrors.length > 0) throw new Error("Expected report violates validation-report.schema.json");

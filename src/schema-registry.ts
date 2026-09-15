@@ -1,6 +1,7 @@
 import Ajv2020, { type ErrorObject, type ValidateFunction } from "ajv/dist/2020";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { decodeUtf8 } from "./utf8";
 
 export class SchemaRegistry {
   readonly #ajv: Ajv2020;
@@ -11,7 +12,10 @@ export class SchemaRegistry {
     this.#ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false });
     const schemas = readdirSync(schemaDirectory)
       .filter((name) => name.endsWith(".schema.json"))
-      .map((name) => JSON.parse(readFileSync(join(schemaDirectory, name), "utf8")));
+      .map((name) => {
+        const path = join(schemaDirectory, name);
+        return JSON.parse(decodeUtf8(readFileSync(path), path));
+      });
     for (const schema of schemas) this.#ajv.addSchema(schema);
     for (const schema of schemas) {
       const name = schema.$id.split("/").at(-1);
