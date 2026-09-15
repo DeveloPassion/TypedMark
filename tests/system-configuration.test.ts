@@ -69,7 +69,8 @@ test("root rewrite retains Core resolution and expands custom tag directives wit
 
 test("root rewrite retains blank lines in a final keep-chomp scalar", () => {
   const { data } = rewrite(`${base}\ncomposition: {sources: []}\nx_text: |+\n  retained\n\n\n`);
-  expect(data.x_text).toBe("retained\n\n\n");
+  // rewrite() adds the fourth YAML content newline before the delimiter.
+  expect(data.x_text).toBe("retained\n\n\n\n");
 });
 
 test("root rewrite retains scalar precision beyond JavaScript Number and Date", () => {

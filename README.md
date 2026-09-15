@@ -64,6 +64,12 @@ result when loading fails.
 Valid Unicode and existing JSON syntax/BOM behavior are unchanged; see the
 [JSON-input decision](docs/decisions/013-strict-json-inputs.md).
 
+Final YAML keep-chomp values retain their trailing newlines through frontmatter
+reading and scaffold serialization. The fixture checker also retains the final
+content newline in classified YAML examples. Delimiters, body handling, clipping
+and stripping are unchanged; see the
+[terminal-newline decision](docs/decisions/015-terminal-yaml-newlines.md).
+
 Malformed extension declarations retain their well-formed identifier/version
 entries in `required_extensions`, including unsupported exact contracts. Invalid
 entries receive separate findings; evaluation stays incomplete even when those

@@ -194,13 +194,18 @@ and no target published; the safety limit is not disabled. Resolve that interact
 without corrupting metadata or weakening resource protection. This is not general
 writer fidelity: scaffold serialization remains a separate audit target.
 
-A follow-up six-case probe confirms that both runtime and fixture-checker
-frontmatter extraction omit the final YAML content line break. A final `|+`
-value containing `retained\n\n` becomes `retained\n` with either closing delimiter
-and LF, CRLF or CR source endings; the artifact body remains correct. The new
-root writer quotes multiline values to avoid additional serialization loss, but
-does not repair this earlier read loss. Correct the shared reader boundary next,
-then continue the remaining graph-budget and full-plan audit.
+The terminal YAML reader loss is now corrected in both runtime and fixture checker,
+including classified YAML/YML fences. Final keep-chomp scalars retain all content
+newlines, while exact delimiters, body extraction, Core resolution and alias guards
+are unchanged. Scaffold serialization also stops trimming significant terminal
+YAML content. Regression tests and two constant-comparison golden vectors cover
+the correction; see the [newline decision](../../docs/decisions/015-terminal-yaml-newlines.md).
+The shared-root graph budget still requires work. A separate valid-source scaffold
+probe confirms native-value loss in declared `any` fields: Set, ordered Map, Date
+and binary inputs become arrays, ordinary mappings or text in an accepted target.
+The source bytes remain unchanged, but this is not a faithful materialization.
+Correct scaffold value/tag/alias preservation next; the broader Core/capability,
+effort and release audit remains open.
 
 ## Completion evidence still required
 

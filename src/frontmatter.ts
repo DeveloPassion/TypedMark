@@ -53,7 +53,10 @@ export function parseMarkdownWithNodes(source: string | Uint8Array, options: { p
     // A version directive must not override FND-25's Core scalar resolution.
     // Explicit tags retain the ordinary Core-reader behavior, including aliases.
     // https://eemeli.org/yaml/#schema-options
-    document = parseDocument(lines.slice(1, end).join("\n"), {
+    // The newline before the closing delimiter still belongs to YAML content;
+    // dropping it changes a final keep-chomp scalar (FND-25/FND-33/FND-36).
+    const yaml = lines.slice(1, end).join("\n") + (end > 1 ? "\n" : "");
+    document = parseDocument(yaml, {
       version: "1.2", schema: "core", resolveKnownTags: true, merge: false, uniqueKeys: true,
     });
     if (document.errors.length > 0) throw new Error(document.errors.map((error) => error.message).join("; "));

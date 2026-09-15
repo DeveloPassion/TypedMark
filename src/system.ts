@@ -117,7 +117,9 @@ export function checkMigrationReadiness(input: { systemRoot: string; fromVersion
 }
 
 function serializeMarkdown(frontmatter: Record<string, unknown>, body: string): string {
-  return `---\n${stringify(frontmatter, { lineWidth: 0 }).trimEnd()}\n---\n${body}`;
+  // Keep all content; quoted multiline strings also preserve all-space lines
+  // that the library's block-scalar serializer otherwise drops.
+  return `---\n${stringify(frontmatter, { lineWidth: 0, blockQuote: false })}---\n${body}`;
 }
 
 function safeTarget(root: string, requestedPath: string): string {
