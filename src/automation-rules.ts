@@ -61,10 +61,17 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
     for (const [type, fields] of fieldsByType) {
       const schema = model.schemas.get(type)!;
       const context = { note_type: type };
-      if (action.kind === "set_field") {
+      if (["set_field", "add_list_item", "remove_list_item"].includes(action.kind)) {
         const definition = Object.hasOwn(fields, action.field) ? fields[action.field] : undefined;
         if (!definition || ["id", "note_type"].includes(action.field) || definition.immutable === true || Object.hasOwn(definition, "computed") || Object.hasOwn(definition, "const_value")) {
           fail("CM-278", `Field ${action.field} is undeclared or not assignable`, { ...context, field: action.field }); continue;
+        }
+        if (action.kind !== "set_field") {
+          // List-item actions add or remove one item of a list field (MN-311, MN-312).
+          if (definition.type !== "list") { fail("CM-278", `Field ${action.field} is not a list`, { ...context, field: action.field }); continue; }
+          const invalid = validateFieldValue(expandObjectDefaults(action.value, definition.items!), definition.items!, timezone, model.config.vocabularies);
+          if (invalid) fail("CM-278", `Item for ${action.field} ${invalid.message}`, { ...context, field: action.field });
+          continue;
         }
         const invalid = validateFieldValue(expandObjectDefaults(action.value, definition), definition, timezone, model.config.vocabularies);
         if (invalid) fail("CM-278", `Assignment to ${action.field} ${invalid.message}`, { ...context, field: action.field });

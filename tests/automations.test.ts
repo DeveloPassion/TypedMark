@@ -85,3 +85,17 @@ test.each(["0.1.0", "0.1.1"])("nested unknown automation keys use %s reporting p
   expect(report.results.some((finding) => finding.code === "invalid_automation")).toBe(false);
   if (specification_version === "0.1.1") expect(report.evaluation).toBe("incomplete");
 });
+
+test("list-item actions and only_if_empty are accepted artifact shapes", () => {
+  const root = collection();
+  write(root, ".typedmark/schemas/note.md", { ...version, storage: { folder_pattern: "", note_name_pattern: "{title}" }, frontmatter: {
+    status: { type: "text", allowed_values: ["open", "done"] }, watchers: { type: "list", items: { type: "text" }, default_value: [] },
+  } });
+  write(root, ".typedmark/automations/rule.md", { ...rule, actions: [
+    { kind: "set_field", field: "status", value: "done", only_if_empty: true },
+    { kind: "add_list_item", field: "watchers", value: "ana" }, { kind: "remove_list_item", field: "watchers", value: "bo" },
+  ] });
+  expect(run(root).results).toEqual([]);
+  write(root, ".typedmark/automations/rule.md", { ...rule, actions: [{ kind: "add_list_item", field: "watchers" }, { kind: "set_field", field: "status", value: "done", only_if_empty: "yes" }] });
+  expect(run(root).results.map((result) => result.code)).toEqual(["invalid_automation"]);
+});

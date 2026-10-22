@@ -43,3 +43,20 @@ test("preserves mandatory tags and reserved path boundaries", () => {
   const boundary = { ...model, schemas: new Map([["note", { ...model.schemas.get("note"), storage: { folder_pattern: "Notes", note_name_pattern: "Cafe{title}" } }]]) };
   expect(validateAutomationRule({ ...rule, actions: [{ kind: "move_note", path: "Notes/Café.md" }] }, boundary)).toEqual([]);
 });
+
+test("validates list-item actions against the list's item definition", () => {
+  const listed = { ...model, schemas: new Map([["note", { ...model.schemas.get("note"), frontmatter: {
+    ...(model.schemas.get("note") as { frontmatter: object }).frontmatter,
+    watchers: { type: "list", items: { type: "text", allowed_values: ["ana", "bo"] } },
+    pinned: { type: "list", items: { type: "text" }, const_value: [] },
+  } }]]) } as unknown as CollectionModel;
+  for (const kind of ["add_list_item", "remove_list_item"]) {
+    expect(validateAutomationRule({ ...rule, actions: [{ kind, field: "watchers", value: "ana" }] }, listed)).toEqual([]);
+    expect(validateAutomationRule({ ...rule, actions: [{ kind, field: "watchers", value: "zed" }] }, listed)).toMatchObject([{ rule: "CM-278", field: "watchers" }]);
+    expect(validateAutomationRule({ ...rule, actions: [{ kind, field: "watchers", value: ["ana"] }] }, listed)).toMatchObject([{ rule: "CM-278" }]);
+    for (const field of ["status", "pinned", "missing"]) {
+      expect(validateAutomationRule({ ...rule, actions: [{ kind, field, value: "ana" }] }, listed)).toMatchObject([{ rule: "CM-278", field }]);
+    }
+  }
+  expect(validateAutomationRule({ ...rule, actions: [{ kind: "set_field", field: "status", value: "done", only_if_empty: true }] }, listed)).toEqual([]);
+});
