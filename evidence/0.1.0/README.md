@@ -400,8 +400,9 @@ have separate three-second performance ceilings.
 The anchor-encoding checkpoint (specification `f873d8d`, adapter `0eb7afe`)
 passed 1,835 tooling tests with 5,127 assertions across 78 files, type checking
 and conformance locally, plus 471 specification tests, 320 fixture expectations,
-1,708 rule IDs and the 31-page site build. The dependency audit could not run:
-the npm advisory endpoint returned HTTP 503.
+1,708 rule IDs and the 31-page site build. The dependency audit then flagged
+GHSA-hrr3-gc8f-f4qj in the transitive `fast-uri` 3.1.7 (via `ajv`); the lockfile
+now resolves 3.1.9 within `ajv`'s range, and the audit reports no vulnerabilities.
 No existing test deadlines changed. The CommonMark dependency
 and its development types remain exact-pinned and passed the dependency audit.
 The three earlier specification build tests exercise LF, CRLF and CR source files.
