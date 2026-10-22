@@ -18,3 +18,12 @@ test.each([
 test("validates structured defaults after recursively applying child defaults", () => {
   expect(validateFieldDefinition({ type: "object", fields: { count: { type: "integer", default_value: 1 } }, default_value: {} }, "UTC")).toBeUndefined();
 });
+
+test("state annotations must name allowed values, including vocabulary values (FDR-288)", () => {
+  const states = { completed: { done: true, outcome: "success" } } as FieldDefinition["states"];
+  expect(validateFieldDefinition({ type: "text", allowed_values: ["active", "completed"], states }, "UTC")).toBeUndefined();
+  expect(validateFieldDefinition({ type: "text", allowed_values: ["active", "done"], states }, "UTC")).toMatchObject({ rule: "FDR-288" });
+  const vocabularies = { lifecycle: { values: ["active", "completed"] } } as never;
+  expect(validateFieldDefinition({ type: "text", allowed_values_from: "lifecycle", states }, "UTC", vocabularies)).toBeUndefined();
+  expect(validateFieldDefinition({ type: "text", allowed_values: ["Completed"], states }, "UTC")).toMatchObject({ rule: "FDR-288" });
+});

@@ -17,6 +17,10 @@ export function validateFieldDefinition(definition: FieldDefinition, timezone: s
       if (invalid) return fail("FDR-198", "Allowed value is incompatible with the declared field type");
     }
     if (allowed.some((value, index) => allowed.slice(0, index).some((earlier) => equalFieldValues(value, earlier, definition.type === "tags" ? { type: "text" } : valueType, timezone)))) return fail("FDR-197", "Allowed values are not unique under field-value equality");
+    // Lifecycle state annotations name allowed values (FDR-288).
+    for (const value of Object.keys(definition.states ?? {})) {
+      if (!allowed.some((candidate) => equalFieldValues(value, candidate, valueType, timezone))) return fail("FDR-288", `State ${value} is not an allowed value`);
+    }
   }
   const sized = ["text", "link", "list", "tags"].includes(definition.type);
   for (const bound of ["min", "max"] as const) {

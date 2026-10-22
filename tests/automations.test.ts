@@ -115,3 +115,14 @@ test("older_than is an accepted automation predicate shape but not a mapping pre
   write(root, "typedmark.md", { ...version, name: "automations", extensions, note_type_mappings: [{ kind: "fixed", when: { frontmatter: { completed_on: { exists: true } } }, note_type: "note" }] });
   expect(run(root).results.filter((result) => result.path === "typedmark.md")).toEqual([]);
 });
+
+test("state predicates and state change predicates are accepted automation shapes", () => {
+  const root = collection();
+  write(root, ".typedmark/schemas/note.md", { ...version, storage: { folder_pattern: "", note_name_pattern: "{title}" }, frontmatter: {
+    status: { type: "text", allowed_values: ["open", "done"], states: { done: { done: true, outcome: "success" }, open: { role: "active" } } },
+  } });
+  write(root, ".typedmark/automations/rule.md", { ...rule, trigger: { ...rule.trigger, changed: { status: { to_state: { done: true } } } }, when: { status: { state: { outcome: "success" } } }, actions: [{ kind: "archive_note" }] });
+  expect(run(root).results).toEqual([]);
+  write(root, ".typedmark/automations/rule.md", { ...rule, when: { status: { state: { finished: true } } } });
+  expect(run(root).results.map((result) => result.code)).toEqual(["invalid_automation"]);
+});

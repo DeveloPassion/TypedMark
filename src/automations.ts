@@ -17,7 +17,7 @@ function projectKnownStructure(data: Data, unknown: (path: string) => void) {
   keep(data, ["specification_version", "automation", "description", "priority", "trigger", "scope", "when", "actions", "failure"], "");
   if (data.trigger?.kind === "event") {
     keep(data.trigger, ["kind", "event", "changed", "scope_transition"], "/trigger");
-    if (object(data.trigger.changed)) for (const [field, predicate] of Object.entries(data.trigger.changed)) keep(predicate, ["from", "to"], `/trigger/changed/${field}`);
+    if (object(data.trigger.changed)) for (const [field, predicate] of Object.entries(data.trigger.changed)) keep(predicate, ["from", "to", "from_state", "to_state"], `/trigger/changed/${field}`);
   } else if (data.trigger?.kind === "schedule") {
     keep(data.trigger, ["kind", "schedule"], "/trigger");
     const cadence = data.trigger.schedule?.cadence;
@@ -25,7 +25,7 @@ function projectKnownStructure(data: Data, unknown: (path: string) => void) {
   }
   keep(data.scope, ["note_types", "path"], "/scope");
   keep(data.scope?.path, ["equals", "under", "regex"], "/scope/path");
-  if (object(data.when)) for (const [field, predicate] of Object.entries(data.when)) keep(predicate, ["exists", "equals", "regex", "contains_any", "contains_all", "older_than"], `/when/${field}`);
+  if (object(data.when)) for (const [field, predicate] of Object.entries(data.when)) keep(predicate, ["exists", "equals", "regex", "contains_any", "contains_all", "older_than", "state"], `/when/${field}`);
   const actionKeys: Record<string, string[]> = { set_field: ["field", "value", "only_if_empty"], add_tag: ["tag"], remove_tag: ["tag"], add_list_item: ["field", "value"], remove_list_item: ["field", "value"], move_note: ["path"], archive_note: [], create_note: ["note_type", "values"], logical_delete_note: [], hard_delete_note: [] };
   if (Array.isArray(data.actions)) data.actions.forEach((action, index) => { if (action && Object.hasOwn(actionKeys, action.kind)) keep(action, ["kind", ...actionKeys[action.kind]!], `/actions/${index}`); });
 }

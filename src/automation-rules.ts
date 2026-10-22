@@ -48,6 +48,11 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
     else if (automation.when?.[field]?.older_than !== undefined && !["date", "datetime"].includes(fields[field]!.type)) {
       fail("CM-557", `older_than needs a date or datetime field, but ${type}.${field} is ${fields[field]!.type}`, { field, note_type: type });
     }
+    // State predicates need the field's lifecycle annotations on every target type.
+    else if (!fields[field]!.states && (automation.when?.[field]?.state !== undefined
+      || automation.trigger.changed?.[field]?.from_state !== undefined || automation.trigger.changed?.[field]?.to_state !== undefined)) {
+      fail(automation.when?.[field]?.state !== undefined ? "CM-560" : "CM-562", `${type}.${field} declares no states`, { field, note_type: type });
+    }
   }
   for (const action of automation.actions) {
     if (action.kind === "create_note") {

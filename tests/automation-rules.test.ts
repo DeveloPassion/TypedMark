@@ -70,3 +70,15 @@ test("older_than predicates need a temporal field (CM-557)", () => {
   expect(validateAutomationRule(archive({ finished_at: { older_than: "P1Y" } }), dated)).toEqual([]);
   expect(validateAutomationRule(archive({ status: { older_than: "P30D" } }), dated)).toMatchObject([{ rule: "CM-557", field: "status" }]);
 });
+
+test("state predicates need a field declaring states (CM-560, CM-562)", () => {
+  const stated = { ...model, schemas: new Map([["note", { ...model.schemas.get("note"), frontmatter: {
+    ...(model.schemas.get("note") as { frontmatter: object }).frontmatter,
+    lifecycle: { type: "text", allowed_values: ["open", "closed"], states: { closed: { done: true, outcome: "success" } } },
+  } }]]) } as unknown as CollectionModel;
+  const updated = (extra: object) => ({ ...rule, ...extra, actions: [{ kind: "add_tag", tag: "state/done" }] });
+  expect(validateAutomationRule(updated({ when: { lifecycle: { state: { done: true } } } }), stated)).toEqual([]);
+  expect(validateAutomationRule(updated({ trigger: { ...rule.trigger, changed: { lifecycle: { to_state: { done: true } } } } }), stated)).toEqual([]);
+  expect(validateAutomationRule(updated({ when: { status: { state: { done: true } } } }), stated)).toMatchObject([{ rule: "CM-560", field: "status" }]);
+  expect(validateAutomationRule(updated({ trigger: { ...rule.trigger, changed: { status: { from_state: { role: "active" } } } } }), stated)).toMatchObject([{ rule: "CM-562", field: "status" }]);
+});

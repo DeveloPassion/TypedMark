@@ -3,6 +3,9 @@ import { parseNoteLink } from "./note-links";
 import { hasUriScheme, isUriReference } from "./uri-syntax";
 
 export type FieldType = "text" | "integer" | "number" | "checkbox" | "date" | "time" | "datetime" | "link" | "list" | "tags" | "object" | "any";
+/** Lifecycle meaning of one allowed value (FDR-289); omitted `done` is false (FDR-291). */
+export interface StateAnnotation { done?: boolean; outcome?: "success" | "failure"; role?: "backlog" | "scheduled" | "active" | "waiting" }
+
 export interface FieldDefinition {
   type: FieldType;
   nullable?: boolean;
@@ -24,6 +27,7 @@ export interface FieldDefinition {
   unique?: boolean | "collection";
   relationship_kind?: "belongs_to" | "related_to" | "contains" | "depends_on";
   inverse?: string;
+  states?: Record<string, StateAnnotation>;
   targets?: string[];
   validate_exists?: boolean;
 }
