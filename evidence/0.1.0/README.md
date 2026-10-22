@@ -366,6 +366,11 @@ The trigger-relative values increment (specification `59bd676`, adapter
 `6f7e590`) changes automation artifact validation only; the corpus is unchanged
 at 86/84/19 and 1,870 tooling tests pass. See
 [decision 022](../../docs/decisions/022-trigger-relative-values.md).
+The plain system YAML increment (specification `38fa6b2`) replaces the root
+preservation evidence of decision 014 with rejection cases and adds one golden
+vector; the corpus reports 87 discovered, 85 passed and 19 queries passed, with
+the two precondition skips, and 1,882 tooling tests pass. See
+[decision 023](../../docs/decisions/023-plain-system-yaml.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

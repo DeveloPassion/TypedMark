@@ -335,12 +335,12 @@ authored tags. Unique generated values reserve concrete values across the whole
 scaffold before generation. Optional Authoring generators are not implemented by
 this importer and cause an explicit failure when generation is needed.
 
-Root `x_*` metadata now retains its YAML nodes through instantiation, including
-native tagged values, unknown tags, complex keys and aliases to source values.
-Publishing fields are removed even when inherited through an explicit YAML merge;
-source-root aliases retain the original identity inside metadata. A valid target
-report alone is not preservation proof: dedicated round-trip tests cover this
-writer. See the [root-preservation decision](docs/decisions/014-root-yaml-preservation.md).
+A system's `typedmark.md` and its scaffold templates must be plain YAML data
+(`SCE-159`): anchors, aliases, explicit tags such as `!!set`, and non-string keys
+are reported on the system definition and refused on import (`SCE-160`). Plain
+root `x_*` metadata is preserved exactly. This supersedes the earlier
+[root-preservation decision](docs/decisions/014-root-yaml-preservation.md); see
+the [plain system YAML decision](docs/decisions/023-plain-system-yaml.md).
 Numeric and timestamp scalar text is retained beyond native Number/Date precision.
 Highly shared source-root graphs can still exceed the reader's alias budget after
 rewriting; these imports abort without publishing a target. This operability gap

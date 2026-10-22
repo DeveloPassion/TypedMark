@@ -1,6 +1,6 @@
 # Preserve YAML values during root instantiation
 
-Status: accepted implementation decision on 2026-09-15 (Europe/Brussels).
+Status: superseded on 2026-10-22 by [decision 023](023-plain-system-yaml.md); accepted implementation decision on 2026-09-15 (Europe/Brussels).
 
 ## Problem
 
