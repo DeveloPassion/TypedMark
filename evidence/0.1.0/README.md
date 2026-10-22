@@ -348,6 +348,10 @@ field-derived affixes and archive branches. All seventy-nine prior vector record
 are unchanged; the live corpus reports 81 discovered, 79 passed and 18 queries
 passed, with the same two precondition skips. See
 [decision 018](../../docs/decisions/018-free-note-names.md).
+The list-item increment (specification `a43c88c`, adapter `f7996ef`) changes
+automation artifact validation only; the corpus still reports 81/79/18 with no
+changed vector record and 1,848 passing tooling tests. See
+[decision 019](../../docs/decisions/019-list-item-actions.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

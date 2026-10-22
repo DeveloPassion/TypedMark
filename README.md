@@ -142,6 +142,9 @@ NL-6 failures. See the [anchor-encoding decision](docs/decisions/017-markdown-an
 Storage contracts may omit `note_name_pattern` for an author-chosen free name,
 optionally constrained by `note_name_regex`; `checkStoragePath` validates it
 between the resolved affixes. See the [free-name decision](docs/decisions/018-free-note-names.md).
+Automation artifacts accept `add_list_item`, `remove_list_item` and
+`set_field.only_if_empty`; list-item targets must be assignable list fields. See
+the [list-item decision](docs/decisions/019-list-item-actions.md).
 
 The inline lexer is now extraction-only: emphasis delimiters remain text, while
 link, escape, code-span and HTML tokenization stay active. Rendering-mask work and
