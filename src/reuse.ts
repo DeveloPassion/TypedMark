@@ -118,6 +118,10 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
     // ancestor heading member must not erase a property-set contribution.
     contributions.set(name, structuredClone(effective));
     effective.headings = { required_h2: [], optional_h2: [], allow_other_h2: true, require_order: false, require_h1_title: false, ...effective.headings };
+    // Only an entry's text participates in matching (RHT-301); descriptions are guidance.
+    for (const list of ["required_h2", "optional_h2"]) if (Array.isArray(effective.headings[list])) {
+      effective.headings[list] = effective.headings[list].map((entry: unknown) => entry !== null && typeof entry === "object" ? (entry as { text: unknown }).text : entry);
+    }
     effective.mandatory_tags ??= [];
     if (!result.issues.has(name) && !effective.abstract && !effective.storage) problem(name, "NTS-23", "Concrete type has no effective storage block");
     if (effective.count?.min !== undefined && effective.count?.max !== undefined && effective.count.min > effective.count.max) problem(name, "NTS-69", "Note count minimum exceeds maximum");

@@ -64,6 +64,8 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
   const optional = (schema.headings?.optional_h2 ?? []).map((heading: string) => heading.normalize("NFC"));
   if (new Set(required).size !== required.length || new Set(optional).size !== optional.length) fail("RHT-285", "Heading entries are not unique under string equality");
   if (required.some((heading: string) => optional.includes(heading))) fail("RHT-286", "Required and optional headings overlap");
+  const capture = schema.headings?.capture_h2;
+  if (typeof capture === "string" && ![...required, ...optional].includes(capture.normalize("NFC"))) fail("RHT-302", `capture_h2 ${capture} is not a declared H2 heading`);
   if (schema.storage) failures.push(...validateStorageDefinition(schema.storage, schema.abstract ? undefined : noteFieldDefinitions(schema)));
   return failures;
 }

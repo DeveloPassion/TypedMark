@@ -197,3 +197,17 @@ test("a link-reference definition does not break a following setext paragraph co
 test("a blank line after a reference definition allows an indented code block", () => {
   expect(validate("[A]: /url\n\n    B\n---\n\n## Context\n", contextOnly)).toMatchObject(complete);
 });
+test("described heading entries match by text only (RHT-301)", () => {
+  const headings = { required_h2: [{ text: "Context", description: "Why." }, "Decision"], optional_h2: [{ text: "Notes" }] } as unknown as HeadingRules;
+  expect(validate("## Context\n\n## Decision\n\n## Notes\n", headings).results).toEqual([]);
+  expect(validate("## Decision\n", headings).results).toEqual([expect.objectContaining({ code: "invalid_heading", rule_id: "RHT-58" })]);
+  const duplicate = { required_h2: [{ text: "Context" }, "Context"] } as unknown as HeadingRules;
+  expect(validate("## Context\n", duplicate).results).toContainEqual(expect.objectContaining({ rule_id: "RHT-285" }));
+});
+
+test("capture_h2 must name a declared heading (RHT-302)", () => {
+  const headings = (capture: string) => ({ required_h2: ["Context"], optional_h2: [{ text: "Notes" }], capture_h2: capture }) as unknown as HeadingRules;
+  expect(validate("## Context\n", headings("Notes")).results).toEqual([]);
+  expect(validate("## Context\n", headings("Context")).results).toEqual([]);
+  expect(validate("## Context\n", headings("Inbox")).results).toContainEqual(expect.objectContaining({ code: "invalid_note_type_schema", rule_id: "RHT-302" }));
+});
