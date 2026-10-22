@@ -139,6 +139,9 @@ no target-anchor lookup. See the [Unicode-component decision](docs/decisions/016
 Markdown anchors must now be RFC 3986 percent encoded before decoding, except for
 one leading `^` block marker; raw Unicode, spaces and forbidden punctuation are
 NL-6 failures. See the [anchor-encoding decision](docs/decisions/017-markdown-anchor-encoding.md).
+Storage contracts may omit `note_name_pattern` for an author-chosen free name,
+optionally constrained by `note_name_regex`; `checkStoragePath` validates it
+between the resolved affixes. See the [free-name decision](docs/decisions/018-free-note-names.md).
 
 The inline lexer is now extraction-only: emphasis delimiters remain text, while
 link, escape, code-span and HTML tokenization stay active. Rendering-mask work and

@@ -342,6 +342,13 @@ marker. All seventy-six prior vector records are unchanged; the live corpus now
 reports 79 discovered, 77 passed and 18 queries passed, with the two historical
 precondition skips. See [decision 017](../../docs/decisions/017-markdown-anchor-encoding.md).
 
+The free-name increment (specification `85dfbbf`, adapter `75573ee`) adds eleven
+focused tests and two golden vectors for author-chosen names, `note_name_regex`,
+field-derived affixes and archive branches. All seventy-nine prior vector records
+are unchanged; the live corpus reports 81 discovered, 79 passed and 18 queries
+passed, with the same two precondition skips. See
+[decision 018](../../docs/decisions/018-free-note-names.md).
+
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
 ordinary mappings or text in a valid target. Source bytes stay unchanged, but

@@ -1,8 +1,8 @@
 {
-  "specification_revision": "f873d8d6cab37def9c806758fb58cccf66776628",
-  "adapter_revision": "0eb7afe414b1fde3fbc4b7819f5c2d0b9ec0c890",
-  "started_at": "2026-10-22T07:34:01.782Z",
-  "finished_at": "2026-10-22T07:34:28.617Z",
+  "specification_revision": "85dfbbf719fd0eff35f945f5223629452c14930a",
+  "adapter_revision": "75573ee14ad39c0e41af2fc31ce65b8a36399d11",
+  "started_at": "2026-10-22T08:41:56.097Z",
+  "finished_at": "2026-10-22T08:42:23.929Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 79,
-    "executed": 77,
-    "passed": 77,
+    "discovered": 81,
+    "executed": 79,
+    "passed": 79,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2464,6 +2464,91 @@
             "message": "Storage field tags is not an eligible scalar"
           }
         ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-free-name-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "elsewhere/growth-mindset.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path notes/<free name>.md",
+            "note_type": "concept"
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "journal/2026-10-21 Standup.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path journal/2026-10-22 <free name>.md",
+            "note_type": "entry"
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "journal/2026-10-22 .md",
+            "rule_id": "NTS-181",
+            "message": "A free note name must be non-empty",
+            "note_type": "entry"
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "notes/Border Gateway Protocol.md",
+            "rule_id": "NTS-182",
+            "message": "Free note name Border Gateway Protocol does not match note_name_regex",
+            "note_type": "concept"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-free-name-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
