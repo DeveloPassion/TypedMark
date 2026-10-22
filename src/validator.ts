@@ -2,7 +2,9 @@ import type { ErrorObject } from "ajv";
 import { extractHeadings } from "./markdown-headings";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative } from "node:path";
-import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./frontmatter";
+import { FrontmatterError, frontmatterFailureRule, parseMarkdown, parseMarkdownWithNodes } from "./frontmatter";
+import { plainDataViolation } from "./plain-yaml";
+import type { Document } from "yaml";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
 import { compareFieldValues, comparisonDomain, expandObjectDefaults, fullPattern, validateFieldValue, validateManagedFieldConstraints, type FieldDefinition } from "./field-values";
@@ -71,6 +73,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   const results: ValidationResult[] = [];
   const configPath = join(root, "typedmark.md");
   let config: Data = {};
+  let configDocument: Document | null = null;
   let schemas = new Map<string, Data>();
   let schemaIssues = new Map<string, SchemaIssue>();
   let schemaSources = new Map<string, Array<{ path: string; version: string }>>();
@@ -90,7 +93,8 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   }
 
   try {
-    config = parseMarkdown(readFileSync(configPath)).data;
+    const parsed = parseMarkdownWithNodes(readFileSync(configPath));
+    config = parsed.data; configDocument = parsed.frontmatter;
   } catch (error) {
     configurationIssue = errorMessage(error);
     add(results, {}, "invalid_collection_configuration", "typedmark.md", frontmatterFailureRule(error, "CM-537"), errorMessage(error));
@@ -346,6 +350,11 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, results, config, templates, undefined, options.blockedPaths);
   }
 
+  if (systemsEnabled && isRecord(config.scaffold)) {
+    // An importer rewrites typedmark.md and materializes scaffold values (SCE-159).
+    const violation = plainDataViolation(configDocument);
+    if (violation) add(results, config, "invalid_system", "typedmark.md", "SCE-159", `System configuration uses ${violation}`);
+  }
   if (systemsEnabled) {
     let scaffoldUnavailable = false;
     for (const [index, note] of (Array.isArray(config.scaffold?.notes) ? config.scaffold.notes : []).entries()) {

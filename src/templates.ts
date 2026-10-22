@@ -1,6 +1,7 @@
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { frontmatterFailureRule, parseMarkdown, type MarkdownDocument } from "./frontmatter";
+import { frontmatterFailureRule, parseMarkdownWithNodes, type MarkdownDocument } from "./frontmatter";
+import type { Document } from "yaml";
 import { isTemplatePlaceholder, validateTemplateValue, type FieldDefinition, type ValueFailure, type Vocabularies } from "./field-values";
 import { aliasValueFailure, noteFieldDefinitions } from "./collection-model";
 
@@ -19,7 +20,7 @@ export interface TemplateContext {
 }
 export type TemplateResolution =
   | { kind: "derived"; path: string }
-  | { kind: "file"; path: string; document: MarkdownDocument }
+  | { kind: "file"; path: string; document: MarkdownDocument & { frontmatter: Document | null } }
   | { kind: "invalid"; path: string; rule: string; message: string };
 
 /** Read a template from a caller-owned stable snapshot; never derive clock/random values. */
@@ -54,7 +55,7 @@ export function resolveTemplate(root: string, metadataDirectory: string, noteTyp
     if (index === segments.length - 1 && !entry.isFile()) return invalid("RHT-73", "Template must be an ordinary file");
   }
   try {
-    const document = parseMarkdown(readFileSync(current), { preserveBodyLineEndings: true });
+    const document = parseMarkdownWithNodes(readFileSync(current), { preserveBodyLineEndings: true });
     if (![null, Object.prototype].includes(Object.getPrototypeOf(document.data))) return invalid("RHT-67", "Template frontmatter must be a mapping");
     return { kind: "file", path, document };
   } catch (error) {

@@ -8,6 +8,7 @@ import { readStableCollection } from "./snapshot";
 import { checkStoragePath } from "./storage";
 import { deriveStarter, resolveTemplate } from "./templates";
 import { readCollectionModel } from "./validator";
+import { plainDataViolation } from "./plain-yaml";
 
 /** Prepare source-owned bytes and new notes before creating a destination. */
 export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
@@ -18,6 +19,8 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
     const document = parseMarkdownWithNodes(readFileSync(join(root, "typedmark.md")), { preserveBodyLineEndings: true });
     const config = document.data;
     if (!document.frontmatter || typeof config.name !== "string" || typeof config.version !== "string" || !isMapping(config.scaffold)) throw new Error("Source is not a versioned system definition");
+    const violation = plainDataViolation(document.frontmatter);
+    if (violation) throw new MaterializationError("SCE-160", `System configuration uses ${violation}`);
     const declaredMetadata = typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark";
     const metadataEntry = readdirSync(root, { withFileTypes: true }).find((entry) => entry.isDirectory() && entry.name.normalize("NFC") === declaredMetadata.normalize("NFC"));
     const metadataDirectory = metadataEntry?.name ?? declaredMetadata;
@@ -40,6 +43,8 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
       const schema = model.schemas.get(entry.note_type)!;
       const selected = resolveTemplate(root, metadataDirectory, entry.note_type, schema, typeof entry.from_template === "string" ? entry.from_template : undefined, info.blockedPaths);
       if (selected.kind === "invalid") throw new MaterializationError(selected.rule, selected.message);
+      const templateViolation = selected.kind === "file" ? plainDataViolation(selected.document.frontmatter) : undefined;
+      if (templateViolation) throw new MaterializationError("SCE-160", `Template ${selected.path} frontmatter uses ${templateViolation}`);
       if (selected.kind === "derived") derivedBodies.add(entry.path);
       starters.push({ noteType: entry.note_type, path: entry.path, starter: deriveStarter(schema, model.config, selected.kind === "file" ? selected.document : undefined), values: entry.values as Record<string, unknown> | undefined });
     }
