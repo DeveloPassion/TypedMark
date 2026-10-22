@@ -264,18 +264,22 @@ export function resolveNoteLink(link: Pick<ParsedNoteLink, "form" | "target" | "
 
 export interface RelationshipGraph {
   targets: Map<string, Record<RelationshipKind, Set<string>>>;
+  /** Resolved non-deleted managed targets per relationship-bearing field, for inverse checks. */
+  fieldTargets: Map<string, Map<string, Set<string>>>;
   failures: Map<string, NoteLinkError[]>;
 }
 export function buildRelationshipGraph(model: CollectionModel, matchesType: (actual: string, requested: string) => boolean): RelationshipGraph {
-  const graph: RelationshipGraph = { targets: new Map(), failures: new Map() };
+  const graph: RelationshipGraph = { targets: new Map(), fieldTargets: new Map(), failures: new Map() };
   const managed = new Map(model.notes.map((note) => [note.path, note]));
   for (const note of model.notes) {
     const edges = Object.fromEntries(RELATIONSHIP_KINDS.map((kind) => [kind, new Set<string>()])) as Record<RelationshipKind, Set<string>>;
     graph.targets.set(note.path, edges);
+    const fieldEdges = new Map<string, Set<string>>();
+    graph.fieldTargets.set(note.path, fieldEdges);
     const issue = model.schemaIssues?.get(note.noteType);
     if (issue) { graph.failures.set(note.path, [new NoteLinkError("CM-308", issue.message, issue)]); continue; }
     const schema = model.schemas.get(note.noteType)!;
-    const record = (link: ParsedNoteLink, kind?: RelationshipKind, targets?: string[], validateExists = false, field = false) => {
+    const record = (link: ParsedNoteLink, kind?: RelationshipKind, targets?: string[], validateExists = false, field = false, fieldName?: string) => {
       const allowed = targets ? (candidate: ManagedNote) => targets.some((type) => matchesType(candidate.noteType, type)) : undefined;
       const resolved = resolveNoteLink(link, note.path, model, allowed);
       if (resolved.kind === "unresolved") {
@@ -291,6 +295,7 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
       if (targetIssue) throw new NoteLinkError("CM-308", targetIssue.message, targetIssue);
       if (allowed && (!target || !allowed(target))) throw new NoteLinkError("FDR-160", "Link target does not satisfy its field targets");
       if (!target || !kind || target.values.deleted === true) return;
+      if (fieldName) fieldEdges.set(fieldName, (fieldEdges.get(fieldName) ?? new Set()).add(target.path));
       const declarations = Object.keys(schema.relationships?.[kind]?.allowed_note_types ?? {});
       if (declarations.some((type) => matchesType(target.noteType, type))) edges[kind].add(target.path);
     };
@@ -335,7 +340,7 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
         const candidate = typeof value === "string" ? inspectNoteLink(value) : undefined;
         if (candidate?.kind === "invalid") throw candidate.error;
         if (candidate?.kind !== "parsed" || candidate.link.embed) throw new NoteLinkError("NL-7", "A note-link field stores one non-embed internal link");
-        record(candidate.link, kind, present ? definition.targets : undefined, present && definition.validate_exists, true);
+        record(candidate.link, kind, present ? definition.targets : undefined, present && definition.validate_exists, true, kind ? field : undefined);
       }, field);
     };
     for (const [name, definition] of Object.entries(note.fields)) {

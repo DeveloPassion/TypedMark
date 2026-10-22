@@ -31,8 +31,32 @@ export function validateRelationships(model: CollectionModel): ValidationResult[
       }
     }
   }
+  for (const finding of inverseMismatches(model, graph, notes)) results.push(finding);
   for (const path of dependencyCycles(graph)) {
     results.push({ code: "invalid_relationship_instance", severity: "error", path, note_type: notes.get(path)!.noteType, relationship: "depends_on", rule_id: "RHT-294", message: "depends_on instances form a cycle through this note" });
+  }
+  return results;
+}
+
+/**
+ * One-sided links between inverse fields (RHT-299), reported on the target
+ * that lacks the back-link. Deleted notes neither require nor supply links
+ * (RHT-300); the graph already omits deleted targets.
+ */
+function inverseMismatches(model: CollectionModel, graph: ReturnType<typeof buildRelationshipGraph>, notes: Map<string, CollectionModel["notes"][number]>): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  for (const note of model.notes) {
+    if (note.values.deleted === true || model.schemaIssues?.has(note.noteType)) continue;
+    for (const [field, targets] of graph.fieldTargets.get(note.path) ?? []) {
+      const inverse = note.fields[field]?.inverse;
+      if (inverse === undefined) continue;
+      for (const path of targets) {
+        const target = notes.get(path)!;
+        if (model.schemaIssues?.has(target.noteType) || !Object.hasOwn(target.fields, inverse)) continue;
+        if (graph.fieldTargets.get(path)?.get(inverse)?.has(note.path)) continue;
+        results.push({ code: "inverse_mismatch", severity: "warn", path, note_type: target.noteType, field: inverse, rule_id: "RHT-299", message: `${inverse} does not link back to ${note.path} (inverse of ${field})` });
+      }
+    }
   }
   return results;
 }

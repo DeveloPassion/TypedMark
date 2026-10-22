@@ -6,6 +6,9 @@ import { validateStorageDefinition } from "./storage";
 import { RELATIONSHIP_KINDS } from "./types";
 
 type Data = Record<string, any>;
+const INVERSE_KINDS: Record<string, string[]> = {
+  belongs_to: ["contains"], contains: ["belongs_to"], related_to: ["related_to", "depends_on"], depends_on: ["related_to"],
+};
 export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>, config: Data): ValueFailure[] {
   const failures: ValueFailure[] = [];
   const fail = (rule: string, message: string) => failures.push({ rule, message });
@@ -46,6 +49,14 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
         const owner = claimed.get(`${kind}:${type}`);
         if (owner) fail("RHT-292", `${owner} and ${field} both admit ${kind} target ${type}`);
         else claimed.set(`${kind}:${type}`, field);
+      }
+      if (definition.inverse === undefined) continue;
+      // Each admitted type stores the same relationship back (RHT-297) with a
+      // paired kind (RHT-298); a field may be its own inverse (related_to).
+      for (const type of admitted) {
+        const other = noteFieldDefinitions(schemas.get(type)!)[definition.inverse] as FieldDefinition | undefined;
+        if (!other?.relationship_kind || other.inverse !== field) fail("RHT-297", `${type}.${definition.inverse} is not a relationship field whose inverse is ${field}`);
+        else if (!INVERSE_KINDS[kind].includes(other.relationship_kind)) fail("RHT-298", `${field} (${kind}) cannot pair with ${type}.${definition.inverse} (${other.relationship_kind})`);
       }
     }
   }

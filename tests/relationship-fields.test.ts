@@ -121,3 +121,49 @@ test("a topic may both belong to and contain topics", () => {
   });
   expect(rules(root)).toEqual([]);
 });
+
+const inverseSchemas = (taskInverse: object = { inverse: "related_tasks" }, projectField: object = { relationship_kind: "contains", inverse: "related_projects" }) => ({
+  project: { relationships: block({}, {}, { contains: { allowed_note_types: { task: {} } } }), frontmatter: { related_tasks: linkList(["task"], projectField) } },
+  task: { relationships: block({ project: {} }), frontmatter: { related_projects: linkList(["project"], { relationship_kind: "belongs_to", ...taskInverse }) } },
+});
+
+test("inverse fields must exist, point back and pair kinds (RHT-297, RHT-298)", () => {
+  expect(rules(collection(inverseSchemas()))).toEqual([]);
+  expect(rules(collection(inverseSchemas({ inverse: "missing" })))).toEqual(expect.arrayContaining(["invalid_relationship_definition:RHT-297:.typedmark/schemas/task.md"]));
+  expect(rules(collection(inverseSchemas(undefined, { relationship_kind: "contains" })))).toEqual(["invalid_relationship_definition:RHT-297:.typedmark/schemas/task.md"]);
+  const mispaired = inverseSchemas(undefined, { relationship_kind: "related_to", inverse: "related_projects" });
+  (mispaired.project as { relationships: object }).relationships = block({}, { task: {} });
+  expect(rules(collection(mispaired))).toEqual(expect.arrayContaining(["invalid_relationship_definition:RHT-298:.typedmark/schemas/task.md"]));
+});
+
+test("one-sided links are inverse_mismatch warnings on the target (RHT-299, RHT-300)", () => {
+  const root = collection(inverseSchemas(), {
+    "project/P.md": { note_type: "project", title: "P", related_tasks: ["[[A]]", "[[B]]"] },
+    "task/A.md": { note_type: "task", title: "A", related_projects: ["[[P]]"] },
+    "task/B.md": { note_type: "task", title: "B" },
+    "task/C.md": { note_type: "task", title: "C", related_projects: ["[[P]]"] },
+    "task/D.md": { note_type: "task", title: "D", related_projects: ["[[P]]"], deleted: true },
+  });
+  const report = run(root);
+  expect(report.valid).toBe(true);
+  expect(report.results.map((result) => [result.severity, result.code, result.path, result.field])).toEqual([
+    ["warn", "inverse_mismatch", "project/P.md", "related_tasks"],
+    ["warn", "inverse_mismatch", "task/B.md", "related_projects"],
+  ]);
+});
+
+test("inverse_mismatch severity follows validation_defaults", () => {
+  const notes = { "project/P.md": { note_type: "project", title: "P", related_tasks: ["[[A]]"] }, "task/A.md": { note_type: "task", title: "A" } };
+  expect(run(collection(inverseSchemas(), notes, { validation_defaults: { inverse_mismatch: "error" } })).valid).toBe(false);
+  expect(run(collection(inverseSchemas(), notes, { validation_defaults: { inverse_mismatch: "off" } })).results).toEqual([]);
+});
+
+test("a related_to field may be its own inverse", () => {
+  const schemas = { topic: { relationships: block({}, { topic: {} }), frontmatter: { see_also: linkList(["topic"], { relationship_kind: "related_to", inverse: "see_also" }) } } };
+  const root = collection(schemas, {
+    "topic/A.md": { note_type: "topic", title: "A", see_also: ["[[B]]"] },
+    "topic/B.md": { note_type: "topic", title: "B", see_also: ["[[A]]"] },
+    "topic/C.md": { note_type: "topic", title: "C", see_also: ["[[A]]"] },
+  });
+  expect(run(root).results.map((result) => [result.code, result.path])).toEqual([["inverse_mismatch", "topic/A.md"]]);
+});
