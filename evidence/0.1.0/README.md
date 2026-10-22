@@ -352,6 +352,12 @@ The list-item increment (specification `a43c88c`, adapter `f7996ef`) changes
 automation artifact validation only; the corpus still reports 81/79/18 with no
 changed vector record and 1,848 passing tooling tests. See
 [decision 019](../../docs/decisions/019-list-item-actions.md).
+The typed-relationship increment (specification `715ae50`, adapter `60e90fd`)
+adds four golden vectors and one query case for relationship targets,
+`contains`/`depends_on`, cycles and inverse mismatches. All prior vector records
+are unchanged; the corpus reports 85 discovered, 83 passed and 19 queries
+passed, with the two precondition skips, and 1,865 tooling tests pass. See
+[decision 020](../../docs/decisions/020-typed-relationships-and-osk-features.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

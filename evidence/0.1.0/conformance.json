@@ -1,8 +1,8 @@
 {
-  "specification_revision": "a43c88c550b2d09cc3a156c78ba82f7fcce45d1c",
-  "adapter_revision": "f7996ef8956e7843958cd28769f0918fe65657e9",
-  "started_at": "2026-10-22T08:51:54.305Z",
-  "finished_at": "2026-10-22T08:52:20.212Z",
+  "specification_revision": "715ae505b696279a433bf527da782df7fca3ddc4",
+  "adapter_revision": "60e90fd2f58dcdff85b58ebe04cde1c4fddfd4c1",
+  "started_at": "2026-10-22T12:04:08.040Z",
+  "finished_at": "2026-10-22T12:05:14.851Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 81,
-    "executed": 79,
-    "passed": 79,
+    "discovered": 85,
+    "executed": 83,
+    "passed": 83,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2108,6 +2108,213 @@
       ]
     },
     {
+      "name": "relationship-fields-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_relationship_definition",
+            "severity": "error",
+            "path": ".typedmark/schemas/meeting.md",
+            "rule_id": "RHT-292",
+            "message": "attendees and organizers both admit related_to target person"
+          },
+          {
+            "code": "invalid_relationship_definition",
+            "severity": "error",
+            "path": ".typedmark/schemas/task.md",
+            "rule_id": "FDR-164",
+            "message": "related_projects targets person not declared under belongs_to"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "relationship-inverse-mismatch",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": [
+          {
+            "code": "inverse_mismatch",
+            "severity": "warn",
+            "path": "projects/Launch.md",
+            "rule_id": "RHT-299",
+            "message": "related_tasks does not link back to tasks/Ship.md (inverse of related_projects)",
+            "note_type": "project",
+            "field": "related_tasks"
+          },
+          {
+            "code": "inverse_mismatch",
+            "severity": "warn",
+            "path": "tasks/Build.md",
+            "rule_id": "RHT-299",
+            "message": "related_projects does not link back to projects/Launch.md (inverse of related_tasks)",
+            "note_type": "task",
+            "field": "related_projects"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "relationship-kinds-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "projects/Launch.md",
+            "rule_id": "RHT-31",
+            "message": "contains target task has 4 resolved instances",
+            "note_type": "project",
+            "relationship": "contains"
+          },
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "tasks/Build.md",
+            "rule_id": "RHT-294",
+            "message": "depends_on instances form a cycle through this note",
+            "note_type": "task",
+            "relationship": "depends_on"
+          },
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "tasks/Design.md",
+            "rule_id": "RHT-294",
+            "message": "depends_on instances form a cycle through this note",
+            "note_type": "task",
+            "relationship": "depends_on"
+          },
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "tasks/Ship.md",
+            "rule_id": "RHT-294",
+            "message": "depends_on instances form a cycle through this note",
+            "note_type": "task",
+            "relationship": "depends_on"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "relationship-kinds-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "tasks-contained-by-launch",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "tasks/Build.md"
+              },
+              {
+                "path": "tasks/Design.md"
+              },
+              {
+                "path": "tasks/Ship.md"
+              }
+            ],
+            "provenance": [
+              {
+                "path": null
+              },
+              {
+                "path": null
+              },
+              {
+                "path": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "reuse-composition-valid",
       "status": "passed",
       "collection_changed": false,
@@ -3489,8 +3696,8 @@
     }
   ],
   "query_summary": {
-    "executed": 18,
-    "passed": 18,
+    "executed": 19,
+    "passed": 19,
     "failed": 0
   }
 }

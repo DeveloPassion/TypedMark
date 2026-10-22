@@ -145,6 +145,12 @@ between the resolved affixes. See the [free-name decision](docs/decisions/018-fr
 Automation artifacts accept `add_list_item`, `remove_list_item` and
 `set_field.only_if_empty`; list-item targets must be assignable list fields. See
 the [list-item decision](docs/decisions/019-list-item-actions.md).
+Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
+`depends_on`), one field per kind and target type, optional `inverse` fields
+whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
+Heading entries can carry descriptions and a `capture_h2`; automation `when`
+predicates accept `older_than`. See the
+[typed-relationships decision](docs/decisions/020-typed-relationships-and-osk-features.md).
 
 The inline lexer is now extraction-only: emphasis delimiters remain text, while
 link, escape, code-span and HTML tokenization stay active. Rendering-mask work and
