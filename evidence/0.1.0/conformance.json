@@ -1,8 +1,8 @@
 {
-  "specification_revision": "715ae505b696279a433bf527da782df7fca3ddc4",
-  "adapter_revision": "60e90fd2f58dcdff85b58ebe04cde1c4fddfd4c1",
-  "started_at": "2026-10-22T12:04:08.040Z",
-  "finished_at": "2026-10-22T12:05:14.851Z",
+  "specification_revision": "d0699a6552d7435c6c88cb748e006e5ee31bd0b8",
+  "adapter_revision": "ccbb7741f54837e07210dcfffd00bf7ec76a4eb1",
+  "started_at": "2026-10-22T12:32:42.692Z",
+  "finished_at": "2026-10-22T12:33:10.943Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 85,
-    "executed": 83,
-    "passed": 83,
+    "discovered": 86,
+    "executed": 84,
+    "passed": 84,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -814,6 +814,40 @@
         },
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "field-states-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/project.md",
+            "rule_id": "FDR-288",
+            "message": "status: State done is not an allowed value"
+          }
+        ]
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",

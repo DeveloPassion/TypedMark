@@ -358,6 +358,10 @@ adds four golden vectors and one query case for relationship targets,
 are unchanged; the corpus reports 85 discovered, 83 passed and 19 queries
 passed, with the two precondition skips, and 1,865 tooling tests pass. See
 [decision 020](../../docs/decisions/020-typed-relationships-and-osk-features.md).
+The lifecycle-states increment (specification `d0699a6`) adds one golden
+vector; the corpus reports 86 discovered, 84 passed and 19 queries passed, with
+the two precondition skips and no changed record, and 1,868 tooling tests pass.
+See [decision 021](../../docs/decisions/021-lifecycle-states.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

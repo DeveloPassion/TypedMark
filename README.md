@@ -151,6 +151,9 @@ whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
 Heading entries can carry descriptions and a `capture_h2`; automation `when`
 predicates accept `older_than`. See the
 [typed-relationships decision](docs/decisions/020-typed-relationships-and-osk-features.md).
+Status fields can declare lifecycle `states` (done, outcome, role) that
+automations test with `state`, `to_state` and `from_state` predicates. See the
+[lifecycle-states decision](docs/decisions/021-lifecycle-states.md).
 
 The inline lexer is now extraction-only: emphasis delimiters remain text, while
 link, escape, code-span and HTML tokenization stay active. Rendering-mask work and
