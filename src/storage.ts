@@ -1,9 +1,11 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { datetimeInstant, validateFieldValue, type FieldDefinition, type ValueFailure } from "./field-values";
+import { datetimeInstant, fullPattern, validateFieldValue, type FieldDefinition, type ValueFailure } from "./field-values";
 
 export interface StoragePatterns {
   folder_pattern: string;
-  note_name_pattern: string;
+  /** Absent for a free name chosen by the note's author (NTS-181). */
+  note_name_pattern?: string;
+  note_name_regex?: string;
   note_name_prefix?: { pattern: string };
   note_name_suffix?: { pattern: string };
 }
@@ -11,6 +13,7 @@ export interface StorageDefinition extends StoragePatterns { archive?: StoragePa
 type Fields = Record<string, FieldDefinition>;
 type Reference = { field: string; format?: string };
 type Resolution = { path: string } | { failure: ValueFailure };
+type Parts = { folder: string; prefix: string; name: string; suffix: string };
 const formats = new Set(["YYYY", "MM", "DD", "YYYY-MM", "YYYY-MM-DD", "Q", "WW", "GGGG"]);
 
 function reference(token: string, fields?: Fields): Reference | ValueFailure {
@@ -29,7 +32,7 @@ function reference(token: string, fields?: Fields): Reference | ValueFailure {
 }
 
 function patterns(storage: StoragePatterns): string[] {
-  return [storage.folder_pattern, storage.note_name_prefix?.pattern ?? "", storage.note_name_pattern, storage.note_name_suffix?.pattern ?? ""];
+  return [storage.folder_pattern, storage.note_name_prefix?.pattern ?? "", storage.note_name_pattern ?? "", storage.note_name_suffix?.pattern ?? ""];
 }
 
 // Shape checks run first. Omit fields for an abstract contribution's intrinsic
@@ -41,6 +44,9 @@ export function validateStorageDefinition(storage: StorageDefinition, fields?: F
     for (const pattern of patterns(branch)) for (const match of pattern.matchAll(/\{([^{}]*)\}/gu)) {
       const parsed = reference(match[1]!, fields);
       if ("rule" in parsed) failures.push(parsed);
+    }
+    if (branch.note_name_regex !== undefined) {
+      try { fullPattern(branch.note_name_regex); } catch { failures.push({ rule: "FND-31", message: "Invalid note_name_regex regular expression" }); }
     }
   }
   return failures;
@@ -64,7 +70,7 @@ function formatted(value: string, definition: FieldDefinition, format: string, t
   }
 }
 
-export function resolveStoragePath(storage: StoragePatterns, values: Record<string, unknown>, fields: Fields, timezone: string): Resolution {
+function resolveParts(storage: StoragePatterns, values: Record<string, unknown>, fields: Fields, timezone: string): Parts | { failure: ValueFailure } {
   let failure: ValueFailure | undefined;
   const resolved = patterns(storage).map((pattern) => pattern.replace(/\{([^{}]*)\}/gu, (_match, token: string) => {
     if (failure) return "";
@@ -94,6 +100,52 @@ export function resolveStoragePath(storage: StoragePatterns, values: Record<stri
   }));
   if (failure) return { failure };
   const [folder = "", prefix = "", name = "", suffix = ""] = resolved;
+  return { folder, prefix, name, suffix };
+}
+
+/**
+ * Resolve the conforming path. A free-name contract (no `note_name_pattern`)
+ * takes its name part from `freeName`, which the caller supplies (NTS-150).
+ */
+export function resolveStoragePath(storage: StoragePatterns, values: Record<string, unknown>, fields: Fields, timezone: string, freeName?: string): Resolution {
+  const parts = resolveParts(storage, values, fields, timezone);
+  return "failure" in parts ? parts : assemble(storage, parts, freeName);
+}
+
+/**
+ * Check an existing note path against its storage contract. A free name is the
+ * path's basename between the resolved affixes (NTS-181); a path outside the
+ * resolved folder or affixes is a mismatch, reported by comparing paths.
+ */
+export function checkStoragePath(storage: StoragePatterns, path: string, values: Record<string, unknown>, fields: Fields, timezone: string): Resolution {
+  const parts = resolveParts(storage, values, fields, timezone);
+  if ("failure" in parts || storage.note_name_pattern !== undefined) return "failure" in parts ? parts : assemble(storage, parts);
+  const actual = path.normalize("NFC"), slash = actual.lastIndexOf("/");
+  const folder = slash < 0 ? "" : actual.slice(0, slash), file = actual.slice(slash + 1);
+  const prefix = parts.prefix.normalize("NFC"), suffix = parts.suffix.normalize("NFC");
+  const basename = file.endsWith(".md") ? file.slice(0, -3) : undefined;
+  if (basename === undefined || folder !== parts.folder.normalize("NFC") || basename.length < prefix.length + suffix.length
+    || !basename.startsWith(prefix) || !basename.endsWith(suffix)) {
+    return { path: `${parts.folder ? `${parts.folder}/` : ""}${parts.prefix}<free name>${parts.suffix}.md` };
+  }
+  return assemble(storage, parts, basename.slice(prefix.length, basename.length - suffix.length));
+}
+
+function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Resolution {
+  const { folder, prefix, suffix } = parts;
+  let name = parts.name;
+  if (storage.note_name_pattern === undefined) {
+    if (!freeName) return { failure: { rule: "NTS-181", message: "A free note name must be non-empty" } };
+    if (storage.note_name_regex !== undefined) {
+      let matcher: RegExp;
+      try { matcher = fullPattern(storage.note_name_regex); }
+      catch { return { failure: { rule: "FND-31", message: "Invalid note_name_regex regular expression" } }; }
+      if (!matcher.test(freeName.normalize("NFC"))) {
+        return { failure: { rule: "NTS-182", message: `Free note name ${freeName} does not match note_name_regex` } };
+      }
+    }
+    name = freeName;
+  }
   const basename = `${prefix}${name}${suffix}`.normalize("NFC");
   if (!basename || basename.startsWith(".")) return { failure: { rule: "NTS-134", message: "Resolved note basename must be non-empty and must not begin with a dot" } };
   const path = `${folder ? `${folder}/` : ""}${basename}.md`.normalize("NFC");

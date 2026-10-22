@@ -19,7 +19,7 @@ import { validateExpansions, type ExpansionTemplate } from "./expansions";
 import { validateAutomations } from "./automations";
 import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
 import { validateTemplateTracking } from "./template-tracking";
-import { resolveStoragePath } from "./storage";
+import { checkStoragePath } from "./storage";
 import { validateHistoryOrder, validateHistoryShape } from "./history";
 import { resolveTemplate, validateTemplateFields } from "./templates";
 export { noteFieldDefinitions } from "./collection-model";
@@ -649,7 +649,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
 function validateStorage(path: string, values: Data, fields: Data, schema: Data, noteType: string, config: Data, results: ValidationResult[]) {
   const storage = values.archived === true && schema.storage?.archive ? schema.storage.archive : schema.storage;
   if (!storage) return;
-  const resolved = resolveStoragePath(storage, values, fields, config.timezone ?? "UTC");
+  const resolved = checkStoragePath(storage, path, values, fields, config.timezone ?? "UTC");
   if ("failure" in resolved) add(results, config, "path", path, resolved.failure.rule, resolved.failure.message, { note_type: noteType }, schema);
   else if (path.normalize("NFC") !== resolved.path) add(results, config, "path", path, "NTS-146", `Expected managed-note path ${resolved.path}`, { note_type: noteType }, schema);
 }

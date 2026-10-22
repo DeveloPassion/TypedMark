@@ -5,7 +5,7 @@ import { expandObjectDefaults, isMapping } from "./field-values";
 import { noteFieldDefinitions } from "./collection-model";
 import { materializeStarters, MaterializationError, type StarterInput } from "./materialization";
 import { readStableCollection } from "./snapshot";
-import { resolveStoragePath } from "./storage";
+import { checkStoragePath } from "./storage";
 import { deriveStarter, resolveTemplate } from "./templates";
 import { readCollectionModel } from "./validator";
 
@@ -58,7 +58,7 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
         note.body = `# ${effective.title}\n\n${note.body}`;
       }
       const storage = effective.archived === true ? schema.storage.archive ?? schema.storage : schema.storage;
-      const resolution = resolveStoragePath(storage, effective, fields, model.config.timezone ?? "UTC");
+      const resolution = checkStoragePath(storage, note.path, effective, fields, model.config.timezone ?? "UTC");
       if ("failure" in resolution) throw new MaterializationError(resolution.failure.rule, resolution.failure.message);
       if (resolution.path.normalize("NFC") !== note.path.normalize("NFC")) throw new MaterializationError("NTS-148", `Scaffold path ${note.path} differs from effective storage path ${resolution.path}`);
       if (occupied.has(note.path.normalize("NFC"))) throw new MaterializationError("NTS-152", `Scaffold path is occupied: ${note.path}`);

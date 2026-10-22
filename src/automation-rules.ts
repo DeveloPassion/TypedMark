@@ -8,7 +8,8 @@ type Data = Record<string, any>;
 export interface AutomationFailure extends ValueFailure { field?: string; note_type?: string }
 
 function storageAccepts(path: string, storage: Data): boolean {
-  const name = `${storage.note_name_prefix?.pattern ?? ""}${storage.note_name_pattern}${storage.note_name_suffix?.pattern ?? ""}`;
+  // A free name is approximated as one unconstrained placeholder.
+  const name = `${storage.note_name_prefix?.pattern ?? ""}${storage.note_name_pattern ?? "{free_name}"}${storage.note_name_suffix?.pattern ?? ""}`;
   // Decomposition also handles normalization across a literal/placeholder boundary.
   const pattern = `${storage.folder_pattern ? `${storage.folder_pattern}/` : ""}${name}.md`.normalize("NFD");
   const formats: Record<string, string> = { YYYY: "[0-9]{4}", GGGG: "[0-9]{4}", MM: "(?:0[1-9]|1[0-2])", DD: "(?:0[1-9]|[12][0-9]|3[01])", Q: "[1-4]", WW: "(?:0[1-9]|[1-4][0-9]|5[0-3])", "YYYY-MM": "[0-9]{4}-(?:0[1-9]|1[0-2])", "YYYY-MM-DD": "[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])" };
