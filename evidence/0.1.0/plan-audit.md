@@ -123,8 +123,9 @@ A linear scanner removes the review's reproduced regex-engine size limit; see th
 The maintainer subsequently resolved URI-field fragments, decoded Markdown-anchor
 interpretation and non-UTF-8 note-target rejection; see
 [decision 016](../../docs/decisions/016-unicode-note-link-components.md).
-General raw-fragment character checks and reference-style outer links remain
-separate work; the new decoding step does not claim those boundaries are complete.
+Markdown-anchor RFC encoding is now enforced, retaining one leading `^`; see
+[decision 017](../../docs/decisions/017-markdown-anchor-encoding.md).
+Reference-style outer links and other Markdown consumers remain separate work.
 The measured escaped-character/block-mask and extension-start bottlenecks are now
 fixed by an extraction-only lexer; it omits emphasis rendering work while retaining
 link, escape, code-span, HTML and unescaping behavior. This also corrects astral
@@ -229,8 +230,9 @@ guard was changed and no ordering-only fix is claimed complete.
 The accepted Unicode/URI decisions now have a source-preserving interpretation
 helper, strict internal component decoding, and valid/invalid/suppressed golden
 vectors. URI-field fragments and arbitrary well-formed encoded octets remain
-valid. The existing raw-fragment character-validation conflict is explicitly
-still open, as are the unrelated YAML writer and measured-effort requirements.
+valid. Markdown anchors now require RFC encoding apart from one leading `^`,
+with valid/invalid/suppressed vectors. The unrelated YAML writer and
+measured-effort requirements remain open.
 
 ## Completion evidence still required
 

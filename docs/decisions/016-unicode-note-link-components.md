@@ -14,11 +14,10 @@ literal, and ordinary URI fields retain RFC 3986's arbitrary encoded octets.
 These decisions resolve the corresponding open questions in decisions
 [005](005-markdown-destination-decoding.md),
 [006](006-note-link-diagnostics.md), [007](007-rfc-uri-syntax.md), and
-[008](008-extraction-only-inline-lexer.md). They do not resolve the separate
-raw-fragment character-validation conflict: NL-6 remains unchanged, while the
-existing parser is permissive for some raw anchor characters. A maintainer
-question explicitly asks whether to enforce RFC encoding there. This increment
-does not silently relax that normative rule or claim exhaustive URI conformance.
+[008](008-extraction-only-inline-lexer.md). They did not resolve the separate
+raw-fragment character-validation conflict; that is now settled by
+[decision 017](017-markdown-anchor-encoding.md), which enforces RFC encoding for
+Markdown anchors. This increment does not claim exhaustive URI conformance.
 
 ## Source-preserving interface
 

@@ -1,8 +1,8 @@
 {
-  "specification_revision": "8e7929b9191bf4494dd1a51482043a2784078afe",
-  "adapter_revision": "7583ab170cbbfa78d57808081f749e1c83288b0d",
-  "started_at": "2026-09-15T05:16:32.036Z",
-  "finished_at": "2026-09-15T05:17:03.111Z",
+  "specification_revision": "f873d8d6cab37def9c806758fb58cccf66776628",
+  "adapter_revision": "0eb7afe414b1fde3fbc4b7819f5c2d0b9ec0c890",
+  "started_at": "2026-10-22T07:34:01.782Z",
+  "finished_at": "2026-10-22T07:34:28.617Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 76,
-    "executed": 74,
-    "passed": 74,
+    "discovered": 79,
+    "executed": 77,
+    "passed": 77,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -1390,6 +1390,136 @@
     },
     {
       "name": "note-link-entities-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "note-link-fragment-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown anchor requires RFC 3986 percent encoding",
+            "note_type": "source"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown anchor requires RFC 3986 percent encoding",
+            "note_type": "source"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown anchor requires RFC 3986 percent encoding",
+            "note_type": "source",
+            "field": "references"
+          },
+          {
+            "code": "invalid_note_link",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "NL-6",
+            "message": "NL-6: Markdown anchor requires RFC 3986 percent encoding",
+            "note_type": "source",
+            "field": "references"
+          },
+          {
+            "code": "invalid_relationship_instance",
+            "severity": "error",
+            "path": "Notes/Source.md",
+            "rule_id": "RHT-31",
+            "message": "related_to target target has 0 resolved instances",
+            "note_type": "source",
+            "relationship": "related_to"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "note-link-fragment-suppressed",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "suppressed-unencoded-fragments-block-query-model",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "CM-307"
+        }
+      ]
+    },
+    {
+      "name": "note-link-fragment-valid",
       "status": "passed",
       "collection_changed": false,
       "differences": [],
@@ -3274,8 +3404,8 @@
     }
   ],
   "query_summary": {
-    "executed": 17,
-    "passed": 17,
+    "executed": 18,
+    "passed": 18,
     "failed": 0
   }
 }

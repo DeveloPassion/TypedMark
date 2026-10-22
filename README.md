@@ -136,7 +136,9 @@ undecodable values reported as `invalid_note_link` under `NL-11`.
 `interpretNoteLinkAnchor` supplies a decoded heading/block value while existing
 `anchor`, `raw`, and physical source spans retain authored spelling. It performs
 no target-anchor lookup. See the [Unicode-component decision](docs/decisions/016-unicode-note-link-components.md).
-General raw-fragment character validation remains a separate open boundary.
+Markdown anchors must now be RFC 3986 percent encoded before decoding, except for
+one leading `^` block marker; raw Unicode, spaces and forbidden punctuation are
+NL-6 failures. See the [anchor-encoding decision](docs/decisions/017-markdown-anchor-encoding.md).
 
 The inline lexer is now extraction-only: emphasis delimiters remain text, while
 link, escape, code-span and HTML tokenization stay active. Rendering-mask work and

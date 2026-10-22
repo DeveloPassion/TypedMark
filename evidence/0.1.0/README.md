@@ -224,7 +224,8 @@ All sixty-seven previous vector machine records remain unchanged in this CI outp
 The maintainer has now resolved URI-field fragments, decoded Markdown-anchor
 interpretation and non-UTF-8 note-target rejection; see
 [decision 016](../../docs/decisions/016-unicode-note-link-components.md).
-General raw-fragment character enforcement remains separately unresolved. The measured mask/start-scan slowdown is fixed, not claimed as an
+Markdown-anchor RFC encoding is now enforced, retaining one leading `^`; see
+[decision 017](../../docs/decisions/017-markdown-anchor-encoding.md). The measured mask/start-scan slowdown is fixed, not claimed as an
 exhaustive parser-performance audit. A separate checker-parity probe found native
 YAML sets/ordered maps accepted as structural configuration maps by the specification
 fixture checker but rejected by the runtime. The fixture checker is now aligned:
@@ -332,8 +333,14 @@ components remain located `invalid_note_link` failures under NL-11, including wh
 query/model use is blocked behind suppressed diagnostics. URI fields retain
 fragments and arbitrary well-formed percent octets. All seventy-three prior vector
 records are unchanged; the three new vectors and suppressed query case pass.
-The raw-fragment character-validation conflict remains open, with NL-6 unchanged.
 See [decision 016](../../docs/decisions/016-unicode-note-link-components.md).
+
+The anchor-encoding increment adds forty-four focused regressions, three golden
+vectors and one query case. Raw Unicode, spaces and forbidden punctuation in
+Markdown anchors are located NL-6 failures; one leading `^` remains the block
+marker. All seventy-six prior vector records are unchanged; the live corpus now
+reports 79 discovered, 77 passed and 18 queries passed, with the two historical
+precondition skips. See [decision 017](../../docs/decisions/017-markdown-anchor-encoding.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
@@ -390,6 +397,11 @@ dependency audit. The final local source run completed 4,943 assertions across
 filesystem integration case and 300 seconds for the whole vector-suite case;
 those timeouts are not performance budgets. The inline-lexer regression cases
 have separate three-second performance ceilings.
+The anchor-encoding checkpoint (specification `f873d8d`, adapter `0eb7afe`)
+passed 1,835 tooling tests with 5,127 assertions across 78 files, type checking
+and conformance locally, plus 471 specification tests, 320 fixture expectations,
+1,708 rule IDs and the 31-page site build. The dependency audit could not run:
+the npm advisory endpoint returned HTTP 503.
 No existing test deadlines changed. The CommonMark dependency
 and its development types remain exact-pinned and passed the dependency audit.
 The three earlier specification build tests exercise LF, CRLF and CR source files.
