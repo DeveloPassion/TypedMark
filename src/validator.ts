@@ -323,7 +323,7 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     const failures = validateReusableBlocks(schema, schemas, config);
     const reportFailures = () => {
       for (const failure of failures) {
-        const code = ["RHT-15", "RHT-21", "RHT-26"].includes(failure.rule) ? "invalid_relationship_definition" : "invalid_note_type_schema";
+        const code = ["RHT-15", "RHT-21", "RHT-26", "RHT-292", "FDR-164"].includes(failure.rule) ? "invalid_relationship_definition" : "invalid_note_type_schema";
         add(results, config, code, path, failure.rule, failure.message);
         schemaIssues.set(name, { kind: "invalid", path, message: failure.message });
       }

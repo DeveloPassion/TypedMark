@@ -28,6 +28,26 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
   for (const [name, target] of schemas) if (!target.abstract
     && Object.keys(declarations("belongs_to")).some((type) => matchesNoteType(schemas, name, type))
     && Object.keys(declarations("related_to")).some((type) => matchesNoteType(schemas, name, type))) fail("RHT-21", `${name} is declared under both relationship kinds`);
+  if (!schema.abstract) {
+    // Field targets must be declared under their kind (FDR-164), and each
+    // (kind, concrete target) has one field so writers know where to link (RHT-292).
+    const concrete = (types: string[]) => [...schemas].filter(([name, target]) => !target.abstract && types.some((type) => matchesNoteType(schemas, name, type))).map(([name]) => name);
+    const claimed = new Map<string, string>();
+    for (const [field, definition] of Object.entries(noteFieldDefinitions(schema)) as Array<[string, FieldDefinition]>) {
+      const kind = definition.relationship_kind;
+      if (!kind) continue;
+      const link = definition.type === "list" ? definition.items : definition;
+      const declared = concrete(Object.keys(declarations(kind)));
+      const admitted = link?.targets ? concrete(link.targets) : declared;
+      const undeclared = admitted.filter((type) => !declared.includes(type));
+      if (undeclared.length) fail("FDR-164", `${field} targets ${undeclared.join(", ")} not declared under ${kind}`);
+      for (const type of admitted) {
+        const owner = claimed.get(`${kind}:${type}`);
+        if (owner) fail("RHT-292", `${owner} and ${field} both admit ${kind} target ${type}`);
+        else claimed.set(`${kind}:${type}`, field);
+      }
+    }
+  }
   const required = (schema.headings?.required_h2 ?? []).map((heading: string) => heading.normalize("NFC"));
   const optional = (schema.headings?.optional_h2 ?? []).map((heading: string) => heading.normalize("NFC"));
   if (new Set(required).size !== required.length || new Set(optional).size !== optional.length) fail("RHT-285", "Heading entries are not unique under string equality");
