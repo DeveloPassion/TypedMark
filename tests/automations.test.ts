@@ -99,3 +99,19 @@ test("list-item actions and only_if_empty are accepted artifact shapes", () => {
   write(root, ".typedmark/automations/rule.md", { ...rule, actions: [{ kind: "add_list_item", field: "watchers" }, { kind: "set_field", field: "status", value: "done", only_if_empty: "yes" }] });
   expect(run(root).results.map((result) => result.code)).toEqual(["invalid_automation"]);
 });
+
+test("older_than is an accepted automation predicate shape but not a mapping predicate", () => {
+  const root = collection();
+  write(root, ".typedmark/schemas/note.md", { ...version, storage: { folder_pattern: "", note_name_pattern: "{title}" }, frontmatter: {
+    status: { type: "text", allowed_values: ["open", "done"] }, completed_on: { type: "date", nullable: true, default_value: null },
+  } });
+  write(root, ".typedmark/automations/rule.md", { ...rule, trigger: { kind: "schedule", schedule: { cadence: "daily", at: "02:00" } }, when: { completed_on: { older_than: "P30D" } }, actions: [{ kind: "archive_note" }] });
+  expect(run(root).results).toEqual([]);
+  write(root, ".typedmark/automations/rule.md", { ...rule, when: { completed_on: { older_than: "P1M15D" } } });
+  expect(run(root).results.map((result) => result.code)).toEqual(["invalid_automation"]);
+  write(root, ".typedmark/automations/rule.md", rule);
+  write(root, "typedmark.md", { ...version, name: "automations", extensions, note_type_mappings: [{ kind: "fixed", when: { frontmatter: { completed_on: { older_than: "P30D" } } }, note_type: "note" }] });
+  expect(run(root).results).toContainEqual(expect.objectContaining({ code: "invalid_collection_configuration" }));
+  write(root, "typedmark.md", { ...version, name: "automations", extensions, note_type_mappings: [{ kind: "fixed", when: { frontmatter: { completed_on: { exists: true } } }, note_type: "note" }] });
+  expect(run(root).results.filter((result) => result.path === "typedmark.md")).toEqual([]);
+});

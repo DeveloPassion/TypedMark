@@ -44,6 +44,10 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
   const fieldsByType = new Map(types.map((type) => [type, noteFieldDefinitions(model.schemas.get(type)!)]));
   for (const [type, fields] of fieldsByType) for (const field of new Set([...Object.keys(automation.when ?? {}), ...Object.keys(automation.trigger.changed ?? {})])) {
     if (!Object.hasOwn(fields, field)) fail("CM-278", `Predicate field ${field} is undeclared for ${type}`, { field, note_type: type });
+    // Time-relative predicates compare a temporal value with the trigger instant (CM-557).
+    else if (automation.when?.[field]?.older_than !== undefined && !["date", "datetime"].includes(fields[field]!.type)) {
+      fail("CM-557", `older_than needs a date or datetime field, but ${type}.${field} is ${fields[field]!.type}`, { field, note_type: type });
+    }
   }
   for (const action of automation.actions) {
     if (action.kind === "create_note") {

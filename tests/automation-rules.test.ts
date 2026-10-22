@@ -60,3 +60,13 @@ test("validates list-item actions against the list's item definition", () => {
   }
   expect(validateAutomationRule({ ...rule, actions: [{ kind: "set_field", field: "status", value: "done", only_if_empty: true }] }, listed)).toEqual([]);
 });
+
+test("older_than predicates need a temporal field (CM-557)", () => {
+  const dated = { ...model, schemas: new Map([["note", { ...model.schemas.get("note"), frontmatter: {
+    ...(model.schemas.get("note") as { frontmatter: object }).frontmatter, completed_on: { type: "date", nullable: true }, finished_at: { type: "datetime", nullable: true },
+  } }]]) } as unknown as CollectionModel;
+  const archive = (when: object) => ({ trigger: { kind: "schedule", schedule: { cadence: "daily", at: "02:00" } }, scope: { note_types: ["note"] }, when, actions: [{ kind: "archive_note" }] });
+  expect(validateAutomationRule(archive({ status: { equals: "done" }, completed_on: { older_than: "P30D" } }), dated)).toEqual([]);
+  expect(validateAutomationRule(archive({ finished_at: { older_than: "P1Y" } }), dated)).toEqual([]);
+  expect(validateAutomationRule(archive({ status: { older_than: "P30D" } }), dated)).toMatchObject([{ rule: "CM-557", field: "status" }]);
+});
