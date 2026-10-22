@@ -362,6 +362,10 @@ The lifecycle-states increment (specification `d0699a6`) adds one golden
 vector; the corpus reports 86 discovered, 84 passed and 19 queries passed, with
 the two precondition skips and no changed record, and 1,868 tooling tests pass.
 See [decision 021](../../docs/decisions/021-lifecycle-states.md).
+The trigger-relative values increment (specification `59bd676`, adapter
+`6f7e590`) changes automation artifact validation only; the corpus is unchanged
+at 86/84/19 and 1,870 tooling tests pass. See
+[decision 022](../../docs/decisions/022-trigger-relative-values.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

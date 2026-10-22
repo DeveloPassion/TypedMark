@@ -154,6 +154,9 @@ predicates accept `older_than`. See the
 Status fields can declare lifecycle `states` (done, outcome, role) that
 automations test with `state`, `to_state` and `from_state` predicates. See the
 [lifecycle-states decision](docs/decisions/021-lifecycle-states.md).
+`set_field.value_from` (`trigger_date` / `trigger_datetime`) must target a field
+of the matching temporal type. See the
+[trigger-relative values decision](docs/decisions/022-trigger-relative-values.md).
 
 The inline lexer is now extraction-only: emphasis delimiters remain text, while
 link, escape, code-span and HTML tokenization stay active. Rendering-mask work and
