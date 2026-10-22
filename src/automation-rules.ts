@@ -82,6 +82,12 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
           if (invalid) fail("CM-278", `Item for ${action.field} ${invalid.message}`, { ...context, field: action.field });
           continue;
         }
+        if (action.value_from !== undefined) {
+          // Trigger-relative values resolve at run time; only the field type is known here (CM-563).
+          const type = action.value_from === "trigger_date" ? "date" : "datetime";
+          if (definition.type !== type) fail("CM-563", `${action.value_from} needs a ${type} field, but ${action.field} is ${definition.type}`, { ...context, field: action.field });
+          continue;
+        }
         const invalid = validateFieldValue(expandObjectDefaults(action.value, definition), definition, timezone, model.config.vocabularies);
         if (invalid) fail("CM-278", `Assignment to ${action.field} ${invalid.message}`, { ...context, field: action.field });
       } else if (action.kind === "add_tag" || action.kind === "remove_tag") {

@@ -82,3 +82,16 @@ test("state predicates need a field declaring states (CM-560, CM-562)", () => {
   expect(validateAutomationRule(updated({ when: { status: { state: { done: true } } } }), stated)).toMatchObject([{ rule: "CM-560", field: "status" }]);
   expect(validateAutomationRule(updated({ trigger: { ...rule.trigger, changed: { status: { from_state: { role: "active" } } } } }), stated)).toMatchObject([{ rule: "CM-562", field: "status" }]);
 });
+
+test("value_from needs a field of the matching temporal type (CM-563)", () => {
+  const dated = { ...model, schemas: new Map([["note", { ...model.schemas.get("note"), frontmatter: {
+    ...(model.schemas.get("note") as { frontmatter: object }).frontmatter,
+    completed_on: { type: "date", nullable: true }, completed_at: { type: "datetime", nullable: true },
+  } }]]) } as unknown as CollectionModel;
+  const stamp = (field: string, value_from: string) => ({ ...rule, actions: [{ kind: "set_field", field, value_from, only_if_empty: true }] });
+  expect(validateAutomationRule(stamp("completed_on", "trigger_date"), dated)).toEqual([]);
+  expect(validateAutomationRule(stamp("completed_at", "trigger_datetime"), dated)).toEqual([]);
+  expect(validateAutomationRule(stamp("completed_at", "trigger_date"), dated)).toMatchObject([{ rule: "CM-563", field: "completed_at" }]);
+  expect(validateAutomationRule(stamp("status", "trigger_datetime"), dated)).toMatchObject([{ rule: "CM-563", field: "status" }]);
+  expect(validateAutomationRule(stamp("fixed", "trigger_date"), dated)).toMatchObject([{ rule: "CM-278", field: "fixed" }]);
+});

@@ -126,3 +126,16 @@ test("state predicates and state change predicates are accepted automation shape
   write(root, ".typedmark/automations/rule.md", { ...rule, when: { status: { state: { finished: true } } } });
   expect(run(root).results.map((result) => result.code)).toEqual(["invalid_automation"]);
 });
+
+test("set_field takes exactly one of value or value_from", () => {
+  const root = collection();
+  write(root, ".typedmark/schemas/note.md", { ...version, storage: { folder_pattern: "", note_name_pattern: "{title}" }, frontmatter: {
+    status: { type: "text", allowed_values: ["open", "done"] }, completed_on: { type: "date", nullable: true, default_value: null },
+  } });
+  write(root, ".typedmark/automations/rule.md", { ...rule, actions: [{ kind: "set_field", field: "completed_on", value_from: "trigger_date", only_if_empty: true }] });
+  expect(run(root).results).toEqual([]);
+  for (const action of [{ kind: "set_field", field: "completed_on", value: "2026-10-22", value_from: "trigger_date" }, { kind: "set_field", field: "completed_on" }, { kind: "set_field", field: "completed_on", value_from: "now" }]) {
+    write(root, ".typedmark/automations/rule.md", { ...rule, actions: [action] });
+    expect(run(root).results.map((result) => result.code)).toEqual(["invalid_automation"]);
+  }
+});
