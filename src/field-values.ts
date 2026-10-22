@@ -22,7 +22,7 @@ export interface FieldDefinition {
   computed?: string;
   immutable?: boolean;
   unique?: boolean | "collection";
-  relationship_kind?: "belongs_to" | "related_to";
+  relationship_kind?: "belongs_to" | "related_to" | "contains" | "depends_on";
   targets?: string[];
   validate_exists?: boolean;
 }

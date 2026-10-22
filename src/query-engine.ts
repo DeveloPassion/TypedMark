@@ -7,9 +7,10 @@ import { validateFieldDefinition } from "./field-definitions";
 import { hasComputed } from "./expressions";
 import { hasAuthoring } from "./authoring";
 import { classifyConversion, comparisonDomain, compareFieldValues, equalFieldValues, fullPattern, validateFieldValue, type FieldDefinition } from "./field-values";
+import type { RelationshipKind } from "./types";
 
 type Row = Record<string, unknown>;
-type Kind = "belongs_to" | "related_to";
+type Kind = RelationshipKind;
 type Predicate =
   | { kind: "all"; predicates: Predicate[] }
   | { kind: "any"; predicates: Predicate[] }

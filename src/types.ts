@@ -1,5 +1,9 @@
 export type ExtensionMap = Record<string, string>;
 
+/** Relationship kinds in declaration order; body links only feed `related_to` (RHT-7). */
+export const RELATIONSHIP_KINDS = ["belongs_to", "related_to", "contains", "depends_on"] as const;
+export type RelationshipKind = typeof RELATIONSHIP_KINDS[number];
+
 export type ValidationMode = "system_definition" | "instantiated_collection" | "both";
 export type Evaluation = "complete" | "incomplete";
 export type Severity = "error" | "warn" | "info";

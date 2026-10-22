@@ -7,6 +7,7 @@ import { markdownBlockSources, type MarkdownBlockSource } from "./markdown-block
 import { markdownLinkDestination } from "./markdown-link-destination";
 import { hasUriScheme, isUriReference } from "./uri-syntax";
 import { createNoteLinkLexer } from "./markdown-inline-lexer";
+import { RELATIONSHIP_KINDS, type RelationshipKind } from "./types";
 
 export interface ParsedNoteLink {
   /** Exact input supplied to parseNoteLink, not rendered Markdown. */
@@ -262,19 +263,19 @@ export function resolveNoteLink(link: Pick<ParsedNoteLink, "form" | "target" | "
 }
 
 export interface RelationshipGraph {
-  targets: Map<string, Record<"belongs_to" | "related_to", Set<string>>>;
+  targets: Map<string, Record<RelationshipKind, Set<string>>>;
   failures: Map<string, NoteLinkError[]>;
 }
 export function buildRelationshipGraph(model: CollectionModel, matchesType: (actual: string, requested: string) => boolean): RelationshipGraph {
   const graph: RelationshipGraph = { targets: new Map(), failures: new Map() };
   const managed = new Map(model.notes.map((note) => [note.path, note]));
   for (const note of model.notes) {
-    const edges = { belongs_to: new Set<string>(), related_to: new Set<string>() };
+    const edges = Object.fromEntries(RELATIONSHIP_KINDS.map((kind) => [kind, new Set<string>()])) as Record<RelationshipKind, Set<string>>;
     graph.targets.set(note.path, edges);
     const issue = model.schemaIssues?.get(note.noteType);
     if (issue) { graph.failures.set(note.path, [new NoteLinkError("CM-308", issue.message, issue)]); continue; }
     const schema = model.schemas.get(note.noteType)!;
-    const record = (link: ParsedNoteLink, kind?: "belongs_to" | "related_to", targets?: string[], validateExists = false, field = false) => {
+    const record = (link: ParsedNoteLink, kind?: RelationshipKind, targets?: string[], validateExists = false, field = false) => {
       const allowed = targets ? (candidate: ManagedNote) => targets.some((type) => matchesType(candidate.noteType, type)) : undefined;
       const resolved = resolveNoteLink(link, note.path, model, allowed);
       if (resolved.kind === "unresolved") {
@@ -304,7 +305,7 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
         recordFailure(error, field);
       }
     };
-    const visit = (definition: FieldDefinition, value: unknown, stored: unknown, present: boolean, field: string, kind?: "belongs_to" | "related_to"): void => {
+    const visit = (definition: FieldDefinition, value: unknown, stored: unknown, present: boolean, field: string, kind?: RelationshipKind): void => {
       if (value == null) return;
       if (definition.type === "list") {
         if (!Array.isArray(value) || !definition.items) return;

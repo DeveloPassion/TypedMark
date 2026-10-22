@@ -1,4 +1,4 @@
-import type { ValidationResult } from "./types";
+import { RELATIONSHIP_KINDS, type ValidationResult } from "./types";
 
 type Data = Record<string, any>;
 export interface SchemaIssue {
@@ -72,7 +72,7 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
     if (result.issues.has(name)) { result.schemas.set(name, structuredClone(local)); return; }
     const parent = contributions.get(local.extends);
     const effective: Data = { ...structuredClone(local), note_type: name, abstract: local.abstract === true, label: local.label ?? name,
-      frontmatter: {}, relationships: { belongs_to: { allowed_note_types: {} }, related_to: { allowed_note_types: {} } }, headings: {},
+      frontmatter: {}, relationships: Object.fromEntries(RELATIONSHIP_KINDS.map((kind) => [kind, { allowed_note_types: {} }])), headings: {},
     };
     // One non-implemented source is sufficient as a completeness witness; this
     // is not a provenance inventory. Full ancestry lists would be quadratic.
@@ -80,7 +80,7 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
     if (!sources.length && local.specification_version !== "0.1.0") sources.push({ path: pathOf(name), version: String(local.specification_version) });
     const apply = (layer: Data) => {
       Object.assign(effective.frontmatter, structuredClone(layer.frontmatter ?? {}));
-      for (const kind of ["belongs_to", "related_to"]) Object.assign(effective.relationships[kind].allowed_note_types, structuredClone(layer.relationships?.[kind]?.allowed_note_types ?? {}));
+      for (const kind of RELATIONSHIP_KINDS) Object.assign(effective.relationships[kind].allowed_note_types, structuredClone(layer.relationships?.[kind]?.allowed_note_types ?? {}));
       Object.assign(effective.headings, structuredClone(layer.headings ?? {}));
     };
     const applySet = (id: string, isDefault: boolean) => {

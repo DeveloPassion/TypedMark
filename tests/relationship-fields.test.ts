@@ -66,3 +66,58 @@ test("fields without relationship_kind are unconstrained by relationship declara
   const root = collection({ project: {}, task: { frontmatter: { links: linkList(["project"]), more: linkList(["project"]) } } });
   expect(rules(root)).toEqual([]);
 });
+
+const taskSchemas = (extra: object = {}) => ({
+  project: { relationships: block({}, {}, { contains: { allowed_note_types: { task: { max: 2 } } } }), frontmatter: { tasks: linkList(["task"], { relationship_kind: "contains" }) } },
+  task: { relationships: block({}, {}, { depends_on: { allowed_note_types: { task: {} } } }), frontmatter: { after: linkList(["task"], { relationship_kind: "depends_on" }), ...extra } },
+});
+
+test("contains and depends_on instances count against their declared cardinality", () => {
+  const notes = (tasks: string[]) => ({
+    "project/P.md": { note_type: "project", title: "P", tasks },
+    "task/A.md": { note_type: "task", title: "A" }, "task/B.md": { note_type: "task", title: "B" }, "task/C.md": { note_type: "task", title: "C" },
+  });
+  expect(rules(collection(taskSchemas(), notes(["[[A]]", "[[B]]"])))).toEqual([]);
+  expect(run(collection(taskSchemas(), notes(["[[A]]", "[[B]]", "[[C]]"]))).results).toEqual([expect.objectContaining({
+    code: "invalid_relationship_instance", path: "project/P.md", relationship: "contains", rule_id: "RHT-31",
+  })]);
+});
+
+test("depends_on cycles are reported on every note in the cycle (RHT-294)", () => {
+  const root = collection(taskSchemas(), {
+    "task/A.md": { note_type: "task", title: "A", after: ["[[B]]"] },
+    "task/B.md": { note_type: "task", title: "B", after: ["[[C]]"] },
+    "task/C.md": { note_type: "task", title: "C", after: ["[[A]]"] },
+    "task/D.md": { note_type: "task", title: "D", after: ["[[A]]"] },
+    "task/E.md": { note_type: "task", title: "E", after: ["[[E]]"] },
+  });
+  expect(rules(root)).toEqual(["A", "B", "C", "E"].map((name) => `invalid_relationship_instance:RHT-294:task/${name}.md`));
+});
+
+test("acyclic dependency chains and diamonds are valid", () => {
+  const root = collection(taskSchemas(), {
+    "task/A.md": { note_type: "task", title: "A", after: ["[[B]]", "[[C]]"] },
+    "task/B.md": { note_type: "task", title: "B", after: ["[[D]]"] },
+    "task/C.md": { note_type: "task", title: "C", after: ["[[D]]"] },
+    "task/D.md": { note_type: "task", title: "D" },
+  });
+  expect(rules(root)).toEqual([]);
+});
+
+test("a long dependency chain does not overflow the cycle check", () => {
+  const notes: Record<string, object> = {};
+  for (let index = 0; index < 3000; index++) notes[`task/T${index}.md`] = { note_type: "task", title: `T${index}`, after: index ? [`[[T${index - 1}]]`] : [] };
+  expect(rules(collection(taskSchemas(), notes))).toEqual([]);
+});
+
+test("a topic may both belong to and contain topics", () => {
+  const root = collection({ topic: {
+    relationships: block({ topic: { max: 1 } }, {}, { contains: { allowed_note_types: { topic: {} } } }),
+    frontmatter: { parent: { type: "link", format: "note_link", targets: ["topic"], relationship_kind: "belongs_to", nullable: true, default_value: null },
+      children: linkList(["topic"], { relationship_kind: "contains" }) },
+  } }, {
+    "topic/Root.md": { note_type: "topic", title: "Root", children: ["[[Leaf]]"] },
+    "topic/Leaf.md": { note_type: "topic", title: "Leaf", parent: "[[Root]]" },
+  });
+  expect(rules(root)).toEqual([]);
+});

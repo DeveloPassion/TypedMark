@@ -7,6 +7,7 @@ import { compareUnicodeCodePoints } from "./order";
 import type { FieldDefinition } from "./field-values";
 import type { SchemaRegistry } from "./schema-registry";
 import type { TabularSource } from "./views";
+import type { RelationshipKind } from "./types";
 
 type Data = Record<string, any>;
 export class ExpansionError extends Error {
@@ -113,8 +114,8 @@ export function expansionSources(model: CollectionModel, registry: SchemaRegistr
         throw new ExpansionError("RHT-163", failure.message);
       }
       let selected: ManagedNote[] = source.direction === "inbound"
-        ? model.notes.filter((candidate) => graph!.targets.get(candidate.path)?.[source.relationship as "related_to" | "belongs_to"].has(note.path))
-        : [...graph.targets.get(note.path)![source.relationship as "related_to" | "belongs_to"]].map((path) => notes.get(path)!);
+        ? model.notes.filter((candidate) => graph!.targets.get(candidate.path)?.[source.relationship as RelationshipKind].has(note.path))
+        : [...graph.targets.get(note.path)![source.relationship as RelationshipKind]].map((path) => notes.get(path)!);
       if (source.target_note_types) selected = selected.filter((target) => source.target_note_types.some((type: string) => matchesNoteType(model.schemas, target.noteType, type)));
       selected.sort((a, b) => compareUnicodeCodePoints(a.path, b.path));
       return selected.flatMap((target) => {

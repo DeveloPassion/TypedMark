@@ -3,6 +3,7 @@ import type { FieldDefinition, ValueFailure } from "./field-values";
 import { matchesNoteType } from "./reuse";
 import { aliasValueFailure, noteFieldDefinitions } from "./collection-model";
 import { validateStorageDefinition } from "./storage";
+import { RELATIONSHIP_KINDS } from "./types";
 
 type Data = Record<string, any>;
 export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>, config: Data): ValueFailure[] {
@@ -21,7 +22,7 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
     checkTargets(definition);
   }
   const declarations = (kind: string): Data => schema.relationships?.[kind]?.allowed_note_types ?? {};
-  for (const kind of ["belongs_to", "related_to"]) for (const [target, count] of Object.entries(declarations(kind))) {
+  for (const kind of RELATIONSHIP_KINDS) for (const [target, count] of Object.entries(declarations(kind))) {
     if (!schemas.has(target)) fail("RHT-15", `Unknown relationship target ${target}`);
     if ((count.min ?? 0) > (count.max ?? Infinity)) fail("RHT-26", `Relationship minimum exceeds maximum for ${target}`);
   }

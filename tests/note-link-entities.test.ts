@@ -127,7 +127,7 @@ test("decoded note links create real relationships without an external-link edge
 
   const graph = buildRelationshipGraph(model, (actual, requested) => actual === requested);
   expect(graph.targets.get(source.path)).toEqual({
-    belongs_to: new Set(["Notes/P.md"]), related_to: new Set(["Notes/N.md"]),
+    belongs_to: new Set(["Notes/P.md"]), related_to: new Set(["Notes/N.md"]), contains: new Set(), depends_on: new Set(),
   });
   expect(graph.failures.size).toBe(0);
 });

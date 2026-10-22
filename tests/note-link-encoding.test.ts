@@ -121,7 +121,7 @@ function graphFor(body: string, reference?: string) {
 
 test("unencoded field and body targets create failures even when matching managed notes exist", () => {
   const graph = graphFor("[body](N|draft.md)", "[field](<N note.md>)");
-  expect(graph.targets.get(sourcePath)).toEqual({ belongs_to: new Set(), related_to: new Set() });
+  expect(graph.targets.get(sourcePath)).toEqual({ belongs_to: new Set(), related_to: new Set(), contains: new Set(), depends_on: new Set() });
   expect(graph.failures.get(sourcePath)).toEqual([
     expect.objectContaining({ rule_id: "NL-6", field: "reference" }),
     expect.objectContaining({ rule_id: "NL-6", field: undefined }),
@@ -132,7 +132,7 @@ test("encoded equivalents create field and body relationships to the exact decod
   const graph = graphFor("![body](N%7Cdraft.md)", "[field](N%20note.md)");
   expect(graph.failures.size).toBe(0);
   expect(graph.targets.get(sourcePath)).toEqual({
-    belongs_to: new Set(["Notes/N note.md"]), related_to: new Set(["Notes/N|draft.md"]),
+    belongs_to: new Set(["Notes/N note.md"]), related_to: new Set(["Notes/N|draft.md"]), contains: new Set(), depends_on: new Set(),
   });
 });
 
