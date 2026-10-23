@@ -11,7 +11,12 @@ import type { RelationshipKind } from "./types";
 
 type Data = Record<string, any>;
 export class ExpansionError extends Error {
-  constructor(readonly rule: string, message: string) { super(message); }
+  constructor(
+    readonly rule: string,
+    message: string,
+  ) {
+    super(message);
+  }
 }
 
 export function expansionValues(value: unknown, definition?: FieldDefinition): string[] {
@@ -19,7 +24,8 @@ export function expansionValues(value: unknown, definition?: FieldDefinition): s
   const scalar = (value: unknown, definition?: FieldDefinition): string => {
     if (typeof value === "string") return value;
     if (typeof value === "boolean") return String(value);
-    if (typeof value === "number" && Number.isFinite(value)) return (definition?.type === "integer" || (!definition && Number.isInteger(value))) ? BigInt(value).toString() : String(value);
+    if (typeof value === "number" && Number.isFinite(value))
+      return definition?.type === "integer" || (!definition && Number.isInteger(value)) ? BigInt(value).toString() : String(value);
     throw new ExpansionError("RHT-120", "Expansion values must be scalars or flat non-null scalar lists");
   };
   return Array.isArray(value) ? value.map((item) => scalar(item, definition?.items)) : [scalar(value, definition)];
@@ -27,22 +33,32 @@ export function expansionValues(value: unknown, definition?: FieldDefinition): s
 
 export function relationshipLink(path: string): string {
   const label = posix.basename(path, ".md").replace(/[\\\[\]]/g, "\\$&");
-  const destination = [...new TextEncoder().encode(path.normalize("NFC"))].map((byte) => /[A-Za-z0-9._~/-]/.test(String.fromCharCode(byte)) ? String.fromCharCode(byte) : `%${byte.toString(16).toUpperCase().padStart(2, "0")}`).join("");
+  const destination = [...new TextEncoder().encode(path.normalize("NFC"))]
+    .map((byte) => (/[A-Za-z0-9._~/-]/.test(String.fromCharCode(byte)) ? String.fromCharCode(byte) : `%${byte.toString(16).toUpperCase().padStart(2, "0")}`))
+    .join("");
   return `[${label}](/${destination})`;
 }
 
 export function validateSourceContract(source: Data, version: string, tables: Map<string, TabularSource>): void {
   if (source.kind === "query") {
     if (source.query.specification_version !== version) throw new ExpansionError("RHT-247", "Query version differs from inherited expansion version");
-    if (source.query.select.filter((column: Data) => column.as === source.column).length !== 1) throw new ExpansionError("RHT-249", "Source column must resolve to one query projection");
+    if (source.query.select.filter((column: Data) => column.as === source.column).length !== 1)
+      throw new ExpansionError("RHT-249", "Source column must resolve to one query projection");
   } else if (source.kind === "dataset" || source.kind === "view") {
     const table = tables.get(`${source.kind}:${source[source.kind]}`);
-    if (table && table.version !== version) throw new ExpansionError(source.kind === "view" ? "RHT-260" : "RHT-275", "Source and expansion specification versions differ");
+    if (table && table.version !== version)
+      throw new ExpansionError(source.kind === "view" ? "RHT-260" : "RHT-275", "Source and expansion specification versions differ");
   }
 }
 
 /** Validate pending references, never values: RHT-168 defers source evaluation. */
-export function validatePendingSource(source: Data, version: string, model: CollectionModel, registry: SchemaRegistry, tables: Map<string, TabularSource>): boolean {
+export function validatePendingSource(
+  source: Data,
+  version: string,
+  model: CollectionModel,
+  registry: SchemaRegistry,
+  tables: Map<string, TabularSource>,
+): boolean {
   if (source.kind === "note_field" && !parseNoteLink(source.note)) throw new ExpansionError("RHT-122", "Unsupported note-field link");
   if (source.kind === "relationship") {
     for (const type of source.target_note_types ?? []) {
@@ -64,7 +80,8 @@ export function validatePendingSource(source: Data, version: string, model: Coll
   if (table.contractError) throw table.contractError;
   validateSourceContract(source, version, tables);
   if (!table.contract) throw new QueryError("CM-421", "Source artifact has no interpreted contract");
-  if (!table.contract.columns.has(source.column)) throw new ExpansionError(source.kind === "view" ? "RHT-262" : "RHT-277", "Unknown projected expansion column");
+  if (!table.contract.columns.has(source.column))
+    throw new ExpansionError(source.kind === "view" ? "RHT-262" : "RHT-277", "Unknown projected expansion column");
   if (source.kind === "view" && !table.presented?.has(source.column)) throw new ExpansionError("RHT-263", "Column is not presented by the view");
   return table.contract.evaluation === "complete";
 }
@@ -85,7 +102,8 @@ export function expansionSources(model: CollectionModel, registry: SchemaRegistr
   };
   return (source: Data, document: CollectionNote, version: string): string[] => {
     if (source.kind === "self_field") {
-      if (document.hasFrontmatter === false || document.frontmatterValid === false) throw new ExpansionError("RHT-169", "self_field requires valid frontmatter");
+      if (document.hasFrontmatter === false || document.frontmatterValid === false)
+        throw new ExpansionError("RHT-169", "self_field requires valid frontmatter");
       return fieldValues(document, source.field, "RHT-171");
     }
     if (source.kind === "note_field") {
@@ -106,17 +124,24 @@ export function expansionSources(model: CollectionModel, registry: SchemaRegistr
         requireSchemaModel(model, type);
       }
       graph ??= buildRelationshipGraph(model, (actual, requested) => matchesNoteType(model.schemas, actual, requested));
-      const failures = source.direction === "inbound" ? [...graph.failures.values()].flat() : graph.failures.get(note.path) ?? [];
+      const failures = source.direction === "inbound" ? [...graph.failures.values()].flat() : (graph.failures.get(note.path) ?? []);
       if (failures.length) {
         const failure = failures.find((failure) => failure.schemaIssue?.kind === "unavailable") ?? failures[0]!;
         const issue = failure.schemaIssue;
-        if (issue?.kind === "unavailable") throw new QueryError("RHT-163", issue.message, issue.extension ? { extension: issue.extension } : { specificationVersion: issue.specificationVersion!, path: issue.path });
+        if (issue?.kind === "unavailable")
+          throw new QueryError(
+            "RHT-163",
+            issue.message,
+            issue.extension ? { extension: issue.extension } : { specificationVersion: issue.specificationVersion!, path: issue.path },
+          );
         throw new ExpansionError("RHT-163", failure.message);
       }
-      let selected: ManagedNote[] = source.direction === "inbound"
-        ? model.notes.filter((candidate) => graph!.targets.get(candidate.path)?.[source.relationship as RelationshipKind].has(note.path))
-        : [...graph.targets.get(note.path)![source.relationship as RelationshipKind]].map((path) => notes.get(path)!);
-      if (source.target_note_types) selected = selected.filter((target) => source.target_note_types.some((type: string) => matchesNoteType(model.schemas, target.noteType, type)));
+      let selected: ManagedNote[] =
+        source.direction === "inbound"
+          ? model.notes.filter((candidate) => graph!.targets.get(candidate.path)?.[source.relationship as RelationshipKind].has(note.path))
+          : [...graph.targets.get(note.path)![source.relationship as RelationshipKind]].map((path) => notes.get(path)!);
+      if (source.target_note_types)
+        selected = selected.filter((target) => source.target_note_types.some((type: string) => matchesNoteType(model.schemas, target.noteType, type)));
       selected.sort((a, b) => compareUnicodeCodePoints(a.path, b.path));
       return selected.flatMap((target) => {
         requireSchemaModel(model, target.noteType);
@@ -135,11 +160,13 @@ export function expansionSources(model: CollectionModel, registry: SchemaRegistr
         const table = tables.get(`${source.kind}:${source[source.kind]}`);
         if (!table) throw new ExpansionError(source.kind === "view" ? "RHT-259" : "RHT-274", "Unknown expansion artifact source");
         if (table.error) throw table.error;
-        if (table.version !== version) throw new ExpansionError(source.kind === "view" ? "RHT-260" : "RHT-275", "Source and expansion specification versions differ");
+        if (table.version !== version)
+          throw new ExpansionError(source.kind === "view" ? "RHT-260" : "RHT-275", "Source and expansion specification versions differ");
         presented = table.presented;
         evaluation = table.evaluation!;
       }
-      if (!evaluation.columns.has(source.column)) throw new ExpansionError(source.kind === "query" ? "RHT-249" : source.kind === "dataset" ? "RHT-277" : "RHT-262", "Unknown projected expansion column");
+      if (!evaluation.columns.has(source.column))
+        throw new ExpansionError(source.kind === "query" ? "RHT-249" : source.kind === "dataset" ? "RHT-277" : "RHT-262", "Unknown projected expansion column");
       if (source.kind === "view" && !presented?.has(source.column)) throw new ExpansionError("RHT-263", "Column is not presented by the view");
       return evaluation.result.rows.flatMap((row, index) => expansionValues(row[source.column], evaluation.rowDefinitions[index]?.[source.column]));
     }

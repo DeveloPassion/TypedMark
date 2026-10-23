@@ -9,20 +9,38 @@ import { checkMigrationReadiness } from "../src/system";
 type Data = Record<string, any>;
 const roots: string[] = [];
 const schemaDirectory = resolve(import.meta.dir, "../../TypedMarkSpecification/schema/json-schema");
-const entries = [{ version: "0.1.0", changes: [] }, { version: "0.2.0", changes: [] }];
+const entries = [
+  { version: "0.1.0", changes: [] },
+  { version: "0.2.0", changes: [] },
+];
 function write(root: string, path: string, data: unknown) {
   mkdirSync(dirname(join(root, path)), { recursive: true });
   writeFileSync(join(root, path), `---\n${stringify(data)}---\n`);
 }
 function system(history: Data = {}, config: Data = {}) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-history-")); roots.push(root);
-  write(root, "typedmark.md", { specification_version: "0.1.0", name: "history-system", description: "History.", version: "0.2.0", scaffold: {}, extensions: { "typedmark:systems": "0.1.0" }, ...config });
-  write(root, ".typedmark/schemas/note.md", { specification_version: "0.1.0", description: "Note.", storage: { folder_pattern: "", note_name_pattern: "{title}" } });
+  const root = mkdtempSync(join(tmpdir(), "typedmark-history-"));
+  roots.push(root);
+  write(root, "typedmark.md", {
+    specification_version: "0.1.0",
+    name: "history-system",
+    description: "History.",
+    version: "0.2.0",
+    scaffold: {},
+    extensions: { "typedmark:systems": "0.1.0" },
+    ...config,
+  });
+  write(root, ".typedmark/schemas/note.md", {
+    specification_version: "0.1.0",
+    description: "Note.",
+    storage: { folder_pattern: "", note_name_pattern: "{title}" },
+  });
   write(root, ".typedmark/history.md", { specification_version: "0.1.0", history: entries, ...history });
   return root;
 }
 const run = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory, mode: "system_definition" });
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test.each([
   ["1.0.0", "1.0.0"],
@@ -40,41 +58,68 @@ test.each([
 ])("history rejects non-increasing precedence: %s then %s", (previous, current) => {
   const root = system({ history: [previous, current].map((version) => ({ version, changes: [] })) }, { version: current });
   const before = readFileSync(join(root, ".typedmark/history.md"));
-  expect(run(root)).toMatchObject({ evaluation: "complete", valid: false, results: [
-    expect.objectContaining({ code: "invalid_history", rule_id: "SCE-99", path: ".typedmark/history.md" }),
-  ] });
+  expect(run(root)).toMatchObject({
+    evaluation: "complete",
+    valid: false,
+    results: [expect.objectContaining({ code: "invalid_history", rule_id: "SCE-99", path: ".typedmark/history.md" })],
+  });
   expect(readFileSync(join(root, ".typedmark/history.md"))).toEqual(before);
 });
 
 test("history accepts SemVer prerelease, numeric, and build-metadata ordering", () => {
   const versions = [
-    "1.0.0-alpha", "1.0.0-alpha.1", "1.0.0-alpha.2", "1.0.0-alpha.10",
-    "1.0.0-alpha.9007199254740992", "1.0.0-alpha.9007199254740993",
-    "1.0.0-alpha.A", "1.0.0-alpha.Z", "1.0.0-alpha.a", "1.0.0-alpha.a-b",
-    "1.0.0-beta+z", "1.0.0-beta.2+a", "1.0.0-beta.11", "1.0.0-rc.1", "1.0.0",
-    "1.0.9", "1.0.10", "1.9.0", "1.10.0", "2.0.0",
-    "9007199254740992.0.0", "9007199254740993.0.0",
+    "1.0.0-alpha",
+    "1.0.0-alpha.1",
+    "1.0.0-alpha.2",
+    "1.0.0-alpha.10",
+    "1.0.0-alpha.9007199254740992",
+    "1.0.0-alpha.9007199254740993",
+    "1.0.0-alpha.A",
+    "1.0.0-alpha.Z",
+    "1.0.0-alpha.a",
+    "1.0.0-alpha.a-b",
+    "1.0.0-beta+z",
+    "1.0.0-beta.2+a",
+    "1.0.0-beta.11",
+    "1.0.0-rc.1",
+    "1.0.0",
+    "1.0.9",
+    "1.0.10",
+    "1.9.0",
+    "1.10.0",
+    "2.0.0",
+    "9007199254740992.0.0",
+    "9007199254740993.0.0",
   ];
-  expect(run(system({ history: versions.map((version) => ({ version, changes: [] })) }, { version: versions.at(-1) })))
-    .toMatchObject({ valid: true, results: [] });
+  expect(run(system({ history: versions.map((version) => ({ version, changes: [] })) }, { version: versions.at(-1) }))).toMatchObject({
+    valid: true,
+    results: [],
+  });
 });
 
 test("equal-precedence history blocks strict no-op readiness even when findings are suppressed", () => {
-  const root = system({ history: ["1.0.0+linux", "1.0.0+macos"].map((version) => ({ version, changes: [] })) },
-    { version: "1.0.0+macos", validation_defaults: { invalid_history: "off" } });
+  const root = system(
+    { history: ["1.0.0+linux", "1.0.0+macos"].map((version) => ({ version, changes: [] })) },
+    { version: "1.0.0+macos", validation_defaults: { invalid_history: "off" } },
+  );
   expect(run(root)).toMatchObject({ valid: true, results: [] });
   expect(checkMigrationReadiness({ systemRoot: root, fromVersion: "1.0.0+macos", schemaDirectory }).status).toBe("manual_resolution_required");
 });
 
 test("history ordering ignores build metadata without weakening the final exact-version check", () => {
-  expect(run(system({ history: [{ version: "1.0.0+linux", changes: [] }] }, { version: "1.0.0+macos" })))
-    .toMatchObject({ valid: false, results: [expect.objectContaining({ rule_id: "SCE-100" })] });
+  expect(run(system({ history: [{ version: "1.0.0+linux", changes: [] }] }, { version: "1.0.0+macos" }))).toMatchObject({
+    valid: false,
+    results: [expect.objectContaining({ rule_id: "SCE-100" })],
+  });
 });
 
 test("best-effort history still checks ordering beyond the first pair", () => {
   const history = ["0.1.0", "0.2.0", "0.2.0+build"].map((version) => ({ version, changes: [] }));
-  expect(run(system({ specification_version: "0.1.1", history }, { version: "0.2.0+build" })))
-    .toMatchObject({ evaluation: "incomplete", valid: false, results: [expect.objectContaining({ rule_id: "SCE-99" })] });
+  expect(run(system({ specification_version: "0.1.1", history }, { version: "0.2.0+build" }))).toMatchObject({
+    evaluation: "incomplete",
+    valid: false,
+    results: [expect.objectContaining({ rule_id: "SCE-99" })],
+  });
 });
 
 test.each(["9.0.0", "0.0.9"])("history selects its own unsupported Core compatibility line %s", (version) => {
@@ -82,7 +127,9 @@ test.each(["9.0.0", "0.0.9"])("history selects its own unsupported Core compatib
   const before = readFileSync(join(root, ".typedmark/history.md"));
   const report = run(root);
   expect(report).toMatchObject({ evaluation: "incomplete", valid: false, evaluated_extensions: {} });
-  expect(report.results).toContainEqual(expect.objectContaining({ code: "unsupported_specification_version", rule_id: "FND-92", path: ".typedmark/history.md" }));
+  expect(report.results).toContainEqual(
+    expect.objectContaining({ code: "unsupported_specification_version", rule_id: "FND-92", path: ".typedmark/history.md" }),
+  );
   expect(readFileSync(join(root, ".typedmark/history.md"))).toEqual(before);
 });
 
@@ -92,8 +139,11 @@ test("compatible newer history is best-effort, not unsupported or invalid solely
 });
 
 test("history version incompleteness survives suppressed diagnostics", () => {
-  expect(run(system({ specification_version: "9.0.0" }, { validation_defaults: { unsupported_specification_version: "off" } })))
-    .toMatchObject({ evaluation: "incomplete", valid: false, results: [] });
+  expect(run(system({ specification_version: "9.0.0" }, { validation_defaults: { unsupported_specification_version: "off" } }))).toMatchObject({
+    evaluation: "incomplete",
+    valid: false,
+    results: [],
+  });
 });
 
 test.each([
@@ -119,14 +169,24 @@ test.each([
 });
 
 test("a missing release list does not also produce a last-version mismatch", () => {
-  const root = system(); write(root, ".typedmark/history.md", { specification_version: "0.1.0" });
+  const root = system();
+  write(root, ".typedmark/history.md", { specification_version: "0.1.0" });
   expect(run(root).results).toEqual([expect.objectContaining({ code: "invalid_history", rule_id: "SCE-95" })]);
 });
 
 test("composition diagnostics validate local provenance without resolving sources", () => {
-  const root = system({}, { composition: { sources: [
-    { name: "history-system", version: "0.2.0" }, { name: "external", version: "1.0.0" }, { name: "external", version: "1.0.0" },
-  ] } });
+  const root = system(
+    {},
+    {
+      composition: {
+        sources: [
+          { name: "history-system", version: "0.2.0" },
+          { name: "external", version: "1.0.0" },
+          { name: "external", version: "1.0.0" },
+        ],
+      },
+    },
+  );
   expect(run(root).results).toEqual([
     expect.objectContaining({ code: "invalid_composition", rule_id: "CM-130", path: "typedmark.md" }),
     expect.objectContaining({ code: "invalid_composition", rule_id: "CM-131", path: "typedmark.md" }),
@@ -135,7 +195,8 @@ test("composition diagnostics validate local provenance without resolving source
 
 test("readiness never approves an unevaluated history, even for a version no-op", () => {
   const root = system({ specification_version: "9.0.0" });
-  for (const fromVersion of ["0.1.0", "0.2.0"]) expect(checkMigrationReadiness({ systemRoot: root, fromVersion, schemaDirectory }).status).toBe("manual_resolution_required");
+  for (const fromVersion of ["0.1.0", "0.2.0"])
+    expect(checkMigrationReadiness({ systemRoot: root, fromVersion, schemaDirectory }).status).toBe("manual_resolution_required");
 });
 
 test("valid history is not a substitute for target-aware migration impact analysis", () => {
@@ -145,15 +206,20 @@ test("valid history is not a substitute for target-aware migration impact analys
 });
 
 test("valid field-operation operands are not unknown keys from other schema branches", () => {
-  expect(run(system({ history: [{ version: "0.2.0", changes: [{ op: "add_field", note_type: "note", field: "title" }] }] })))
-    .toMatchObject({ valid: true, results: [] });
+  expect(run(system({ history: [{ version: "0.2.0", changes: [{ op: "add_field", note_type: "note", field: "title" }] }] }))).toMatchObject({
+    valid: true,
+    results: [],
+  });
 });
 
 test("best-effort history retains future-operation warnings without mutating source", () => {
   const root = system({ specification_version: "0.1.1", history: [{ version: "0.2.0", changes: [{ op: "future_operation", payload: {} }] }] });
   const before = readFileSync(join(root, ".typedmark/history.md"));
-  expect(run(root)).toMatchObject({ evaluation: "incomplete", valid: false,
-    results: [expect.objectContaining({ code: "unknown_field", severity: "warn", rule_id: "FND-11" })] });
+  expect(run(root)).toMatchObject({
+    evaluation: "incomplete",
+    valid: false,
+    results: [expect.objectContaining({ code: "unknown_field", severity: "warn", rule_id: "FND-11" })],
+  });
   expect(readFileSync(join(root, ".typedmark/history.md"))).toEqual(before);
 });
 
@@ -163,15 +229,15 @@ test.each(["0.1.bad", "0.1.00"])("malformed history version %s cannot enable bes
   expect(report.results.some((finding) => finding.rule_id === "FND-11")).toBe(false);
 });
 
-test.each([
-  { version: ["0.1.1"] },
-  { version: { toString: 0, valueOf: 0 } },
-])("non-string history version %j cannot enable best effort or hide its shape error", ({ version }) => {
-  const report = run(system({ specification_version: version, future_key: true }));
-  expect(report.results).toContainEqual(expect.objectContaining({ code: "unknown_field", severity: "error", rule_id: "CM-534" }));
-  expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_history", rule_id: "FND-5" }));
-  expect(report.results.some((finding) => finding.rule_id === "FND-11")).toBe(false);
-});
+test.each([{ version: ["0.1.1"] }, { version: { toString: 0, valueOf: 0 } }])(
+  "non-string history version %j cannot enable best effort or hide its shape error",
+  ({ version }) => {
+    const report = run(system({ specification_version: version, future_key: true }));
+    expect(report.results).toContainEqual(expect.objectContaining({ code: "unknown_field", severity: "error", rule_id: "CM-534" }));
+    expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_history", rule_id: "FND-5" }));
+    expect(report.results.some((finding) => finding.rule_id === "FND-11")).toBe(false);
+  },
+);
 
 test("unknown operation diagnostics are specific rather than oneOf branch noise", () => {
   const report = run(system({ history: [{ version: "0.2.0", changes: [{ op: "unknown" }] }] }));
@@ -200,7 +266,11 @@ test("suppressed configuration failures still block readiness", () => {
 
 test("readiness uses the NFC-resolved metadata directory inside its snapshot", () => {
   const root = system({}, { metadata_directory: "é" });
-  write(root, "e\u0301/schemas/note.md", { specification_version: "0.1.0", description: "Note.", storage: { folder_pattern: "", note_name_pattern: "{title}" } });
+  write(root, "e\u0301/schemas/note.md", {
+    specification_version: "0.1.0",
+    description: "Note.",
+    storage: { folder_pattern: "", note_name_pattern: "{title}" },
+  });
   write(root, "e\u0301/history.md", { specification_version: "0.1.0", history: entries });
   const readiness = checkMigrationReadiness({ systemRoot: root, fromVersion: "0.1.0", schemaDirectory });
   expect(readiness.status).toBe("manual_resolution_required");
@@ -208,12 +278,24 @@ test("readiness uses the NFC-resolved metadata directory inside its snapshot", (
 });
 
 test.each(["history", "schema", "property-set", "automation"])("suppressed invalid %s artifacts cannot make a no-op ready", (artifact) => {
-  const root = system({}, { extensions: { "typedmark:systems": "0.1.0", "typedmark:reuse": "0.1.0", "typedmark:automation": "0.1.0" },
-    validation_defaults: { invalid_history: "off", invalid_note_type_schema: "off", invalid_property_set: "off", invalid_automation: "off" } });
+  const root = system(
+    {},
+    {
+      extensions: { "typedmark:systems": "0.1.0", "typedmark:reuse": "0.1.0", "typedmark:automation": "0.1.0" },
+      validation_defaults: { invalid_history: "off", invalid_note_type_schema: "off", invalid_property_set: "off", invalid_automation: "off" },
+    },
+  );
   if (artifact === "history") write(root, ".typedmark/history.md", { specification_version: "0.1.0", history: [{ version: "0.2.0" }] });
   if (artifact === "schema") write(root, ".typedmark/schemas/note.md", { specification_version: "0.1.0", description: "Missing storage." });
-  if (artifact === "property-set") write(root, ".typedmark/property-sets/broken.md", { specification_version: "0.1.0", description: "Invalid default.", property_set: "broken", frontmatter: { value: { type: "integer", default_value: "wrong" } } });
-  if (artifact === "automation") write(root, ".typedmark/automations/broken.md", { specification_version: "0.1.0", automation: "broken", description: "Missing required trigger/actions." });
+  if (artifact === "property-set")
+    write(root, ".typedmark/property-sets/broken.md", {
+      specification_version: "0.1.0",
+      description: "Invalid default.",
+      property_set: "broken",
+      frontmatter: { value: { type: "integer", default_value: "wrong" } },
+    });
+  if (artifact === "automation")
+    write(root, ".typedmark/automations/broken.md", { specification_version: "0.1.0", automation: "broken", description: "Missing required trigger/actions." });
   const before = readFileSync(join(root, "typedmark.md"));
   expect(run(root).valid).toBe(true);
   expect(checkMigrationReadiness({ systemRoot: root, fromVersion: "0.2.0", schemaDirectory }).status).toBe("manual_resolution_required");

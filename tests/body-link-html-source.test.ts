@@ -34,7 +34,14 @@ const examples: Array<{ name: string; link: ParsedNoteLink }> = [
   },
   {
     name: "authored literal entity text in a Markdown label and anchor",
-    link: { raw: "[Label&lt;D](N.md#Heading&percnt;3CC)", form: "markdown", target: "N.md", anchor: "Heading&percnt;3CC", displayText: "Label&lt;D", embed: false },
+    link: {
+      raw: "[Label&lt;D](N.md#Heading&percnt;3CC)",
+      form: "markdown",
+      target: "N.md",
+      anchor: "Heading&percnt;3CC",
+      displayText: "Label&lt;D",
+      embed: false,
+    },
   },
   {
     name: "less-than signs beside literal entities in wiki components",
@@ -59,26 +66,34 @@ test("preserves source order and embed flags across prose and HTML", () => {
     { raw: "[[A&lt;B]]", form: "wikilink", target: "A&lt;B", embed: false },
     { raw: "[After](After.md)", form: "markdown", target: "After.md", displayText: "After", embed: false },
   ];
-  const body = [
-    expected[0]!.raw, "", "<div>", expected[1]!.raw, expected[2]!.raw, expected[3]!.raw,
-    "</div>", "", expected[4]!.raw,
-  ].join("\n");
+  const body = [expected[0]!.raw, "", "<div>", expected[1]!.raw, expected[2]!.raw, expected[3]!.raw, "</div>", "", expected[4]!.raw].join("\n");
   expect(parsedLinks(body)).toEqual(expected);
 });
 
 test("preserves links inside an ordinary HTML comment", () => {
-  expect(parsedLinks("<!-- See [[A<B#Heading<C|Label<D]]. -->")).toEqual([{
-    raw: "[[A<B#Heading<C|Label<D]]", form: "wikilink", target: "A<B",
-    anchor: "Heading<C", displayText: "Label<D", embed: false,
-  }]);
+  expect(parsedLinks("<!-- See [[A<B#Heading<C|Label<D]]. -->")).toEqual([
+    {
+      raw: "[[A<B#Heading<C|Label<D]]",
+      form: "wikilink",
+      target: "A<B",
+      anchor: "Heading<C",
+      displayText: "Label<D",
+      embed: false,
+    },
+  ]);
 });
 
 // NL-35/37: source restoration must retain the supported code boundaries.
 test("does not extract inline code spans while examining HTML content", () => {
   const body = "<div>\n`[[Hidden<Wiki]] [Hidden](<Hidden.md#Heading>)`\n[[Visible]]\n</div>";
-  expect(parsedLinks(body)).toEqual([{
-    raw: "[[Visible]]", form: "wikilink", target: "Visible", embed: false,
-  }]);
+  expect(parsedLinks(body)).toEqual([
+    {
+      raw: "[[Visible]]",
+      form: "wikilink",
+      target: "Visible",
+      embed: false,
+    },
+  ]);
 });
 
 test.each(["```", "~~~"])("does not inspect HTML inside a %s fenced code block", (fence) => {
@@ -93,31 +108,44 @@ test("does not inspect HTML inside indented code", () => {
 
 test("retains wiki escaping while examining HTML content", () => {
   const body = "<div>\n\\[[Hidden<Wiki]] [[Visible]]\n</div>";
-  expect(parsedLinks(body)).toEqual([{
-    raw: "[[Visible]]", form: "wikilink", target: "Visible", embed: false,
-  }]);
+  expect(parsedLinks(body)).toEqual([
+    {
+      raw: "[[Visible]]",
+      form: "wikilink",
+      target: "Visible",
+      embed: false,
+    },
+  ]);
 });
 
 // RHT-105/106: the descriptor is metadata; its materialized body stays ordinary Markdown.
 test("ignores expansion descriptor links while extracting materialized content", () => {
   const body = [
     '<!-- typedmark:expansion {"id":"summary","mode":"manual","state":"materialized","source":{"kind":"note_field","note":"[[Hidden<Source]]","field":"summary"},"render":{"item":"${value}"}} -->',
-    "[[Visible]]", "<!-- /typedmark:expansion -->",
+    "[[Visible]]",
+    "<!-- /typedmark:expansion -->",
   ].join("\n");
-  expect(parsedLinks(body)).toEqual([{
-    raw: "[[Visible]]", form: "wikilink", target: "Visible", embed: false,
-  }]);
+  expect(parsedLinks(body)).toEqual([
+    {
+      raw: "[[Visible]]",
+      form: "wikilink",
+      target: "Visible",
+      embed: false,
+    },
+  ]);
 });
 
 // RHT-194/195: template-region markers do not make their static body opaque.
 test("extracts template-region content between its marker lines", () => {
-  const body = [
-    '<!-- typedmark:template-region {"id":"guidance"} -->',
-    "[[Visible]]", "<!-- /typedmark:template-region -->",
-  ].join("\n");
-  expect(parsedLinks(body)).toEqual([{
-    raw: "[[Visible]]", form: "wikilink", target: "Visible", embed: false,
-  }]);
+  const body = ['<!-- typedmark:template-region {"id":"guidance"} -->', "[[Visible]]", "<!-- /typedmark:template-region -->"].join("\n");
+  expect(parsedLinks(body)).toEqual([
+    {
+      raw: "[[Visible]]",
+      form: "wikilink",
+      target: "Visible",
+      embed: false,
+    },
+  ]);
 });
 
 test("large HTML prose does not rescan its full suffix for every tag", () => {

@@ -15,10 +15,11 @@ function rewrite(yaml: string) {
 }
 
 test("root rewrite does not retain publishing fields inherited through explicit YAML merge", () => {
-  const { data } = rewrite([
-    'x_base: &base {name: "@example/source", version: 0.1.0, scaffold: {}, description: Source, x_payload: !!set {one: null}}',
-    "!!merge <<: *base",
-  ].join("\n"));
+  const { data } = rewrite(
+    ['x_base: &base {name: "@example/source", version: 0.1.0, scaffold: {}, description: Source, x_payload: !!set {one: null}}', "!!merge <<: *base"].join(
+      "\n",
+    ),
+  );
   expect(data.name).toBe(identity.name);
   expect(data.description).toBe("Source");
   expect(data.x_payload).toEqual(new Set(["one"]));
@@ -29,12 +30,14 @@ test("root rewrite does not retain publishing fields inherited through explicit 
 });
 
 test("root merge materialization keeps explicit override and ordered-source precedence", () => {
-  const { data } = rewrite([
-    'x_first: &first {name: "@example/source", version: 0.1.0, scaffold: {}, description: First, x_winner: first}',
-    "x_second: &second {description: Second, x_winner: second, x_added: yes}",
-    "description: Explicit",
-    "!!merge <<: [*first, *second]",
-  ].join("\n"));
+  const { data } = rewrite(
+    [
+      'x_first: &first {name: "@example/source", version: 0.1.0, scaffold: {}, description: First, x_winner: first}',
+      "x_second: &second {description: Second, x_winner: second, x_added: yes}",
+      "description: Explicit",
+      "!!merge <<: [*first, *second]",
+    ].join("\n"),
+  );
   expect(data.description).toBe("Explicit");
   expect(data.x_winner).toBe("first");
   expect(data.x_added).toBe("yes");
@@ -42,10 +45,18 @@ test("root merge materialization keeps explicit override and ordered-source prec
 });
 
 test("root rewrite binds reused anchor names before hoisting source nodes", () => {
-  const { data } = rewrite([
-    'name: &same "@example/source"', "x_name: *same", "version: &same 0.1.0", "x_version: *same",
-    "scaffold: &same {}", "x_scaffold: *same", "x_later: &same [last]", "x_last: *same",
-  ].join("\n"));
+  const { data } = rewrite(
+    [
+      'name: &same "@example/source"',
+      "x_name: *same",
+      "version: &same 0.1.0",
+      "x_version: *same",
+      "scaffold: &same {}",
+      "x_scaffold: *same",
+      "x_later: &same [last]",
+      "x_last: *same",
+    ].join("\n"),
+  );
   expect(data).toMatchObject({ x_name: identity.source.name, x_version: "0.1.0", x_scaffold: {}, x_later: ["last"], x_last: ["last"] });
 });
 

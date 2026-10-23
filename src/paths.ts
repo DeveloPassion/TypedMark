@@ -10,15 +10,33 @@ export function isSubtreeExcluded(path: string, globs: string[]): boolean {
 
 export function isExcluded(path: string, globs: string[]) {
   return globs.some((input) => {
-    const glob = input.normalize("NFC").split("/").filter((segment, index, all) => segment !== "**" || all[index - 1] !== "**").join("/");
+    const glob = input
+      .normalize("NFC")
+      .split("/")
+      .filter((segment, index, all) => segment !== "**" || all[index - 1] !== "**")
+      .join("/");
     let regex = "";
-    for (let index = 0; index < glob.length;) {
-      if (glob.slice(index) === "/**") { regex += "(?:/[\\s\\S]*)?"; break; }
-      if (glob.slice(index, index + 3) === "**/" && (index === 0 || glob[index - 1] === "/")) { regex += "(?:[^/]+/)*"; index += 3; }
-      else if (glob.slice(index, index + 2) === "**") { regex += "[\\s\\S]*"; index += 2; }
-      else if (glob[index] === "*") { regex += "[^/]*"; index++; }
-      else if (glob[index] === "?") { regex += "[^/]"; index++; }
-      else { regex += glob[index]!.replace(/[.+^${}()|[\]\\]/g, "\\$&"); index++; }
+    for (let index = 0; index < glob.length; ) {
+      if (glob.slice(index) === "/**") {
+        regex += "(?:/[\\s\\S]*)?";
+        break;
+      }
+      if (glob.slice(index, index + 3) === "**/" && (index === 0 || glob[index - 1] === "/")) {
+        regex += "(?:[^/]+/)*";
+        index += 3;
+      } else if (glob.slice(index, index + 2) === "**") {
+        regex += "[\\s\\S]*";
+        index += 2;
+      } else if (glob[index] === "*") {
+        regex += "[^/]*";
+        index++;
+      } else if (glob[index] === "?") {
+        regex += "[^/]";
+        index++;
+      } else {
+        regex += glob[index]!.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+        index++;
+      }
     }
     return new RegExp(`^(?:${regex})(?![\\s\\S])`, "u").test(path.normalize("NFC"));
   });

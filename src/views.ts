@@ -2,13 +2,26 @@ import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { frontmatterFailureRule, parseMarkdown } from "./frontmatter";
 import { noteFieldDefinitions, type CollectionModel } from "./collection-model";
-import { analyzeQuery, definitionAt, evaluateQueryWithColumns, parseQuery, QueryError, type Descriptor, type QueryAnalysis, type QueryEvaluation } from "./query-engine";
+import {
+  analyzeQuery,
+  definitionAt,
+  evaluateQueryWithColumns,
+  parseQuery,
+  QueryError,
+  type Descriptor,
+  type QueryAnalysis,
+  type QueryEvaluation,
+} from "./query-engine";
 import { equalFieldValues, validateFieldValue, type FieldDefinition } from "./field-values";
 import type { SchemaRegistry } from "./schema-registry";
 import type { ValidationResult } from "./types";
 
 type Data = Record<string, any>;
-interface Artifact { path: string; id: string; data: Data }
+interface Artifact {
+  path: string;
+  id: string;
+  data: Data;
+}
 export interface TabularSource {
   path: string;
   version: string;
@@ -59,8 +72,12 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         source.version = String(version);
         const validVersion = typeof version === "string" && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?![\s\S])/u.test(version);
         if (validVersion && version.startsWith("0.1.") && version !== "0.1.0") outcome.incomplete = true;
-        if (Object.hasOwn(data, "query") && !required["typedmark:queries"]) finding("invalid_extension_declaration", path, "EXT-16", "An embedded query requires typedmark:queries", { extension: "typedmark:queries" });
-        if (!evaluated["typedmark:views"]) { source.contractError = source.error = new QueryError("CM-421", "Views evaluation is unavailable", { extension: "typedmark:views" }); continue; }
+        if (Object.hasOwn(data, "query") && !required["typedmark:queries"])
+          finding("invalid_extension_declaration", path, "EXT-16", "An embedded query requires typedmark:queries", { extension: "typedmark:queries" });
+        if (!evaluated["typedmark:views"]) {
+          source.contractError = source.error = new QueryError("CM-421", "Views evaluation is unavailable", { extension: "typedmark:views" });
+          continue;
+        }
         if (validVersion && !version.startsWith("0.1.")) {
           outcome.incomplete = true;
           block("A query-owning artifact uses an unsupported specification compatibility line");
@@ -70,7 +87,13 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         }
         const errors = registry.validate(`${identity}.schema.json`, data);
         if (!parsed.hasFrontmatter || errors.length) {
-          finding(`invalid_${identity}`, path, identity === "dataset" ? "CM-499" : "CM-413", errors.map((error) => `${error.instancePath} ${error.message}`).join("; ") || "Artifact requires frontmatter", context);
+          finding(
+            `invalid_${identity}`,
+            path,
+            identity === "dataset" ? "CM-499" : "CM-413",
+            errors.map((error) => `${error.instancePath} ${error.message}`).join("; ") || "Artifact requires frontmatter",
+            context,
+          );
           continue;
         }
         if (data[identity] !== id) {
@@ -79,7 +102,13 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         }
         artifacts.push({ path, id, data });
       } catch (error) {
-        finding(`invalid_${identity}`, path, frontmatterFailureRule(error, identity === "dataset" ? "CM-499" : "CM-413"), error instanceof Error ? error.message : String(error), context);
+        finding(
+          `invalid_${identity}`,
+          path,
+          frontmatterFailureRule(error, identity === "dataset" ? "CM-499" : "CM-413"),
+          error instanceof Error ? error.message : String(error),
+          context,
+        );
       }
     }
     return artifacts;
@@ -94,13 +123,20 @@ export function validateViews(root: string, metadata: string, model: CollectionM
   if (hasOwnedArtifacts && !evaluated["typedmark:views"]) block("The query-owning Views contract is unavailable or undeclared");
   if ((datasets.length || views.length) && !evaluated["typedmark:queries"]) block("Embedded query evaluation is unavailable or deliberately excluded");
   if ((required["typedmark:expansion"] && !evaluated["typedmark:expansion"]) || !evaluated["typedmark:views"] || !evaluated["typedmark:queries"]) {
-    for (const source of outcome.sources.values()) if (!source.error?.unavailable) source.contractError = source.error = new QueryError("CM-421", "Query artifact evaluation is unavailable", { extension: !evaluated["typedmark:views"] ? "typedmark:views" : !evaluated["typedmark:queries"] ? "typedmark:queries" : "typedmark:expansion" });
+    for (const source of outcome.sources.values())
+      if (!source.error?.unavailable)
+        source.contractError = source.error = new QueryError("CM-421", "Query artifact evaluation is unavailable", {
+          extension: !evaluated["typedmark:views"] ? "typedmark:views" : !evaluated["typedmark:queries"] ? "typedmark:queries" : "typedmark:expansion",
+        });
     return outcome;
   }
 
-  function fail(rule: string, message: string): never { throw new QueryError(rule, message); }
+  function fail(rule: string, message: string): never {
+    throw new QueryError(rule, message);
+  }
   const analyze = (artifact: Artifact, queryData: unknown, mismatchRule: string) => {
-    if ((queryData as Descriptor).specification_version !== artifact.data.specification_version) fail(mismatchRule, "Query and artifact specification versions differ");
+    if ((queryData as Descriptor).specification_version !== artifact.data.specification_version)
+      fail(mismatchRule, "Query and artifact specification versions differ");
     const query = parseQuery(queryData, registry);
     const contract = analyzeQuery(model, query);
     if (contract.evaluation !== "complete") outcome.incomplete = true;
@@ -136,7 +172,8 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         const common = definitions[0];
         if (!common) fail("CM-515", `Column ${column.as} has no effective field definition`);
         if (column.kind === "field") {
-          if (definitions.some((definition) => !equalFieldValues(normalizeDefinition(definition), normalizeDefinition(common), { type: "any" }, timezone))) fail("CM-528", `Column ${column.as} has heterogeneous definitions; use mapped_field`);
+          if (definitions.some((definition) => !equalFieldValues(normalizeDefinition(definition), normalizeDefinition(common), { type: "any" }, timezone)))
+            fail("CM-528", `Column ${column.as} has heterogeneous definitions; use mapped_field`);
           const undeclared = contract.admittedTypes.some((type) => !definitionAt(noteFieldDefinitions(model.schemas.get(type)!), column.field));
           if (undeclared && common.nullable !== true) fail("CM-529", `Column ${column.as} can be absent but its common definition is not nullable`);
         }
@@ -164,7 +201,9 @@ export function validateViews(root: string, metadata: string, model: CollectionM
       }
       cached.evaluation = evaluation;
       source.evaluation = evaluation;
-    } catch (error) { reportError(artifact, "dataset", error); }
+    } catch (error) {
+      reportError(artifact, "dataset", error);
+    }
   }
 
   for (const artifact of views) {
@@ -204,8 +243,10 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         if (!definitions?.length) fail("CM-435", "Board column does not resolve to a typed projected column");
         const seen: unknown[] = [];
         for (const column of board.columns) {
-          if (definitions.some((definition) => validateFieldValue(column.value, definition, timezone, model.config.vocabularies))) fail("CM-437", "Declared board value is incompatible with its projected field");
-          if (seen.some((value) => definitions.some((definition) => equalFieldValues(value, column.value, definition, timezone)))) fail("CM-438", "Declared board values are not unique");
+          if (definitions.some((definition) => validateFieldValue(column.value, definition, timezone, model.config.vocabularies)))
+            fail("CM-437", "Declared board value is incompatible with its projected field");
+          if (seen.some((value) => definitions.some((definition) => equalFieldValues(value, column.value, definition, timezone))))
+            fail("CM-438", "Declared board values are not unique");
           seen.push(column.value);
         }
       }
@@ -224,16 +265,29 @@ export function validateViews(root: string, metadata: string, model: CollectionM
       } else evaluation = evaluate(query!);
       if (artifact.data.presentation.layout === "board") {
         const column = artifact.data.presentation.board.column;
-        if (evaluation.result.rows.some((row) => row[column] !== null && !["string", "number", "boolean"].includes(typeof row[column]))) fail("CM-435", "Board values must be scalar or null");
+        if (evaluation.result.rows.some((row) => row[column] !== null && !["string", "number", "boolean"].includes(typeof row[column])))
+          fail("CM-435", "Board values must be scalar or null");
       }
       source.evaluation = evaluation;
-    } catch (error) { reportError(artifact, "view", error); }
+    } catch (error) {
+      reportError(artifact, "view", error);
+    }
   }
   return outcome;
 }
 
 function normalizeDefinition(definition: FieldDefinition): Record<string, unknown> {
-  const normalized: Record<string, unknown> = { nullable: false, generated: false, immutable: false, deprecated: false, unique: false, validate_exists: false, not_empty: false, not_blank: false, ...definition };
+  const normalized: Record<string, unknown> = {
+    nullable: false,
+    generated: false,
+    immutable: false,
+    deprecated: false,
+    unique: false,
+    validate_exists: false,
+    not_empty: false,
+    not_blank: false,
+    ...definition,
+  };
   if (definition.items) normalized.items = normalizeDefinition(definition.items);
   if (definition.fields) normalized.fields = Object.fromEntries(Object.entries(definition.fields).map(([name, child]) => [name, normalizeDefinition(child)]));
   return normalized;

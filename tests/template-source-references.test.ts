@@ -12,12 +12,19 @@ const schemaDirectory = resolve(import.meta.dir, "../../TypedMarkSpecification/s
 const templatePath = ".typedmark/templates/note.md";
 const version = { specification_version: "0.1.0", description: "Template source references." };
 const extensions = {
-  "typedmark:systems": "0.1.0", "typedmark:expansion": "0.1.0", "typedmark:expressions": "0.1.0",
-  "typedmark:queries": "0.1.0", "typedmark:views": "0.1.0",
+  "typedmark:systems": "0.1.0",
+  "typedmark:expansion": "0.1.0",
+  "typedmark:expressions": "0.1.0",
+  "typedmark:queries": "0.1.0",
+  "typedmark:views": "0.1.0",
 };
 const query = {
-  specification_version: "0.1.0", note_types: ["note"],
-  select: [{ kind: "path", as: "path" }, { kind: "field", field: "summary", as: "summary" }],
+  specification_version: "0.1.0",
+  note_types: ["note"],
+  select: [
+    { kind: "path", as: "path" },
+    { kind: "field", field: "summary", as: "summary" },
+  ],
   order_by: [{ column: "path" }],
 };
 
@@ -38,12 +45,22 @@ function pending(source: Data, id = "source") {
 function system(source: Data, requiredExtensions: Record<string, string> = extensions) {
   const root = mkdtempSync(join(tmpdir(), "typedmark-template-source-"));
   roots.push(root);
-  write(root, "typedmark.md", {
-    ...version, name: "template-source-references", version: "1.0.0", extensions: requiredExtensions,
-    scaffold: { notes: [{ path: "Starter.md", note_type: "note" }] },
-  }, "\r\n# Published system\r\n");
+  write(
+    root,
+    "typedmark.md",
+    {
+      ...version,
+      name: "template-source-references",
+      version: "1.0.0",
+      extensions: requiredExtensions,
+      scaffold: { notes: [{ path: "Starter.md", note_type: "note" }] },
+    },
+    "\r\n# Published system\r\n",
+  );
   write(root, ".typedmark/schemas/note.md", {
-    ...version, template: { file: "note.md" }, storage: { folder_pattern: "", note_name_pattern: "{title}" },
+    ...version,
+    template: { file: "note.md" },
+    storage: { folder_pattern: "", note_name_pattern: "{title}" },
     frontmatter: {
       summary: { type: "text", nullable: true },
       details: { type: "object", nullable: true, fields: { label: { type: "text" } } },
@@ -61,7 +78,9 @@ function dataset(root: string) {
 function view(root: string, embedded = false) {
   if (!embedded) dataset(root);
   write(root, ".typedmark/views/notes.md", {
-    ...version, view: "notes", ...(embedded ? { query } : { dataset: "notes" }),
+    ...version,
+    view: "notes",
+    ...(embedded ? { query } : { dataset: "notes" }),
     presentation: { layout: "table", fields: [{ column: "summary" }] },
   });
 }
@@ -97,7 +116,11 @@ test.each([
   const root = system(source);
   prepare(root);
   expect(validate(root)).toMatchObject({
-    evaluation: "complete", valid: true, required_extensions: extensions, evaluated_extensions: extensions, results: [],
+    evaluation: "complete",
+    valid: true,
+    required_extensions: extensions,
+    evaluated_extensions: extensions,
+    results: [],
   });
 });
 
@@ -109,9 +132,14 @@ test.each([
   const root = system({ kind, [kind]: "missing", column: "summary" });
   const report = validate(root);
   expect(report).toMatchObject({ evaluation: "complete", valid: false });
-  expect(report.results).toContainEqual(expect.objectContaining({
-    code: "invalid_expansion", rule_id: rule, path: templatePath, expansion: "source",
-  }));
+  expect(report.results).toContainEqual(
+    expect.objectContaining({
+      code: "invalid_expansion",
+      rule_id: rule,
+      path: templatePath,
+      expansion: "source",
+    }),
+  );
 });
 
 test.each([
@@ -122,9 +150,14 @@ test.each([
   prepare(root);
   const report = validate(root);
   expect(report).toMatchObject({ evaluation: "complete", valid: false });
-  expect(report.results).toContainEqual(expect.objectContaining({
-    code: "invalid_expansion", rule_id: rule, path: templatePath, expansion: "source",
-  }));
+  expect(report.results).toContainEqual(
+    expect.objectContaining({
+      code: "invalid_expansion",
+      rule_id: rule,
+      path: templatePath,
+      expansion: "source",
+    }),
+  );
 });
 
 test("a pending template rejects a projected view column absent from presentation.fields", () => {
@@ -132,9 +165,14 @@ test("a pending template rejects a projected view column absent from presentatio
   view(root);
   const report = validate(root);
   expect(report).toMatchObject({ evaluation: "complete", valid: false });
-  expect(report.results).toContainEqual(expect.objectContaining({
-    code: "invalid_expansion", rule_id: "RHT-263", path: templatePath, expansion: "source",
-  }));
+  expect(report.results).toContainEqual(
+    expect.objectContaining({
+      code: "invalid_expansion",
+      rule_id: "RHT-263",
+      path: templatePath,
+      expansion: "source",
+    }),
+  );
 });
 
 // EXT-19/EXT-21: retaining source declarations is not complete interpretation of them.
@@ -142,9 +180,7 @@ test.each(["typedmark:queries", "typedmark:views"])(
   "a pending template using unsupported %s stays incomplete without invented reference failures",
   (extension) => {
     const required: Record<string, string> = { ...extensions, [extension]: "0.2.0" };
-    const source = extension === "typedmark:queries"
-      ? { kind: "query", query, column: "summary" }
-      : { kind: "dataset", dataset: "notes", column: "summary" };
+    const source = extension === "typedmark:queries" ? { kind: "query", query, column: "summary" } : { kind: "dataset", dataset: "notes", column: "summary" };
     // No supported Views declaration can depend on the unsupported Queries version.
     if (extension === "typedmark:queries") delete required["typedmark:views"];
     const root = system(source, required);
@@ -160,9 +196,7 @@ test.each(["typedmark:queries", "typedmark:views"])(
 test.each(["typedmark:queries", "typedmark:views"])(
   "a pending template using disabled %s stays incomplete without invented reference failures",
   (extension) => {
-    const source = extension === "typedmark:queries"
-      ? { kind: "query", query, column: "summary" }
-      : { kind: "view", view: "notes", column: "summary" };
+    const source = extension === "typedmark:queries" ? { kind: "query", query, column: "summary" } : { kind: "view", view: "notes", column: "summary" };
     const root = system(source);
     if (extension === "typedmark:views") view(root);
     const supported: Record<string, string> = { ...extensions };
@@ -178,14 +212,21 @@ test("a pending view source preserves an unsupported transitive dataset as unava
   const root = system({ kind: "view", view: "notes", column: "summary" });
   view(root);
   write(root, ".typedmark/datasets/notes.md", {
-    ...version, specification_version: "0.2.0", dataset: "notes", row_identity: "path",
+    ...version,
+    specification_version: "0.2.0",
+    dataset: "notes",
+    row_identity: "path",
     query: { ...query, specification_version: "0.2.0" },
   });
   const report = validate(root);
   expect(report).toMatchObject({ evaluation: "incomplete", valid: false });
-  expect(report.results).toContainEqual(expect.objectContaining({
-    code: "unsupported_specification_version", rule_id: "FND-92", path: ".typedmark/datasets/notes.md",
-  }));
+  expect(report.results).toContainEqual(
+    expect.objectContaining({
+      code: "unsupported_specification_version",
+      rule_id: "FND-92",
+      path: ".typedmark/datasets/notes.md",
+    }),
+  );
   expect(report.results.filter((finding) => ["invalid_view", "invalid_expansion"].includes(finding.code))).toEqual([]);
   expect(report.evaluated_extensions).not.toHaveProperty("typedmark:expansion");
 });
@@ -193,20 +234,32 @@ test("a pending view source preserves an unsupported transitive dataset as unava
 test("pending note and query sources do not evaluate existing note values before instantiation", () => {
   const root = system({ kind: "note_field", note: "[[Existing]]", field: "details" });
   const conditionalQuery = {
-    specification_version: "0.1.0", note_types: ["note"],
-    select: [{
-      kind: "mapped_field", as: "score", definition: { type: "integer", nullable: true },
-      sources: [{ note_types: ["note"], field: "score", conversion: "conditional" }],
-    }],
+    specification_version: "0.1.0",
+    note_types: ["note"],
+    select: [
+      {
+        kind: "mapped_field",
+        as: "score",
+        definition: { type: "integer", nullable: true },
+        sources: [{ note_types: ["note"], field: "score", conversion: "conditional" }],
+      },
+    ],
   };
   write(root, "Existing.md", { note_type: "note", details: { label: "Source data" }, score: 3.5 });
-  write(root, templatePath, {},
-    pending({ kind: "note_field", note: "[[Existing]]", field: "details" }, "note-source")
-    + pending({ kind: "query", query: conditionalQuery, column: "score" }, "query-source"));
+  write(
+    root,
+    templatePath,
+    {},
+    pending({ kind: "note_field", note: "[[Existing]]", field: "details" }, "note-source") +
+      pending({ kind: "query", query: conditionalQuery, column: "score" }, "query-source"),
+  );
   // RHT-168 defers source evaluation. Reading these valid note values would fail
   // RHT-120 (object expansion) or CM-488 (3.5 cannot conditionally convert to integer).
   expect(validate(root, { mode: "instantiated_collection" })).toMatchObject({
-    evaluation: "complete", valid: true, evaluated_extensions: extensions, results: [],
+    evaluation: "complete",
+    valid: true,
+    evaluated_extensions: extensions,
+    results: [],
   });
 });
 
@@ -214,21 +267,33 @@ test("a pending query source still requires its selected column to resolve", () 
   const root = system({ kind: "query", query, column: "missing" });
   const report = validate(root);
   expect(report).toMatchObject({ evaluation: "complete", valid: false });
-  expect(report.results).toContainEqual(expect.objectContaining({
-    code: "invalid_expansion", rule_id: "RHT-249", path: templatePath, expansion: "source",
-  }));
+  expect(report.results).toContainEqual(
+    expect.objectContaining({
+      code: "invalid_expansion",
+      rule_id: "RHT-249",
+      path: templatePath,
+      expansion: "source",
+    }),
+  );
 });
 
 test("a pending query source rejects an order_by alias absent from its projections", () => {
   const root = system({
-    kind: "query", query: { ...query, order_by: [{ column: "missing" }] }, column: "summary",
+    kind: "query",
+    query: { ...query, order_by: [{ column: "missing" }] },
+    column: "summary",
   });
   const report = validate(root);
   // CM-369 is a descriptor reference check; RHT-168 only defers source evaluation.
   expect(report).toMatchObject({ evaluation: "complete", valid: false });
-  expect(report.results).toContainEqual(expect.objectContaining({
-    code: "invalid_expansion", rule_id: "CM-369", path: templatePath, expansion: "source",
-  }));
+  expect(report.results).toContainEqual(
+    expect.objectContaining({
+      code: "invalid_expansion",
+      rule_id: "CM-369",
+      path: templatePath,
+      expansion: "source",
+    }),
+  );
 });
 
 test.each(["dataset", "view"])("pending %s references use static contracts even when live row evaluation fails", (kind) => {
@@ -244,8 +309,12 @@ test.each(["dataset", "view"])("pending %s references use static contracts even 
 
 test("a pending view rejects duplicate presentation entries instead of treating a set as exactly once", () => {
   const root = system({ kind: "view", view: "notes", column: "summary" });
-  write(root, ".typedmark/views/notes.md", { ...version, view: "notes", query,
-    presentation: { layout: "table", fields: [{ column: "summary" }, { column: "summary" }] } });
+  write(root, ".typedmark/views/notes.md", {
+    ...version,
+    view: "notes",
+    query,
+    presentation: { layout: "table", fields: [{ column: "summary" }, { column: "summary" }] },
+  });
   const report = validate(root);
   expect(report.valid).toBe(false);
   expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_view", rule_id: "CM-426" }));

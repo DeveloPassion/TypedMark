@@ -23,10 +23,13 @@ function collection(source: string) {
   const root = mkdtempSync(join(tmpdir(), "typedmark-body-source-"));
   roots.push(root);
   writeArtifact(root, "typedmark.md", {
-    specification_version: "0.1.0", name: "body-source", description: "Body source preservation.",
+    specification_version: "0.1.0",
+    name: "body-source",
+    description: "Body source preservation.",
   });
   writeArtifact(root, ".typedmark/schemas/note.md", {
-    specification_version: "0.1.0", description: "Note.",
+    specification_version: "0.1.0",
+    description: "Note.",
     storage: { folder_pattern: "", note_name_pattern: "A" },
   });
   const path = join(root, "A.md");
@@ -65,9 +68,13 @@ test.each(lineEndings)("retains the exact body when $name note frontmatter conta
 
   expect(readFileSync(fixture.path)).toEqual(fixture.bytes);
   expect(model.report.valid).toBe(false);
-  expect(model.report.results).toContainEqual(expect.objectContaining({
-    code: "invalid_note_frontmatter", path: "A.md", rule_id: "MN-118",
-  }));
+  expect(model.report.results).toContainEqual(
+    expect.objectContaining({
+      code: "invalid_note_frontmatter",
+      path: "A.md",
+      rule_id: "MN-118",
+    }),
+  );
   expect(model.notes).toEqual([]);
   expect(model.documents).toHaveLength(1);
   expect(model.documents[0]).toMatchObject({ path: "A.md", frontmatterValid: false });

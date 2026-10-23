@@ -24,19 +24,32 @@ export type TemplateResolution =
   | { kind: "invalid"; path: string; rule: string; message: string };
 
 /** Read a template from a caller-owned stable snapshot; never derive clock/random values. */
-export function resolveTemplate(root: string, metadataDirectory: string, noteType: string, schema: TemplateSchema, overrideFile?: string, blockedPaths?: ReadonlySet<string>): TemplateResolution {
+export function resolveTemplate(
+  root: string,
+  metadataDirectory: string,
+  noteType: string,
+  schema: TemplateSchema,
+  overrideFile?: string,
+  blockedPaths?: ReadonlySet<string>,
+): TemplateResolution {
   const name = overrideFile ?? schema.template?.file ?? `${noteType}.md`;
   const explicit = overrideFile !== undefined || schema.template?.file !== undefined;
   const parts = name.split("/").filter((part) => part && part !== ".");
   const path = `${metadataDirectory}/templates/${parts.join("/")}`;
   const invalid = (rule: string, message: string): TemplateResolution => ({ kind: "invalid", path, rule, message });
-  const missing = (): TemplateResolution => explicit ? invalid("RHT-73", `Explicit template ${name} is missing`) : { kind: "derived", path };
-  if (/[\\]/u.test(name) || name.startsWith("/") || /^[A-Za-z]:/u.test(name) || parts.some((part) => part === "..")
-    || parts[0] === "templates" || parts[0]?.normalize("NFC") === metadataDirectory.normalize("NFC")) {
+  const missing = (): TemplateResolution => (explicit ? invalid("RHT-73", `Explicit template ${name} is missing`) : { kind: "derived", path });
+  if (
+    /[\\]/u.test(name) ||
+    name.startsWith("/") ||
+    /^[A-Za-z]:/u.test(name) ||
+    parts.some((part) => part === "..") ||
+    parts[0] === "templates" ||
+    parts[0]?.normalize("NFC") === metadataDirectory.normalize("NFC")
+  ) {
     return invalid("NTS-45", "Template path must be relative to the templates directory");
   }
   if (!name.endsWith(".md")) return invalid("NTS-47", "Template path must end in .md");
-  if ([...blockedPaths ?? []].some((blocked) => path.normalize("NFC") === blocked || path.normalize("NFC").startsWith(`${blocked}/`))) {
+  if ([...(blockedPaths ?? [])].some((blocked) => path.normalize("NFC") === blocked || path.normalize("NFC").startsWith(`${blocked}/`))) {
     return invalid("RHT-73", "Template path traverses a symbolic link omitted from the snapshot");
   }
   let current = root;
@@ -65,10 +78,11 @@ export function resolveTemplate(root: string, metadataDirectory: string, noteTyp
 
 export function mandatoryTags(schema: TemplateSchema, config: TemplateContext): string[] {
   const seen = new Set<string>();
-  return [...config.mandatory_tags ?? [], ...schema.mandatory_tags ?? []].filter((tag) => {
+  return [...(config.mandatory_tags ?? []), ...(schema.mandatory_tags ?? [])].filter((tag) => {
     const normalized = tag.normalize("NFC");
     if (seen.has(normalized)) return false;
-    seen.add(normalized); return true;
+    seen.add(normalized);
+    return true;
   });
 }
 
@@ -84,11 +98,17 @@ export function deriveStarter(schema: TemplateSchema, config: TemplateContext, d
 }
 
 /** Validate authored template values, before any scaffold values can mask errors. */
-export function validateTemplateFields(data: Record<string, unknown>, schema: TemplateSchema, config: TemplateContext, noteType: string): Array<ValueFailure & { field: string }> {
+export function validateTemplateFields(
+  data: Record<string, unknown>,
+  schema: TemplateSchema,
+  config: TemplateContext,
+  noteType: string,
+): Array<ValueFailure & { field: string }> {
   const failures: Array<ValueFailure & { field: string }> = [];
   const unknown = (field: string) => failures.push({ rule: "RHT-76", field, message: `Template field ${field} is undeclared` });
   const nested = (value: unknown, definition: FieldDefinition, path: string) => {
-    if (definition.type === "list" && definition.items && Array.isArray(value)) value.forEach((item, index) => nested(item, definition.items!, `${path}.${index}`));
+    if (definition.type === "list" && definition.items && Array.isArray(value))
+      value.forEach((item, index) => nested(item, definition.items!, `${path}.${index}`));
     if (definition.type !== "object" || !value || typeof value !== "object" || Array.isArray(value)) return;
     for (const [name, child] of Object.entries(value)) {
       if (!Object.hasOwn(definition.fields ?? {}, name)) unknown(`${path}.${name}`);
@@ -103,9 +123,12 @@ export function validateTemplateFields(data: Record<string, unknown>, schema: Te
     }
     const definition = definitions[field]!;
     if (isTemplatePlaceholder(value, definition)) continue;
-    const failure = validateTemplateValue(value, definition, config.timezone ?? "UTC", config.vocabularies)
-      ?? (field === "aliases" && Array.isArray(value) ? aliasValueFailure(value.filter((alias) => !isTemplatePlaceholder(alias, definition.items!))) : undefined)
-      ?? (field === "note_type" && value !== noteType ? { message: "Template note_type differs from its referencing concrete type" } : undefined);
+    const failure =
+      validateTemplateValue(value, definition, config.timezone ?? "UTC", config.vocabularies) ??
+      (field === "aliases" && Array.isArray(value)
+        ? aliasValueFailure(value.filter((alias) => !isTemplatePlaceholder(alias, definition.items!)))
+        : undefined) ??
+      (field === "note_type" && value !== noteType ? { message: "Template note_type differs from its referencing concrete type" } : undefined);
     if (failure) failures.push({ rule: "RHT-80", field, message: failure.message });
     nested(value, definition, field);
   }

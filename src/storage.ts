@@ -9,7 +9,9 @@ export interface StoragePatterns {
   note_name_prefix?: { pattern: string };
   note_name_suffix?: { pattern: string };
 }
-export interface StorageDefinition extends StoragePatterns { archive?: StoragePatterns }
+export interface StorageDefinition extends StoragePatterns {
+  archive?: StoragePatterns;
+}
 type Fields = Record<string, FieldDefinition>;
 type Reference = { field: string; format?: string };
 type Resolution = { path: string } | { failure: ValueFailure };
@@ -41,12 +43,17 @@ function patterns(storage: StoragePatterns): string[] {
 export function validateStorageDefinition(storage: StorageDefinition, fields?: Fields): ValueFailure[] {
   const failures: ValueFailure[] = [];
   for (const branch of [storage, ...(storage.archive ? [storage.archive] : [])]) {
-    for (const pattern of patterns(branch)) for (const match of pattern.matchAll(/\{([^{}]*)\}/gu)) {
-      const parsed = reference(match[1]!, fields);
-      if ("rule" in parsed) failures.push(parsed);
-    }
+    for (const pattern of patterns(branch))
+      for (const match of pattern.matchAll(/\{([^{}]*)\}/gu)) {
+        const parsed = reference(match[1]!, fields);
+        if ("rule" in parsed) failures.push(parsed);
+      }
     if (branch.note_name_regex !== undefined) {
-      try { fullPattern(branch.note_name_regex); } catch { failures.push({ rule: "FND-31", message: "Invalid note_name_regex regular expression" }); }
+      try {
+        fullPattern(branch.note_name_regex);
+      } catch {
+        failures.push({ rule: "FND-31", message: "Invalid note_name_regex regular expression" });
+      }
     }
   }
   return failures;
@@ -58,46 +65,66 @@ export function validateStorageDefinition(storage: StorageDefinition, fields?: F
 function formatted(value: string, definition: FieldDefinition, format: string, timezone: string): string {
   const date = definition.type === "datetime" ? datetimeInstant(value, timezone).toZonedDateTimeISO(timezone).toPlainDate() : Temporal.PlainDate.from(value);
   switch (format) {
-    case "YYYY": return String(date.year).padStart(4, "0");
-    case "MM": return String(date.month).padStart(2, "0");
-    case "DD": return String(date.day).padStart(2, "0");
-    case "YYYY-MM": return `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}`;
-    case "YYYY-MM-DD": return date.toString();
-    case "Q": return String(Math.floor((date.month - 1) / 3) + 1);
-    case "WW": return String(date.weekOfYear).padStart(2, "0");
-    case "GGGG": return String(date.yearOfWeek).padStart(4, "0");
-    default: throw new Error("Storage format was not validated");
+    case "YYYY":
+      return String(date.year).padStart(4, "0");
+    case "MM":
+      return String(date.month).padStart(2, "0");
+    case "DD":
+      return String(date.day).padStart(2, "0");
+    case "YYYY-MM":
+      return `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}`;
+    case "YYYY-MM-DD":
+      return date.toString();
+    case "Q":
+      return String(Math.floor((date.month - 1) / 3) + 1);
+    case "WW":
+      return String(date.weekOfYear).padStart(2, "0");
+    case "GGGG":
+      return String(date.yearOfWeek).padStart(4, "0");
+    default:
+      throw new Error("Storage format was not validated");
   }
 }
 
 function resolveParts(storage: StoragePatterns, values: Record<string, unknown>, fields: Fields, timezone: string): Parts | { failure: ValueFailure } {
   let failure: ValueFailure | undefined;
-  const resolved = patterns(storage).map((pattern) => pattern.replace(/\{([^{}]*)\}/gu, (_match, token: string) => {
-    if (failure) return "";
-    const parsed = reference(token, fields);
-    if ("rule" in parsed) { failure = parsed; return ""; }
-    const value = Object.hasOwn(values, parsed.field) ? values[parsed.field] : undefined;
-    if (value === undefined || value === null) {
-      failure = { rule: "NTS-130", message: `Storage field ${parsed.field} has no concrete non-null value` }; return "";
-    }
-    const definition = fields[parsed.field]!;
-    if (!["string", "number", "boolean"].includes(typeof value)) {
-      failure = { rule: "NTS-129", message: `Storage field ${parsed.field} has no scalar value` }; return "";
-    }
-    if (parsed.format && validateFieldValue(value, { type: definition.type }, timezone)) {
-      failure = { rule: "NTS-128", message: `Cannot extract date components from ${parsed.field}` }; return "";
-    }
-    let text: string;
-    try { text = parsed.format ? formatted(String(value), definition, parsed.format, timezone) : String(value); }
-    catch (error) {
-      if (!(error instanceof RangeError)) throw error;
-      failure = { rule: "NTS-128", message: `Cannot extract date components for ${parsed.field} in the collection timezone` }; return "";
-    }
-    if (/[/\\\p{Cc}]/u.test(text) || text === "." || text === "..") {
-      failure = { rule: "NTS-133", message: `Storage field ${parsed.field} contains an unsafe path value` }; return "";
-    }
-    return text;
-  }));
+  const resolved = patterns(storage).map((pattern) =>
+    pattern.replace(/\{([^{}]*)\}/gu, (_match, token: string) => {
+      if (failure) return "";
+      const parsed = reference(token, fields);
+      if ("rule" in parsed) {
+        failure = parsed;
+        return "";
+      }
+      const value = Object.hasOwn(values, parsed.field) ? values[parsed.field] : undefined;
+      if (value === undefined || value === null) {
+        failure = { rule: "NTS-130", message: `Storage field ${parsed.field} has no concrete non-null value` };
+        return "";
+      }
+      const definition = fields[parsed.field]!;
+      if (!["string", "number", "boolean"].includes(typeof value)) {
+        failure = { rule: "NTS-129", message: `Storage field ${parsed.field} has no scalar value` };
+        return "";
+      }
+      if (parsed.format && validateFieldValue(value, { type: definition.type }, timezone)) {
+        failure = { rule: "NTS-128", message: `Cannot extract date components from ${parsed.field}` };
+        return "";
+      }
+      let text: string;
+      try {
+        text = parsed.format ? formatted(String(value), definition, parsed.format, timezone) : String(value);
+      } catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        failure = { rule: "NTS-128", message: `Cannot extract date components for ${parsed.field} in the collection timezone` };
+        return "";
+      }
+      if (/[/\\\p{Cc}]/u.test(text) || text === "." || text === "..") {
+        failure = { rule: "NTS-133", message: `Storage field ${parsed.field} contains an unsafe path value` };
+        return "";
+      }
+      return text;
+    }),
+  );
   if (failure) return { failure };
   const [folder = "", prefix = "", name = "", suffix = ""] = resolved;
   return { folder, prefix, name, suffix };
@@ -120,12 +147,20 @@ export function resolveStoragePath(storage: StoragePatterns, values: Record<stri
 export function checkStoragePath(storage: StoragePatterns, path: string, values: Record<string, unknown>, fields: Fields, timezone: string): Resolution {
   const parts = resolveParts(storage, values, fields, timezone);
   if ("failure" in parts || storage.note_name_pattern !== undefined) return "failure" in parts ? parts : assemble(storage, parts);
-  const actual = path.normalize("NFC"), slash = actual.lastIndexOf("/");
-  const folder = slash < 0 ? "" : actual.slice(0, slash), file = actual.slice(slash + 1);
-  const prefix = parts.prefix.normalize("NFC"), suffix = parts.suffix.normalize("NFC");
+  const actual = path.normalize("NFC"),
+    slash = actual.lastIndexOf("/");
+  const folder = slash < 0 ? "" : actual.slice(0, slash),
+    file = actual.slice(slash + 1);
+  const prefix = parts.prefix.normalize("NFC"),
+    suffix = parts.suffix.normalize("NFC");
   const basename = file.endsWith(".md") ? file.slice(0, -3) : undefined;
-  if (basename === undefined || folder !== parts.folder.normalize("NFC") || basename.length < prefix.length + suffix.length
-    || !basename.startsWith(prefix) || !basename.endsWith(suffix)) {
+  if (
+    basename === undefined ||
+    folder !== parts.folder.normalize("NFC") ||
+    basename.length < prefix.length + suffix.length ||
+    !basename.startsWith(prefix) ||
+    !basename.endsWith(suffix)
+  ) {
     return { path: `${parts.folder ? `${parts.folder}/` : ""}${parts.prefix}<free name>${parts.suffix}.md` };
   }
   return assemble(storage, parts, basename.slice(prefix.length, basename.length - suffix.length));
@@ -138,8 +173,11 @@ function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Re
     if (!freeName) return { failure: { rule: "NTS-181", message: "A free note name must be non-empty" } };
     if (storage.note_name_regex !== undefined) {
       let matcher: RegExp;
-      try { matcher = fullPattern(storage.note_name_regex); }
-      catch { return { failure: { rule: "FND-31", message: "Invalid note_name_regex regular expression" } }; }
+      try {
+        matcher = fullPattern(storage.note_name_regex);
+      } catch {
+        return { failure: { rule: "FND-31", message: "Invalid note_name_regex regular expression" } };
+      }
       if (!matcher.test(freeName.normalize("NFC"))) {
         return { failure: { rule: "NTS-182", message: `Free note name ${freeName} does not match note_name_regex` } };
       }
@@ -147,7 +185,8 @@ function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Re
     name = freeName;
   }
   const basename = `${prefix}${name}${suffix}`.normalize("NFC");
-  if (!basename || basename.startsWith(".")) return { failure: { rule: "NTS-134", message: "Resolved note basename must be non-empty and must not begin with a dot" } };
+  if (!basename || basename.startsWith("."))
+    return { failure: { rule: "NTS-134", message: "Resolved note basename must be non-empty and must not begin with a dot" } };
   const path = `${folder ? `${folder}/` : ""}${basename}.md`.normalize("NFC");
   if (/[\\\p{Cc}]/u.test(path) || path.split("/").some((part) => part === "" || part === "." || part === "..")) {
     return { failure: { rule: "NTS-180", message: "Resolved note path contains unsafe characters or segments" } };

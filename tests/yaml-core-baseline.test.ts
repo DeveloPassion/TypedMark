@@ -39,7 +39,8 @@ for (const { label, version } of [
   test(`${label}: Core booleans and nulls retain their standard values`, () => {
     const source = markdown("value: [true, True, TRUE, false, False, FALSE, null, Null, NULL, ~]\nempty:", version);
     expect(parseMarkdown(source).data).toEqual({
-      value: [true, true, true, false, false, false, null, null, null, null], empty: null,
+      value: [true, true, true, false, false, false, null, null, null, null],
+      empty: null,
     });
   });
 
@@ -51,21 +52,23 @@ for (const { label, version } of [
   test(`${label}: an implicit merge-looking key stays an ordinary mapping entry`, () => {
     const source = markdown("defaults: &defaults {status: off}\nvalue: {<<: *defaults, title: Example}", version);
     expect(parseMarkdown(source).data).toEqual({
-      defaults: { status: "off" }, value: { "<<": { status: "off" }, title: "Example" },
+      defaults: { status: "off" },
+      value: { "<<": { status: "off" }, title: "Example" },
     });
   });
 
   test(`${label}: nested explicit set, ordered-map, timestamp and binary tags remain supported`, () => {
-    const source = markdown([
-      "value:",
-      "  set: !!set {yes: null}",
-      "  ordered: !!omap [{yes: off}]",
-      "  timestamp: !!timestamp 2026-09-15T10:20:30Z",
-      "  binary: !!binary SGk=",
-    ].join("\n"), version);
+    const source = markdown(
+      ["value:", "  set: !!set {yes: null}", "  ordered: !!omap [{yes: off}]", "  timestamp: !!timestamp 2026-09-15T10:20:30Z", "  binary: !!binary SGk="].join(
+        "\n",
+      ),
+      version,
+    );
     expect(parseMarkdown(source).data.value).toEqual({
-      set: new Set(["yes"]), ordered: new Map([["yes", "off"]]),
-      timestamp: new Date("2026-09-15T10:20:30Z"), binary: Buffer.from("Hi"),
+      set: new Set(["yes"]),
+      ordered: new Map([["yes", "off"]]),
+      timestamp: new Date("2026-09-15T10:20:30Z"),
+      binary: Buffer.from("Hi"),
     });
   });
 
@@ -78,7 +81,9 @@ for (const { label, version } of [
     for (const yaml of ["value: 1\nvalue: 2", "value: {nested: 1, nested: 2}", "value: {12: first, 012: second}"]) {
       const source = markdown(yaml, version, "Retained body  \n");
       expect(() => parseMarkdown(source)).toThrow(FrontmatterError);
-      try { parseMarkdown(source); } catch (error) {
+      try {
+        parseMarkdown(source);
+      } catch (error) {
         expect(error).toMatchObject({ body: "Retained body  \n" });
       }
     }
@@ -128,40 +133,57 @@ test("collection validation interprets a YAML 1.1 managed note using Core withou
   const root = createRoot();
   const sources = {
     "typedmark.md": markdown("specification_version: 0.1.0\nname: core\ndescription: Core baseline."),
-    ".typedmark/schemas/note.md": markdown([
-      "specification_version: 0.1.0", "description: Note.",
-      "storage: {folder_pattern: '', note_name_pattern: '{title}'}",
-      "frontmatter:", "  status: {type: text, allowed_values: [yes, no, on, off]}",
-      "  amount: {type: integer, allowed_values: [12]}",
-    ].join("\n")),
+    ".typedmark/schemas/note.md": markdown(
+      [
+        "specification_version: 0.1.0",
+        "description: Note.",
+        "storage: {folder_pattern: '', note_name_pattern: '{title}'}",
+        "frontmatter:",
+        "  status: {type: text, allowed_values: [yes, no, on, off]}",
+        "  amount: {type: integer, allowed_values: [12]}",
+      ].join("\n"),
+    ),
     "Example.md": "\uFEFF" + markdown("note_type: note\nstatus: yes\namount: 012", "1.1", "Body  \n---\n").replaceAll("\n", "\r\n"),
   };
   writeSources(root, sources);
   try {
     expect(validateCollection({ collectionRoot: root, schemaDirectory })).toMatchObject({
-      evaluation: "complete", valid: true, results: [],
+      evaluation: "complete",
+      valid: true,
+      results: [],
     });
-  } finally { expectSourcesUnchanged(root, sources); }
+  } finally {
+    expectSourcesUnchanged(root, sources);
+  }
 });
 
 test("collection configuration and schema defaults retain Core meaning under YAML 1.1 directives", () => {
   const root = createRoot();
   const sources = {
     "typedmark.md": markdown("specification_version: 0.1.0\nname: on\ndescription: no", "1.1"),
-    ".typedmark/schemas/note.md": markdown([
-      "specification_version: 0.1.0", "description: yes",
-      "storage: {folder_pattern: '', note_name_pattern: '{title}'}",
-      "frontmatter:", "  status: {type: text, default_value: off}",
-      "  amount: {type: integer, default_value: 012, allowed_values: [12]}",
-    ].join("\n"), "1.1"),
+    ".typedmark/schemas/note.md": markdown(
+      [
+        "specification_version: 0.1.0",
+        "description: yes",
+        "storage: {folder_pattern: '', note_name_pattern: '{title}'}",
+        "frontmatter:",
+        "  status: {type: text, default_value: off}",
+        "  amount: {type: integer, default_value: 012, allowed_values: [12]}",
+      ].join("\n"),
+      "1.1",
+    ),
     "Example.md": markdown("note_type: note"),
   };
   writeSources(root, sources);
   try {
     expect(validateCollection({ collectionRoot: root, schemaDirectory })).toMatchObject({
-      evaluation: "complete", valid: true, results: [],
+      evaluation: "complete",
+      valid: true,
+      results: [],
     });
-  } finally { expectSourcesUnchanged(root, sources); }
+  } finally {
+    expectSourcesUnchanged(root, sources);
+  }
 });
 
 test("system import uses Core scaffold and template values while preserving source bodies and artifact bytes", async () => {
@@ -170,19 +192,39 @@ test("system import uses Core scaffold and template values while preserving sour
   const configBody = "System prose  \r\n---\r\n%YAML 1.1\r\n";
   const templateBody = "Starter prose  \r\n---\r\n%YAML 1.1\r\n";
   const sources = {
-    "typedmark.md": markdown([
-      "specification_version: 0.1.0", "extensions: {typedmark:systems: 0.1.0}",
-      'name: "@example/core-baseline"', "description: Core baseline system.", "version: 0.1.0",
-      "publisher: {name: Example}", "license: MIT", "scaffold:", "  folders: [Notes]",
-      "  notes:", "    - path: Notes/Welcome.md", "      note_type: note",
-      "      values: {title: Welcome, status: on, amount: 012}",
-    ].join("\n"), "1.1", "").replaceAll("\n", "\r\n") + configBody,
-    ".typedmark/schemas/note.md": markdown([
-      "specification_version: 0.1.0", "description: Note.",
-      "storage: {folder_pattern: Notes, note_name_pattern: '{title}'}",
-      "frontmatter:", "  status: {type: text}", "  amount: {type: integer}",
-    ].join("\n"), "1.1"),
-    ".typedmark/templates/note.md": "\uFEFF" + markdown("note_type: note\ntitle: null\nstatus: off\namount: 012", "1.1", "").replaceAll("\n", "\r\n") + templateBody,
+    "typedmark.md":
+      markdown(
+        [
+          "specification_version: 0.1.0",
+          "extensions: {typedmark:systems: 0.1.0}",
+          'name: "@example/core-baseline"',
+          "description: Core baseline system.",
+          "version: 0.1.0",
+          "publisher: {name: Example}",
+          "license: MIT",
+          "scaffold:",
+          "  folders: [Notes]",
+          "  notes:",
+          "    - path: Notes/Welcome.md",
+          "      note_type: note",
+          "      values: {title: Welcome, status: on, amount: 012}",
+        ].join("\n"),
+        "1.1",
+        "",
+      ).replaceAll("\n", "\r\n") + configBody,
+    ".typedmark/schemas/note.md": markdown(
+      [
+        "specification_version: 0.1.0",
+        "description: Note.",
+        "storage: {folder_pattern: Notes, note_name_pattern: '{title}'}",
+        "frontmatter:",
+        "  status: {type: text}",
+        "  amount: {type: integer}",
+      ].join("\n"),
+      "1.1",
+    ),
+    ".typedmark/templates/note.md":
+      "\uFEFF" + markdown("note_type: note\ntitle: null\nstatus: off\namount: 012", "1.1", "").replaceAll("\n", "\r\n") + templateBody,
   };
   writeSources(sourceRoot, sources);
   try {
@@ -195,5 +237,7 @@ test("system import uses Core scaffold and template values while preserving sour
     for (const path of [".typedmark/schemas/note.md", ".typedmark/templates/note.md"]) {
       expect(readFileSync(join(targetRoot, path))).toEqual(Buffer.from(sources[path as keyof typeof sources]));
     }
-  } finally { expectSourcesUnchanged(sourceRoot, sources); }
+  } finally {
+    expectSourcesUnchanged(sourceRoot, sources);
+  }
 });

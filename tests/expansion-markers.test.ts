@@ -26,7 +26,8 @@ test.each([
 });
 
 test.each([
-  [`${start}\n`, "RHT-101"], [`${end}\n`, "RHT-102"],
+  [`${start}\n`, "RHT-101"],
+  [`${end}\n`, "RHT-102"],
   [`${start}\n${start}\n${end}\n${end}`, "RHT-100"],
   [`${start}\n${end}\n${start}\n${end}`, "RHT-103"],
   [`${start} trailing\n${end}`, "RHT-95"],

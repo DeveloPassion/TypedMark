@@ -9,7 +9,9 @@ import { validateCollection } from "../src/validator";
 
 const roots: string[] = [];
 const schemaDirectory = resolve(import.meta.dir, "../../TypedMarkSpecification/schema/json-schema");
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 // Parse as the frontmatter reader does (FND-25), so Core scalars stay plain.
 const yaml = (source: string) => parseDocument(source, { version: "1.2", schema: "core", resolveKnownTags: true, merge: false, uniqueKeys: true });
@@ -31,10 +33,13 @@ test("an alias is reported even when its anchor lies outside the checked node", 
 });
 
 function system(values: string, template = "note_type: note\ntitle: null\n") {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-plain-starter-")); roots.push(root);
+  const root = mkdtempSync(join(tmpdir(), "typedmark-plain-starter-"));
+  roots.push(root);
   mkdirSync(join(root, ".typedmark", "schemas"), { recursive: true });
   mkdirSync(join(root, ".typedmark", "templates"), { recursive: true });
-  writeFileSync(join(root, "typedmark.md"), `---
+  writeFileSync(
+    join(root, "typedmark.md"),
+    `---
 specification_version: 0.1.0
 extensions:
   typedmark:systems: 0.1.0
@@ -46,10 +51,17 @@ scaffold:
     - path: Notes/Welcome.md
       note_type: note
       values:
-${values.split("\n").filter(Boolean).map((line) => `        ${line}`).join("\n")}
+${values
+  .split("\n")
+  .filter(Boolean)
+  .map((line) => `        ${line}`)
+  .join("\n")}
 ---
-`);
-  writeFileSync(join(root, ".typedmark", "schemas", "note.md"), `---
+`,
+  );
+  writeFileSync(
+    join(root, ".typedmark", "schemas", "note.md"),
+    `---
 specification_version: 0.1.0
 description: A note.
 storage:
@@ -59,13 +71,15 @@ frontmatter:
   title: {type: text, nullable: false}
   extra: {type: any, nullable: true, default_value: null}
 ---
-`);
+`,
+  );
   writeFileSync(join(root, ".typedmark", "templates", "note.md"), `---\n${template}---\n\n# Welcome\n`);
   return root;
 }
 const definition = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory, mode: "system_definition" });
 const instantiate = (root: string) => {
-  const target = join(mkdtempSync(join(tmpdir(), "typedmark-plain-target-")), "instance"); roots.push(resolve(target, ".."));
+  const target = join(mkdtempSync(join(tmpdir(), "typedmark-plain-target-")), "instance");
+  roots.push(resolve(target, ".."));
   return instantiateSystem({ sourceRoot: root, targetRoot: target, collectionName: "working", description: "Working.", schemaDirectory });
 };
 
@@ -81,7 +95,9 @@ test.each([
   ["title: Welcome\nextra: {? [north, east] : 1}", "non-string mapping key"],
 ])("system definitions report non-plain scaffold values (SCE-159) and importers refuse them (SCE-160): %j", async (values, construct) => {
   const root = system(values);
-  expect(definition(root).results).toContainEqual(expect.objectContaining({ code: "invalid_system", rule_id: "SCE-159", message: expect.stringContaining(construct) }));
+  expect(definition(root).results).toContainEqual(
+    expect.objectContaining({ code: "invalid_system", rule_id: "SCE-159", message: expect.stringContaining(construct) }),
+  );
   // Source validation already refuses the system before anything is written.
   await expect(instantiate(root)).rejects.toThrow(/SCE-159/);
 });

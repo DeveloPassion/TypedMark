@@ -14,14 +14,18 @@ function write(root: string, path: string, data: unknown) {
   writeFileSync(join(root, path), `---\n${stringify(data)}---\n`);
 }
 function collection(field: object, declared = true) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-authoring-")); roots.push(root);
+  const root = mkdtempSync(join(tmpdir(), "typedmark-authoring-"));
+  roots.push(root);
   write(root, "typedmark.md", { ...version, name: "authoring", extensions: declared ? { "typedmark:authoring": "0.1.0" } : {} });
   write(root, ".typedmark/schemas/note.md", { ...version, storage: { folder_pattern: "", note_name_pattern: "{title}" }, frontmatter: { value: field } });
   write(root, "A.md", { note_type: "note" });
   return root;
 }
-const model = (collectionRoot: string, supportedExtensions?: Record<string, string>) => readCollectionModel({ collectionRoot, schemaDirectory, supportedExtensions });
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+const model = (collectionRoot: string, supportedExtensions?: Record<string, string>) =>
+  readCollectionModel({ collectionRoot, schemaDirectory, supportedExtensions });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test.each([
   { type: "text", generated: "ulid", nullable: true },
@@ -29,7 +33,8 @@ test.each([
   { type: "integer", generated: { sequence: {} }, nullable: true },
   { type: "text", immutable: true, nullable: true },
 ])("interprets authoring declarations without generating or overwriting values: %j", (field) => {
-  const root = collection(field); const before = readFileSync(join(root, "A.md"));
+  const root = collection(field);
+  const before = readFileSync(join(root, "A.md"));
   const loaded = model(root);
   expect(loaded.report).toMatchObject({ valid: true, evaluation: "complete", results: [], evaluated_extensions: { "typedmark:authoring": "0.1.0" } });
   expect(loaded.notes[0]!.values.value).toBeNull();
@@ -37,8 +42,10 @@ test.each([
 });
 
 test.each([
-  { type: "integer", generated: "ulid" }, { type: "text", generated: { random: 0 } },
-  { type: "text", generated: { sequence: {} } }, { type: "list", items: { type: "text", immutable: true }, nullable: true },
+  { type: "integer", generated: "ulid" },
+  { type: "text", generated: { random: 0 } },
+  { type: "text", generated: { sequence: {} } },
+  { type: "list", items: { type: "text", immutable: true }, nullable: true },
 ])("rejects incompatible authoring declarations: %j", (field) => {
   expect(model(collection(field)).report.results).toContainEqual(expect.objectContaining({ code: "invalid_note_type_schema" }));
 });
@@ -79,6 +86,11 @@ test.each([
 
 test("an unrelated vocabulary named undefined does not constrain generated fields", () => {
   const root = collection({ type: "text", generated: { random: 4 }, nullable: true });
-  write(root, "typedmark.md", { ...version, name: "authoring", extensions: { "typedmark:authoring": "0.1.0" }, vocabularies: { undefined: { values: ["long-unrelated-value"] } } });
+  write(root, "typedmark.md", {
+    ...version,
+    name: "authoring",
+    extensions: { "typedmark:authoring": "0.1.0" },
+    vocabularies: { undefined: { values: ["long-unrelated-value"] } },
+  });
   expect(model(root).report).toMatchObject({ valid: true, results: [] });
 });

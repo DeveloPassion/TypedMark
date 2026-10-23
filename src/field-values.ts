@@ -4,7 +4,11 @@ import { hasUriScheme, isUriReference } from "./uri-syntax";
 
 export type FieldType = "text" | "integer" | "number" | "checkbox" | "date" | "time" | "datetime" | "link" | "list" | "tags" | "object" | "any";
 /** Lifecycle meaning of one allowed value (FDR-289); omitted `done` is false (FDR-291). */
-export interface StateAnnotation { done?: boolean; outcome?: "success" | "failure"; role?: "backlog" | "scheduled" | "active" | "waiting" }
+export interface StateAnnotation {
+  done?: boolean;
+  outcome?: "success" | "failure";
+  role?: "backlog" | "scheduled" | "active" | "waiting";
+}
 
 export interface FieldDefinition {
   type: FieldType;
@@ -33,17 +37,18 @@ export interface FieldDefinition {
 }
 export type Vocabularies = Record<string, { values: string[] }>;
 export type ConversionClass = "exact" | "lossless" | "conditional" | "incompatible";
-export interface ValueFailure { rule: string; message: string }
+export interface ValueFailure {
+  rule: string;
+  message: string;
+}
 
 export function isMapping(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    && [null, Object.prototype].includes(Object.getPrototypeOf(value));
+  return value !== null && typeof value === "object" && !Array.isArray(value) && [null, Object.prototype].includes(Object.getPrototypeOf(value));
 }
 
 export function expandObjectDefaults(value: unknown, definition: FieldDefinition): unknown {
   if (value === null || typeof value !== "object") return value;
-  if (Array.isArray(value)) return definition.type === "list" && definition.items
-    ? value.map((item) => expandObjectDefaults(item, definition.items!)) : value;
+  if (Array.isArray(value)) return definition.type === "list" && definition.items ? value.map((item) => expandObjectDefaults(item, definition.items!)) : value;
   if (definition.type !== "object" || !isMapping(value)) return value;
   const result = { ...value } as Record<string, unknown>;
   for (const [name, child] of Object.entries(definition.fields ?? {})) {
@@ -96,30 +101,45 @@ export function equalFieldValues(left: unknown, right: unknown, definition: Fiel
   if (left === null || right === null || left === undefined || right === undefined) return left === right;
   if (comparisonDomain(definition)) return compareFieldValues(left, right, definition, timezone) === 0;
   if (Array.isArray(left) || Array.isArray(right)) {
-    return Array.isArray(left) && Array.isArray(right) && left.length === right.length
-      && left.every((value, index) => equalFieldValues(value, right[index], definition.items ?? { type: "any" }, timezone));
+    return (
+      Array.isArray(left) &&
+      Array.isArray(right) &&
+      left.length === right.length &&
+      left.every((value, index) => equalFieldValues(value, right[index], definition.items ?? { type: "any" }, timezone))
+    );
   }
   if (typeof left === "object" || typeof right === "object") {
     if (typeof left !== "object" || typeof right !== "object") return false;
     const a = left as Record<string, unknown>;
     const b = right as Record<string, unknown>;
     const bKeys = new Map(Object.keys(b).map((key) => [key.normalize("NFC"), key]));
-    return Object.keys(a).length === Object.keys(b).length && Object.keys(a).every((key) => {
-      const other = bKeys.get(key.normalize("NFC"));
-      return other !== undefined && equalFieldValues(a[key], b[other], definition.fields?.[key] ?? { type: "any" }, timezone);
-    });
+    return (
+      Object.keys(a).length === Object.keys(b).length &&
+      Object.keys(a).every((key) => {
+        const other = bKeys.get(key.normalize("NFC"));
+        return other !== undefined && equalFieldValues(a[key], b[other], definition.fields?.[key] ?? { type: "any" }, timezone);
+      })
+    );
   }
   return typeof left === "string" && typeof right === "string" ? left.normalize("NFC") === right.normalize("NFC") : left === right;
 }
 
 export function classifyConversion(source: FieldDefinition, target: FieldDefinition): ConversionClass {
   if (source.type === target.type) return "exact";
-  if (target.type === "any" || (source.type === "integer" && target.type === "number")
-    || (["date", "time", "datetime", "link"].includes(source.type) && target.type === "text")
-    || (source.type === "tags" && target.type === "list" && target.items?.type === "text")) return "lossless";
-  if (source.type === "any" || (source.type === "number" && target.type === "integer")
-    || (source.type === "text" && ["link", "date", "time", "datetime"].includes(target.type))
-    || (source.type === "list" && source.items?.type === "text" && target.type === "tags")) return "conditional";
+  if (
+    target.type === "any" ||
+    (source.type === "integer" && target.type === "number") ||
+    (["date", "time", "datetime", "link"].includes(source.type) && target.type === "text") ||
+    (source.type === "tags" && target.type === "list" && target.items?.type === "text")
+  )
+    return "lossless";
+  if (
+    source.type === "any" ||
+    (source.type === "number" && target.type === "integer") ||
+    (source.type === "text" && ["link", "date", "time", "datetime"].includes(target.type)) ||
+    (source.type === "list" && source.items?.type === "text" && target.type === "tags")
+  )
+    return "conditional";
   return "incompatible";
 }
 
@@ -128,12 +148,22 @@ export function validateFieldValue(value: unknown, definition: FieldDefinition, 
 }
 
 /** CM-54: the managed-note graph owns note-link syntax and resolution findings. */
-export function validateManagedFieldConstraints(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies = {}): ValueFailure | undefined {
+export function validateManagedFieldConstraints(
+  value: unknown,
+  definition: FieldDefinition,
+  timezone: string,
+  vocabularies: Vocabularies = {},
+): ValueFailure | undefined {
   return validateValue(value, definition, timezone, vocabularies, "managed_note");
 }
 
 /** RHT-77/78: unresolved starter placeholders are not persisted note values. */
-export function validateTemplateValue(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies = {}): ValueFailure | undefined {
+export function validateTemplateValue(
+  value: unknown,
+  definition: FieldDefinition,
+  timezone: string,
+  vocabularies: Vocabularies = {},
+): ValueFailure | undefined {
   return validateValue(expandObjectDefaults(value, definition), definition, timezone, vocabularies, "template");
 }
 
@@ -141,39 +171,89 @@ export function isTemplatePlaceholder(value: unknown, definition: FieldDefinitio
   return value === null || (value === "" && ["text", "link"].includes(definition.type));
 }
 
-function validateValue(value: unknown, definition: FieldDefinition, timezone: string, vocabularies: Vocabularies, context: "standalone" | "template" | "managed_note"): ValueFailure | undefined {
+function validateValue(
+  value: unknown,
+  definition: FieldDefinition,
+  timezone: string,
+  vocabularies: Vocabularies,
+  context: "standalone" | "template" | "managed_note",
+): ValueFailure | undefined {
   const fail = (rule: string, message: string): ValueFailure => ({ rule, message });
   const template = context === "template";
   if (template && isTemplatePlaceholder(value, definition)) return;
   if (value === null) return definition.nullable === true ? undefined : fail("MN-99", "is not nullable");
   const type = definition.type;
-  const rules: Record<FieldType, string> = { text: "FDR-8", integer: "FDR-9", number: "FDR-11", checkbox: "FDR-12", date: "FDR-13", time: "FDR-14", datetime: "FDR-15", link: "FDR-19", list: "FDR-20", tags: "FDR-21", object: "FDR-28", any: "FDR-29" };
+  const rules: Record<FieldType, string> = {
+    text: "FDR-8",
+    integer: "FDR-9",
+    number: "FDR-11",
+    checkbox: "FDR-12",
+    date: "FDR-13",
+    time: "FDR-14",
+    datetime: "FDR-15",
+    link: "FDR-19",
+    list: "FDR-20",
+    tags: "FDR-21",
+    object: "FDR-28",
+    any: "FDR-29",
+  };
   let valid: boolean;
   switch (type) {
-    case "text": case "link": valid = typeof value === "string"; break;
-    case "integer": valid = typeof value === "number" && Number.isInteger(value); break;
-    case "number": valid = typeof value === "number" && Number.isFinite(value); break;
-    case "checkbox": valid = typeof value === "boolean"; break;
-    case "list": valid = Array.isArray(value); break;
-    case "tags": valid = Array.isArray(value) && value.every((tag) => typeof tag === "string" && fullPattern("[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*(?:/[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*)*").test(tag.normalize("NFC")))
-      && new Set(value.map((tag: string) => tag.normalize("NFC"))).size === value.length; break;
-    case "object": valid = isMapping(value); break;
-    case "date": case "time": case "datetime": {
+    case "text":
+    case "link":
+      valid = typeof value === "string";
+      break;
+    case "integer":
+      valid = typeof value === "number" && Number.isInteger(value);
+      break;
+    case "number":
+      valid = typeof value === "number" && Number.isFinite(value);
+      break;
+    case "checkbox":
+      valid = typeof value === "boolean";
+      break;
+    case "list":
+      valid = Array.isArray(value);
+      break;
+    case "tags":
+      valid =
+        Array.isArray(value) &&
+        value.every(
+          (tag) => typeof tag === "string" && fullPattern("[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*(?:/[\\p{L}\\p{N}_][\\p{L}\\p{N}_-]*)*").test(tag.normalize("NFC")),
+        ) &&
+        new Set(value.map((tag: string) => tag.normalize("NFC"))).size === value.length;
+      break;
+    case "object":
+      valid = isMapping(value);
+      break;
+    case "date":
+    case "time":
+    case "datetime": {
       valid = typeof value === "string";
       try {
-        if (type === "date") valid = valid && fullPattern("\\d{4}-\\d{2}-\\d{2}").test(String(value)) && Temporal.PlainDate.from(String(value)).toString() === value;
+        if (type === "date")
+          valid = valid && fullPattern("\\d{4}-\\d{2}-\\d{2}").test(String(value)) && Temporal.PlainDate.from(String(value)).toString() === value;
         else if (type === "datetime") {
           valid = valid && fullPattern("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?:Z|[+-]\\d{2}:\\d{2})?").test(String(value));
           datetimeInstant(String(value), timezone);
         } else {
-          const patterns: Record<string, string> = { "hh:mm": "(?:[01]\\d|2[0-3]):[0-5]\\d", "hh:mm:ss": "(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d", "hh:mm:ss.sss": "(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}" };
+          const patterns: Record<string, string> = {
+            "hh:mm": "(?:[01]\\d|2[0-3]):[0-5]\\d",
+            "hh:mm:ss": "(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d",
+            "hh:mm:ss.sss": "(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d\\.\\d{3}",
+          };
           valid = valid && !!patterns[definition.format ?? ""] && fullPattern(patterns[definition.format ?? ""]!).test(String(value));
         }
-      } catch { valid = false; }
+      } catch {
+        valid = false;
+      }
       break;
     }
-    case "any": valid = value !== undefined; break;
-    default: return fail("FDR-7", "has an unknown type");
+    case "any":
+      valid = value !== undefined;
+      break;
+    default:
+      return fail("FDR-7", "has an unknown type");
   }
   if (!valid) return fail(rules[type], `must satisfy the ${type} value contract`);
   if (type === "list" && definition.items) {
@@ -186,8 +266,13 @@ function validateValue(value: unknown, definition: FieldDefinition, timezone: st
     for (const [name, child] of Object.entries(definition.fields ?? {})) {
       const object = value as Record<string, unknown>;
       if (template && !Object.hasOwn(object, name)) continue;
-      const effective = Object.hasOwn(object, name) ? object[name]
-        : Object.hasOwn(child, "default_value") ? child.default_value : child.nullable ? null : undefined;
+      const effective = Object.hasOwn(object, name)
+        ? object[name]
+        : Object.hasOwn(child, "default_value")
+          ? child.default_value
+          : child.nullable
+            ? null
+            : undefined;
       if (effective === undefined) return fail("MN-98", `has no conforming value for ${name}`);
       const failure = validateValue(effective, child, timezone, vocabularies, context);
       if (failure) return failure;
@@ -205,19 +290,41 @@ function validateValue(value: unknown, definition: FieldDefinition, timezone: st
     const link = parseNoteLink(String(value));
     if (!link || link.embed) return fail("FDR-142", "must be one non-embed internal note link");
   }
-  if (definition.regex && !fullPattern(definition.regex).test(String(value).normalize("NFC"))) return fail("FDR-181", "does not match the declared regular expression");
+  if (definition.regex && !fullPattern(definition.regex).test(String(value).normalize("NFC")))
+    return fail("FDR-181", "does not match the declared regular expression");
   const measured = type === "text" || type === "link" ? [...String(value).normalize("NFC")].length : Array.isArray(value) ? value.length : value;
   const temporal = ["date", "time", "datetime"].includes(type);
-  if (definition.min !== undefined && (temporal ? compareFieldValues(value, definition.min, definition, timezone) < 0 : Number(measured) < Number(definition.min))) return fail("FDR-187", "is below the minimum");
-  if (definition.max !== undefined && (temporal ? compareFieldValues(value, definition.max, definition, timezone) > 0 : Number(measured) > Number(definition.max))) return fail("FDR-193", "exceeds the maximum");
+  if (
+    definition.min !== undefined &&
+    (temporal ? compareFieldValues(value, definition.min, definition, timezone) < 0 : Number(measured) < Number(definition.min))
+  )
+    return fail("FDR-187", "is below the minimum");
+  if (
+    definition.max !== undefined &&
+    (temporal ? compareFieldValues(value, definition.max, definition, timezone) > 0 : Number(measured) > Number(definition.max))
+  )
+    return fail("FDR-193", "exceeds the maximum");
   const vocabulary = definition.allowed_values_from ? vocabularies[definition.allowed_values_from]?.values : undefined;
   if (definition.allowed_values_from && !vocabulary) return fail("FDR-205", "references an unknown vocabulary");
   const allowed = definition.allowed_values ?? vocabulary;
   if (allowed) {
-    const candidates = type === "list" || type === "tags" ? value as unknown[] : [value];
-    if (candidates.some((candidate) => !(template && type === "list" && isTemplatePlaceholder(candidate, definition.items!)) && !allowed.some((entry) => type === "tags"
-      ? String(candidate).normalize("NFC") === String(entry).normalize("NFC") || String(candidate).normalize("NFC").startsWith(`${String(entry).normalize("NFC")}/`)
-      : equalFieldValues(candidate, entry, type === "list" ? definition.items! : definition, timezone)))) return fail("FDR-198", "is not in the allowed values");
+    const candidates = type === "list" || type === "tags" ? (value as unknown[]) : [value];
+    if (
+      candidates.some(
+        (candidate) =>
+          !(template && type === "list" && isTemplatePlaceholder(candidate, definition.items!)) &&
+          !allowed.some((entry) =>
+            type === "tags"
+              ? String(candidate).normalize("NFC") === String(entry).normalize("NFC") ||
+                String(candidate)
+                  .normalize("NFC")
+                  .startsWith(`${String(entry).normalize("NFC")}/`)
+              : equalFieldValues(candidate, entry, type === "list" ? definition.items! : definition, timezone),
+          ),
+      )
+    )
+      return fail("FDR-198", "is not in the allowed values");
   }
-  if (Object.hasOwn(definition, "const_value") && !equalFieldValues(value, definition.const_value, definition, timezone)) return fail("FDR-213", "does not equal const_value");
+  if (Object.hasOwn(definition, "const_value") && !equalFieldValues(value, definition.const_value, definition, timezone))
+    return fail("FDR-213", "does not equal const_value");
 }

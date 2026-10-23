@@ -25,19 +25,26 @@ test.each([new Map([["required_h2", 7]]), new Set(["required_h2"]), new Date(0)]
 
 test("allowed values reject ordinary objects before equality comparison", () => {
   const errors = registry.validate("defs.schema.json#/$defs/field_definition", {
-    type: "text", allowed_values: [{ a: 1 }, { a: 2 }],
+    type: "text",
+    allowed_values: [{ a: 1 }, { a: 2 }],
   });
-  expect(errors.map(error => [error.keyword, error.instancePath])).toEqual([
-    ["type", "/allowed_values/0"], ["type", "/allowed_values/1"],
+  expect(errors.map((error) => [error.keyword, error.instancePath])).toEqual([
+    ["type", "/allowed_values/0"],
+    ["type", "/allowed_values/1"],
   ]);
 });
 
 test("native allowed values are invalid regardless of alias identity", () => {
-  const first = new Date(0), second = new Date(1);
-  for (const values of [[first, second], [first, first]]) {
+  const first = new Date(0),
+    second = new Date(1);
+  for (const values of [
+    [first, second],
+    [first, first],
+  ]) {
     const errors = registry.validate("defs.schema.json#/$defs/field_definition", { type: "text", allowed_values: values });
-    expect(errors.map(error => [error.keyword, error.instancePath])).toEqual([
-      ["type", "/allowed_values/0"], ["type", "/allowed_values/1"],
+    expect(errors.map((error) => [error.keyword, error.instancePath])).toEqual([
+      ["type", "/allowed_values/0"],
+      ["type", "/allowed_values/1"],
     ]);
   }
   expect(first.getTime()).toBe(0);
@@ -59,8 +66,10 @@ test("opaque cyclic values and aliases are not mutated by shape checking", () =>
 test("an own __proto__ key cannot disappear while projecting a mapping", () => {
   const frontmatter = JSON.parse('{"__proto__":{"type":"text"}}');
   const errors = registry.validate("note-type.schema.json", {
-    specification_version: "0.1.0", description: "Note.",
-    storage: { folder_pattern: "", note_name_pattern: "Note" }, frontmatter,
+    specification_version: "0.1.0",
+    description: "Note.",
+    storage: { folder_pattern: "", note_name_pattern: "Note" },
+    frontmatter,
   });
   expect(errors.length).toBeGreaterThan(0);
   expect(Object.hasOwn(frontmatter, "__proto__")).toBe(true);

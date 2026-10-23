@@ -25,24 +25,37 @@ function write(root: string, path: string, data: object, body = "") {
   writeFileSync(join(root, path), `---\n${stringify(data)}---\n${body}`);
 }
 function snapshot(root: string): Array<[string, string]> {
-  return readdirSync(root, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile())
+  return readdirSync(root, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
     .map((entry): [string, string] => {
       const path = join(entry.parentPath, entry.name);
       return [path.slice(root.length + 1).replaceAll("\\", "/"), createHash("sha256").update(readFileSync(path)).digest("hex")];
-    }).sort(([left], [right]) => left.localeCompare(right));
+    })
+    .sort(([left], [right]) => left.localeCompare(right));
 }
 function fixture(source: Flags = {}, target: Flags = {}, kind: Kind = "belongs_to", sourceFolder?: string, withArchive = true) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-lifecycle-audit-")); roots.push(root);
+  const root = mkdtempSync(join(tmpdir(), "typedmark-lifecycle-audit-"));
+  roots.push(root);
   write(root, "typedmark.md", { specification_version: "0.1.0", name: "lifecycle-audit", description: "Read-only lifecycle audit." });
-  const storage = { folder_pattern: "Notes", note_name_pattern: "{title}",
-    ...(withArchive ? { archive: { folder_pattern: "Archive", note_name_pattern: "{title}" } } : {}) };
+  const storage = {
+    folder_pattern: "Notes",
+    note_name_pattern: "{title}",
+    ...(withArchive ? { archive: { folder_pattern: "Archive", note_name_pattern: "{title}" } } : {}),
+  };
   write(root, ".typedmark/schemas/source.md", {
-    specification_version: "0.1.0", description: "Source.", storage, count: { min: 1, max: 1 },
-    frontmatter: { score: { type: "integer", default_value: 1 },
-      parent: { type: "link", format: "note_link", nullable: true, validate_exists: true, relationship_kind: kind } },
+    specification_version: "0.1.0",
+    description: "Source.",
+    storage,
+    count: { min: 1, max: 1 },
+    frontmatter: {
+      score: { type: "integer", default_value: 1 },
+      parent: { type: "link", format: "note_link", nullable: true, validate_exists: true, relationship_kind: kind },
+    },
     headings: { require_h1_title: true, required_h2: ["Required"] },
-    relationships: { belongs_to: { allowed_note_types: kind === "belongs_to" ? { target: { min: 1, max: 1 } } : {} },
-      related_to: { allowed_note_types: kind === "related_to" ? { target: { min: 1, max: 1 } } : {} } },
+    relationships: {
+      belongs_to: { allowed_note_types: kind === "belongs_to" ? { target: { min: 1, max: 1 } } : {} },
+      related_to: { allowed_note_types: kind === "related_to" ? { target: { min: 1, max: 1 } } : {} },
+    },
   });
   write(root, ".typedmark/schemas/target.md", { specification_version: "0.1.0", description: "Target.", storage });
   const sourcePath = `${sourceFolder ?? (withArchive && source.archived ? "Archive" : "Notes")}/Source.md`;
@@ -53,10 +66,16 @@ function fixture(source: Flags = {}, target: Flags = {}, kind: Kind = "belongs_t
   return { root, sourcePath, targetPath, sourceData };
 }
 function query(root: string, descriptor: Record<string, unknown> = {}) {
-  return queryCollection({ collectionRoot: root, schemaDirectory, queryVersion: "0.1.0",
-    query: { specification_version: "0.1.0", note_types: ["source"], select: [{ kind: "path", as: "path" }], ...descriptor } });
+  return queryCollection({
+    collectionRoot: root,
+    schemaDirectory,
+    queryVersion: "0.1.0",
+    query: { specification_version: "0.1.0", note_types: ["source"], select: [{ kind: "path", as: "path" }], ...descriptor },
+  });
 }
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test.each(states)("$name source retains type, fields, counts, storage and query selection", ({ flags }) => {
   const { root, sourcePath } = fixture(flags);
@@ -79,9 +98,9 @@ test.each(states)("$name source is still checked for field, heading, path and re
   const before = snapshot(root);
   const report = validateCollection({ collectionRoot: root, schemaDirectory });
   expect(report).toMatchObject({ valid: false, evaluation: "complete" });
-  expect(new Set(report.results.map((finding) => finding.code))).toEqual(new Set([
-    "invalid_field_value", "invalid_heading", "path", "invalid_relationship_instance",
-  ]));
+  expect(new Set(report.results.map((finding) => finding.code))).toEqual(
+    new Set(["invalid_field_value", "invalid_heading", "path", "invalid_relationship_instance"]),
+  );
   expect(report.results.every((finding) => finding.path === sourcePath)).toBe(true);
   expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_field_value", field: "score" }));
   expect(report.results).toContainEqual(expect.objectContaining({ code: "path", rule_id: "NTS-146" }));
@@ -116,14 +135,25 @@ for (const kind of ["belongs_to", "related_to"] as const) {
     const model = readCollectionModel({ collectionRoot: root, schemaDirectory });
     expect(model.report.evaluation).toBe("complete");
     expect(model.report.valid).toBe(!flags.deleted);
-    expect(model.report.results).toEqual(flags.deleted ? [expect.objectContaining({
-      code: "invalid_relationship_instance", rule_id: "RHT-31", relationship: kind, path: sourcePath,
-    })] : []);
+    expect(model.report.results).toEqual(
+      flags.deleted
+        ? [
+            expect.objectContaining({
+              code: "invalid_relationship_instance",
+              rule_id: "RHT-31",
+              relationship: kind,
+              path: sourcePath,
+            }),
+          ]
+        : [],
+    );
     for (const raw of ["[[stable]]", "[[Target]]", "[[alias-target]]", `[[/${targetPath}]]`, `[target](/${targetPath})`, "![[stable]]"]) {
       expect(resolveNoteLink(parseNoteLink(raw)!, sourcePath, model)).toEqual({ kind: "note", path: targetPath });
     }
-    expect(query(root, { include_deleted: true, where: { kind: "relationship", relationship: kind } }))
-      .toMatchObject({ evaluation: "complete", rows: flags.deleted ? [] : [{ path: sourcePath }] });
+    expect(query(root, { include_deleted: true, where: { kind: "relationship", relationship: kind } })).toMatchObject({
+      evaluation: "complete",
+      rows: flags.deleted ? [] : [{ path: sourcePath }],
+    });
     expect(snapshot(root)).toEqual(before);
   });
 }
@@ -131,13 +161,18 @@ for (const kind of ["belongs_to", "related_to"] as const) {
 for (const deleted of [false, true]) {
   test.each(["field", "body", "embed"] as const)(`a lone %s related_to reference counts only a non-deleted target (deleted=${deleted})`, (origin) => {
     const { root, sourcePath, sourceData } = fixture({ deleted: true }, { deleted }, "related_to");
-    write(root, sourcePath, { ...sourceData, parent: origin === "field" ? "[[stable]]" : null },
-      `# Source\n\n## Required\n\n${origin === "field" ? "" : origin === "embed" ? "![[stable]]" : "[[stable]]"}\n`);
+    write(
+      root,
+      sourcePath,
+      { ...sourceData, parent: origin === "field" ? "[[stable]]" : null },
+      `# Source\n\n## Required\n\n${origin === "field" ? "" : origin === "embed" ? "![[stable]]" : "[[stable]]"}\n`,
+    );
     const before = snapshot(root);
     const report = validateCollection({ collectionRoot: root, schemaDirectory });
     expect(report).toMatchObject({ valid: !deleted, evaluation: "complete" });
-    expect(report.results).toEqual(deleted ? [expect.objectContaining({ code: "invalid_relationship_instance",
-      rule_id: "RHT-31", relationship: "related_to", path: sourcePath })] : []);
+    expect(report.results).toEqual(
+      deleted ? [expect.objectContaining({ code: "invalid_relationship_instance", rule_id: "RHT-31", relationship: "related_to", path: sourcePath })] : [],
+    );
     expect(snapshot(root)).toEqual(before);
   });
 }
@@ -161,8 +196,13 @@ test("lifecycle-looking fields do not make an untyped note managed", () => {
   expect(model.report).toMatchObject({ valid: true, evaluation: "complete", results: [] });
   expect(model.documents.some((note) => note.path === "Untyped.md")).toBe(true);
   expect(model.notes.some((note) => note.path === "Untyped.md")).toBe(false);
-  expect(queryCollection({ collectionRoot: root, schemaDirectory, queryVersion: "0.1.0",
-    query: { specification_version: "0.1.0", include_deleted: true, select: [{ kind: "path", as: "path" }] } }).rows)
-    .toEqual([{ path: "Notes/Source.md" }, { path: "Notes/Target.md" }]);
+  expect(
+    queryCollection({
+      collectionRoot: root,
+      schemaDirectory,
+      queryVersion: "0.1.0",
+      query: { specification_version: "0.1.0", include_deleted: true, select: [{ kind: "path", as: "path" }] },
+    }).rows,
+  ).toEqual([{ path: "Notes/Source.md" }, { path: "Notes/Target.md" }]);
   expect(snapshot(root)).toEqual(before);
 });

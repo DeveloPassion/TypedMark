@@ -7,7 +7,10 @@ import { RELATIONSHIP_KINDS } from "./types";
 
 type Data = Record<string, any>;
 const INVERSE_KINDS: Record<string, string[]> = {
-  belongs_to: ["contains"], contains: ["belongs_to"], related_to: ["related_to", "depends_on"], depends_on: ["related_to"],
+  belongs_to: ["contains"],
+  contains: ["belongs_to"],
+  related_to: ["related_to", "depends_on"],
+  depends_on: ["related_to"],
 };
 export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>, config: Data): ValueFailure[] {
   const failures: ValueFailure[] = [];
@@ -25,17 +28,23 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
     checkTargets(definition);
   }
   const declarations = (kind: string): Data => schema.relationships?.[kind]?.allowed_note_types ?? {};
-  for (const kind of RELATIONSHIP_KINDS) for (const [target, count] of Object.entries(declarations(kind))) {
-    if (!schemas.has(target)) fail("RHT-15", `Unknown relationship target ${target}`);
-    if ((count.min ?? 0) > (count.max ?? Infinity)) fail("RHT-26", `Relationship minimum exceeds maximum for ${target}`);
-  }
-  for (const [name, target] of schemas) if (!target.abstract
-    && Object.keys(declarations("belongs_to")).some((type) => matchesNoteType(schemas, name, type))
-    && Object.keys(declarations("related_to")).some((type) => matchesNoteType(schemas, name, type))) fail("RHT-21", `${name} is declared under both relationship kinds`);
+  for (const kind of RELATIONSHIP_KINDS)
+    for (const [target, count] of Object.entries(declarations(kind))) {
+      if (!schemas.has(target)) fail("RHT-15", `Unknown relationship target ${target}`);
+      if ((count.min ?? 0) > (count.max ?? Infinity)) fail("RHT-26", `Relationship minimum exceeds maximum for ${target}`);
+    }
+  for (const [name, target] of schemas)
+    if (
+      !target.abstract &&
+      Object.keys(declarations("belongs_to")).some((type) => matchesNoteType(schemas, name, type)) &&
+      Object.keys(declarations("related_to")).some((type) => matchesNoteType(schemas, name, type))
+    )
+      fail("RHT-21", `${name} is declared under both relationship kinds`);
   if (!schema.abstract) {
     // Field targets must be declared under their kind (FDR-164), and each
     // (kind, concrete target) has one field so writers know where to link (RHT-292).
-    const concrete = (types: string[]) => [...schemas].filter(([name, target]) => !target.abstract && types.some((type) => matchesNoteType(schemas, name, type))).map(([name]) => name);
+    const concrete = (types: string[]) =>
+      [...schemas].filter(([name, target]) => !target.abstract && types.some((type) => matchesNoteType(schemas, name, type))).map(([name]) => name);
     const claimed = new Map<string, string>();
     for (const [field, definition] of Object.entries(noteFieldDefinitions(schema)) as Array<[string, FieldDefinition]>) {
       const kind = definition.relationship_kind;
@@ -55,17 +64,21 @@ export function validateReusableBlocks(schema: Data, schemas: Map<string, Data>,
       // paired kind (RHT-298); a field may be its own inverse (related_to).
       for (const type of admitted) {
         const other = noteFieldDefinitions(schemas.get(type)!)[definition.inverse] as FieldDefinition | undefined;
-        if (!other?.relationship_kind || other.inverse !== field) fail("RHT-297", `${type}.${definition.inverse} is not a relationship field whose inverse is ${field}`);
-        else if (!INVERSE_KINDS[kind].includes(other.relationship_kind)) fail("RHT-298", `${field} (${kind}) cannot pair with ${type}.${definition.inverse} (${other.relationship_kind})`);
+        if (!other?.relationship_kind || other.inverse !== field)
+          fail("RHT-297", `${type}.${definition.inverse} is not a relationship field whose inverse is ${field}`);
+        else if (!INVERSE_KINDS[kind].includes(other.relationship_kind))
+          fail("RHT-298", `${field} (${kind}) cannot pair with ${type}.${definition.inverse} (${other.relationship_kind})`);
       }
     }
   }
   const required = (schema.headings?.required_h2 ?? []).map((heading: string) => heading.normalize("NFC"));
   const optional = (schema.headings?.optional_h2 ?? []).map((heading: string) => heading.normalize("NFC"));
-  if (new Set(required).size !== required.length || new Set(optional).size !== optional.length) fail("RHT-285", "Heading entries are not unique under string equality");
+  if (new Set(required).size !== required.length || new Set(optional).size !== optional.length)
+    fail("RHT-285", "Heading entries are not unique under string equality");
   if (required.some((heading: string) => optional.includes(heading))) fail("RHT-286", "Required and optional headings overlap");
   const capture = schema.headings?.capture_h2;
-  if (typeof capture === "string" && ![...required, ...optional].includes(capture.normalize("NFC"))) fail("RHT-302", `capture_h2 ${capture} is not a declared H2 heading`);
+  if (typeof capture === "string" && ![...required, ...optional].includes(capture.normalize("NFC")))
+    fail("RHT-302", `capture_h2 ${capture} is not a declared H2 heading`);
   if (schema.storage) failures.push(...validateStorageDefinition(schema.storage, schema.abstract ? undefined : noteFieldDefinitions(schema)));
   return failures;
 }

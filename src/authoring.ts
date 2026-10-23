@@ -28,10 +28,13 @@ export function validateAuthoringFields(fields: Data, config: Data): ValueFailur
     const length = field.generated === "ulid" ? 26 : field.generated?.random;
     if (typeof length === "number") {
       const allowed = field.allowed_values ?? (field.allowed_values_from ? config.vocabularies?.[field.allowed_values_from]?.values : undefined);
-      const compatible = (value: unknown) => typeof value === "string" && value.length === length
-        && (field.generated === "ulid" ? /^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/.test(value) : /^[a-z0-9]+$/.test(value))
-        && !validateFieldValue(value, field as FieldDefinition, config.timezone ?? "UTC", config.vocabularies);
-      if (length < (field.min ?? 0) || length > (field.max ?? Infinity) || (allowed && !allowed.some(compatible))) failures.push({ rule: "FDR-65", message: "Generator output cannot satisfy the declared length or finite value constraints" });
+      const compatible = (value: unknown) =>
+        typeof value === "string" &&
+        value.length === length &&
+        (field.generated === "ulid" ? /^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$/.test(value) : /^[a-z0-9]+$/.test(value)) &&
+        !validateFieldValue(value, field as FieldDefinition, config.timezone ?? "UTC", config.vocabularies);
+      if (length < (field.min ?? 0) || length > (field.max ?? Infinity) || (allowed && !allowed.some(compatible)))
+        failures.push({ rule: "FDR-65", message: "Generator output cannot satisfy the declared length or finite value constraints" });
     }
     if (field.items) visit(field.items);
     for (const child of Object.values(field.fields ?? {})) visit(child as Data);

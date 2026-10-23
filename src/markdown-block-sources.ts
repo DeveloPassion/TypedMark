@@ -18,7 +18,11 @@ type SourceParser = Parser & {
   column: number;
   partiallyConsumedTab: boolean;
 };
-interface CapturedSource { chunks: string[]; length: number; offsets: number[] }
+interface CapturedSource {
+  chunks: string[];
+  length: number;
+  offsets: number[];
+}
 
 /** Capture source positions while CommonMark removes block-container prefixes. */
 export function markdownBlockSources(body: string): MarkdownBlockSource[] {
@@ -41,11 +45,14 @@ export function markdownBlockSources(body: string): MarkdownBlockSource[] {
   const addLine = parser.addLine;
   parser.addLine = () => {
     const node = parser.tip;
-    if (node.type !== "paragraph" && node.type !== "html_block") { addLine.call(parser); return; }
+    if (node.type !== "paragraph" && node.type !== "html_block") {
+      addLine.call(parser);
+      return;
+    }
     const line = lines[parser.lineNumber - 1];
     const before = node._string_content?.length;
     const offset = parser.offset;
-    const padding = parser.partiallyConsumedTab ? 4 - parser.column % 4 : 0;
+    const padding = parser.partiallyConsumedTab ? 4 - (parser.column % 4) : 0;
     if (!line || before === undefined || line.text.length !== parser.currentLine.length) {
       throw new Error("CommonMark line-source capture changed");
     }
@@ -118,7 +125,7 @@ export function markdownBlockSources(body: string): MarkdownBlockSource[] {
     offsets = offsets.slice(leading, leading + text.length);
     // FND-94 selects block structure. Keep original link characters for NL-8's
     // shared direct/body parser instead of coercing an authored NUL to U+FFFD.
-    text = text.replace(/\uFFFD/gu, (character, index: number) => body[offsets[index]!] === "\0" ? "\0" : character);
+    text = text.replace(/\uFFFD/gu, (character, index: number) => (body[offsets[index]!] === "\0" ? "\0" : character));
     blocks.push({ kind: html ? "html" : "inline", text, offsets });
   }
   return blocks;

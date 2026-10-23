@@ -17,8 +17,14 @@ function hex(code: number): boolean {
 function validCharacters(value: string, extra: string): boolean {
   for (let index = 0; index < value.length; index++) {
     const code = value.charCodeAt(index);
-    if ((code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122)
-      || commonPunctuation.includes(value[index]!) || extra.includes(value[index]!)) continue;
+    if (
+      (code >= 48 && code <= 57) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122) ||
+      commonPunctuation.includes(value[index]!) ||
+      extra.includes(value[index]!)
+    )
+      continue;
     if (code !== 37 || !hex(value.charCodeAt(index + 1)) || !hex(value.charCodeAt(index + 2))) return false;
     index += 2;
   }
@@ -60,7 +66,8 @@ function validAuthority(authority: string): boolean {
   if (hostPort.startsWith("[")) {
     const close = hostPort.indexOf("]");
     if (close < 0) return false;
-    const address = hostPort.slice(1, close), suffix = hostPort.slice(close + 1);
+    const address = hostPort.slice(1, close),
+      suffix = hostPort.slice(close + 1);
     if (suffix && (!suffix.startsWith(":") || !port.test(suffix.slice(1)))) return false;
     // isIP also accepts scoped addresses; RFC 3986 explicitly excludes zones.
     // https://nodejs.org/docs/latest-v22.x/api/net.html#netisipinput

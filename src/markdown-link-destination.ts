@@ -9,7 +9,8 @@ const entityOrEscape = /\\[\x21-\x2F\x3A-\x40\x5B-\x60\x7B-\x7E]|&(?:#[xX][0-9a-
 /** Markdown processing only: the returned URI/target are not percent-decoded. */
 export function markdownLinkDestination(authored: string): { uri: string; target: string; anchor?: string } {
   const parts: string[] = [];
-  let cursor = 0, anchorStart: number | undefined;
+  let cursor = 0,
+    anchorStart: number | undefined;
   const append = (value: string, start: number, entityEnd?: number): void => {
     if (anchorStart === undefined) {
       const hash = value.indexOf("#");
@@ -28,8 +29,7 @@ export function markdownLinkDestination(authored: string): { uri: string; target
   const hash = uri.indexOf("#");
   // Map the semantic separator back to its authored end. A numeric entity's
   // own '#' is not a separator, while &#35; contributes one whole separator.
-  return { uri, target: hash < 0 ? uri : uri.slice(0, hash),
-    ...(anchorStart === undefined ? {} : { anchor: authored.slice(anchorStart) }) };
+  return { uri, target: hash < 0 ? uri : uri.slice(0, hash), ...(anchorStart === undefined ? {} : { anchor: authored.slice(anchorStart) }) };
 }
 
 function decodeReference(reference: string): string {
@@ -39,6 +39,5 @@ function decodeReference(reference: string): string {
   // change a note target (for example, &#128; would incorrectly become '€').
   const hexadecimal = reference[2] === "x" || reference[2] === "X";
   const code = Number.parseInt(reference.slice(hexadecimal ? 3 : 2, -1), hexadecimal ? 16 : 10);
-  return code === 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)
-    ? "\uFFFD" : String.fromCodePoint(code);
+  return code === 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff) ? "\uFFFD" : String.fromCodePoint(code);
 }

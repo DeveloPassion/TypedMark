@@ -23,12 +23,13 @@ const noteType = { specification_version: "0.1.0", description: "Shape parity.",
 function compare(schema: string, data: unknown, valid: boolean) {
   const checker = ajv.getSchema(ids.get(schema)!)!;
   expect(checker(shapeValue(data))).toBe(valid);
-  const expected = [...checker.errors ?? []];
+  const expected = [...(checker.errors ?? [])];
   expect(registry.validate(schema, data)).toEqual(expected);
 }
 
 test.each(["!!set {}", "!!omap []", "!!timestamp 2026-09-15T12:00:00Z", '!!binary ""'])(
-  "checker and runtime agree on structural versus opaque %s", (tagged) => {
+  "checker and runtime agree on structural versus opaque %s",
+  (tagged) => {
     const value = parse(`value: ${tagged}`).value;
     for (const field of ["validation_defaults", "vocabularies"]) {
       compare("typedmark.schema.json", { ...collection, [field]: value }, false);
@@ -40,8 +41,12 @@ test.each(["!!set {}", "!!omap []", "!!timestamp 2026-09-15T12:00:00Z", '!!binar
 );
 
 test("both checkers reject native allowed values regardless of alias identity", () => {
-  const first = new Date(0), second = new Date(1);
-  for (const values of [[first, second], [first, first]]) {
+  const first = new Date(0),
+    second = new Date(1);
+  for (const values of [
+    [first, second],
+    [first, first],
+  ]) {
     compare("note-type.schema.json", { ...noteType, frontmatter: { data: { type: "text", allowed_values: values } } }, false);
   }
   expect(first.getTime()).toBe(0);

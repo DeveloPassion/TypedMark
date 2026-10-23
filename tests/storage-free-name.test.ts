@@ -14,7 +14,8 @@ function write(root: string, path: string, data: unknown) {
 }
 // Unlike storage.test.ts, the storage block is used as given: free names omit note_name_pattern.
 function collection(storage: object, fields = {}, notes: Record<string, object> = {}) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-free-name-")); roots.push(root);
+  const root = mkdtempSync(join(tmpdir(), "typedmark-free-name-"));
+  roots.push(root);
   write(root, "typedmark.md", { specification_version: "0.1.0", name: "free-name", description: "Free names." });
   write(root, ".typedmark/schemas/note.md", { specification_version: "0.1.0", description: "Note.", storage, frontmatter: fields });
   for (const [path, stored] of Object.entries(notes)) write(root, path, { note_type: "note", ...stored });
@@ -22,26 +23,46 @@ function collection(storage: object, fields = {}, notes: Record<string, object> 
 }
 const run = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory });
 const pathResults = (root: string) => run(root).results.filter((result) => result.code === "path");
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 const slug = "^[a-z0-9]+(?:[.-][a-z0-9]+)*$";
 const day = { day: { type: "date" } };
 const journal = { folder_pattern: "journal", note_name_prefix: { pattern: "{day:YYYY-MM-DD} " }, note_name_regex: "^\\S.*$" };
 
 test("a free name accepts any author-chosen basename independent of the stored title", () => {
-  const root = collection({ folder_pattern: "contacts" }, {}, {
-    "contacts/smith.john.md": { title: "John Smith" }, "contacts/Jane Doe 📇.md": {}, "contacts/x.md": { title: null },
-  });
+  const root = collection(
+    { folder_pattern: "contacts" },
+    {},
+    {
+      "contacts/smith.john.md": { title: "John Smith" },
+      "contacts/Jane Doe 📇.md": {},
+      "contacts/x.md": { title: null },
+    },
+  );
   expect(run(root)).toMatchObject({ valid: true, results: [] });
 });
 
 test("note_name_regex fully matches the free name (NTS-182)", () => {
-  const root = collection({ folder_pattern: "notes", note_name_regex: slug }, {}, {
-    "notes/net.proto.bgp.md": { title: "Border Gateway Protocol" }, "notes/growth-mindset.md": {},
-    "notes/Net Proto BGP.md": {}, "notes/bgp.md.bak.md": {}, "notes/ok-but-trailing-.md": {},
-  });
-  expect(pathResults(root).map((result) => [result.path, result.rule_id]).sort()).toEqual([
-    ["notes/Net Proto BGP.md", "NTS-182"], ["notes/ok-but-trailing-.md", "NTS-182"],
+  const root = collection(
+    { folder_pattern: "notes", note_name_regex: slug },
+    {},
+    {
+      "notes/net.proto.bgp.md": { title: "Border Gateway Protocol" },
+      "notes/growth-mindset.md": {},
+      "notes/Net Proto BGP.md": {},
+      "notes/bgp.md.bak.md": {},
+      "notes/ok-but-trailing-.md": {},
+    },
+  );
+  expect(
+    pathResults(root)
+      .map((result) => [result.path, result.rule_id])
+      .sort(),
+  ).toEqual([
+    ["notes/Net Proto BGP.md", "NTS-182"],
+    ["notes/ok-but-trailing-.md", "NTS-182"],
   ]);
 });
 
@@ -54,7 +75,11 @@ test("affixes resolve from fields and bound the free name", () => {
     "journal/2026-10-22 .md": { day: "2026-10-22" },
     "journal/Undated.md": {},
   });
-  expect(pathResults(root).map((result) => [result.path, result.rule_id]).sort()).toEqual([
+  expect(
+    pathResults(root)
+      .map((result) => [result.path, result.rule_id])
+      .sort(),
+  ).toEqual([
     ["journal/2026-10-21 Standup.md", "NTS-146"],
     ["journal/2026-10-22  Indented.md", "NTS-182"],
     ["journal/2026-10-22 .md", "NTS-181"],
@@ -66,7 +91,9 @@ test("affixes resolve from fields and bound the free name", () => {
 test("a free name outside the resolved folder is a path mismatch", () => {
   const results = pathResults(collection({ folder_pattern: "notes" }, {}, { "elsewhere/a.md": {}, "a.md": {}, "notes/deeper/a.md": {} }));
   expect(results.map((result) => [result.path, result.rule_id]).sort()).toEqual([
-    ["a.md", "NTS-146"], ["elsewhere/a.md", "NTS-146"], ["notes/deeper/a.md", "NTS-146"],
+    ["a.md", "NTS-146"],
+    ["elsewhere/a.md", "NTS-146"],
+    ["notes/deeper/a.md", "NTS-146"],
   ]);
   expect(results[0]!.message).toContain("notes/<free name>.md");
 });
@@ -78,27 +105,44 @@ test("safety rules still apply to free names", () => {
 
 test("an archive block without name keys keeps the free name in its folder", () => {
   const storage = { folder_pattern: "notes", note_name_regex: slug, archive: { folder_pattern: "Archive/notes" } };
-  const root = collection(storage, {}, {
-    "Archive/notes/net.proto.bgp.md": { archived: true }, "Archive/notes/Any Name.md": { archived: true },
-    "notes/archived.md": { archived: true },
-  });
+  const root = collection(
+    storage,
+    {},
+    {
+      "Archive/notes/net.proto.bgp.md": { archived: true },
+      "Archive/notes/Any Name.md": { archived: true },
+      "notes/archived.md": { archived: true },
+    },
+  );
   expect(pathResults(root).map((result) => [result.path, result.rule_id])).toEqual([["notes/archived.md", "NTS-146"]]);
 });
 
 test("an archive branch can derive a name from an active free name", () => {
   const storage = { folder_pattern: "notes", archive: { folder_pattern: "Archive", note_name_pattern: "{code}" } };
-  const root = collection(storage, { code: { type: "text", nullable: true } }, {
-    "notes/anything.md": { code: "x" }, "Archive/x.md": { archived: true, code: "x" }, "Archive/y.md": { archived: true, code: "x" },
-  });
+  const root = collection(
+    storage,
+    { code: { type: "text", nullable: true } },
+    {
+      "notes/anything.md": { code: "x" },
+      "Archive/x.md": { archived: true, code: "x" },
+      "Archive/y.md": { archived: true, code: "x" },
+    },
+  );
   expect(pathResults(root).map((result) => [result.path, result.rule_id])).toEqual([["Archive/y.md", "NTS-146"]]);
 });
 
 test("an invalid note_name_regex makes the schema invalid in either branch (FND-31)", () => {
-  for (const storage of [{ folder_pattern: "notes", note_name_regex: "^[a-z+$" },
-    { folder_pattern: "notes", archive: { folder_pattern: "Archive", note_name_regex: "(" } }]) {
-    expect(run(collection(storage)).results).toContainEqual(expect.objectContaining({
-      code: "invalid_note_type_schema", path: ".typedmark/schemas/note.md", rule_id: "FND-31",
-    }));
+  for (const storage of [
+    { folder_pattern: "notes", note_name_regex: "^[a-z+$" },
+    { folder_pattern: "notes", archive: { folder_pattern: "Archive", note_name_regex: "(" } },
+  ]) {
+    expect(run(collection(storage)).results).toContainEqual(
+      expect.objectContaining({
+        code: "invalid_note_type_schema",
+        path: ".typedmark/schemas/note.md",
+        rule_id: "FND-31",
+      }),
+    );
   }
 });
 

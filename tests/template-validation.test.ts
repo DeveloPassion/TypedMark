@@ -13,15 +13,29 @@ function write(root: string, path: string, data: unknown, body = "") {
   writeFileSync(join(root, path), `---\n${stringify(data)}---\n${body}`);
 }
 function fixture(config = {}, schema = {}) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-template-validation-")); roots.push(root);
-  write(root, "typedmark.md", { specification_version: "0.1.0", name: "template-checks", description: "Template validation.",
-    version: "1.0.0", scaffold: {}, extensions: { "typedmark:systems": "0.1.0" }, ...config });
-  write(root, ".typedmark/schemas/note.md", { specification_version: "0.1.0", description: "Note.",
-    storage: { folder_pattern: "", note_name_pattern: "{title}" }, ...schema });
+  const root = mkdtempSync(join(tmpdir(), "typedmark-template-validation-"));
+  roots.push(root);
+  write(root, "typedmark.md", {
+    specification_version: "0.1.0",
+    name: "template-checks",
+    description: "Template validation.",
+    version: "1.0.0",
+    scaffold: {},
+    extensions: { "typedmark:systems": "0.1.0" },
+    ...config,
+  });
+  write(root, ".typedmark/schemas/note.md", {
+    specification_version: "0.1.0",
+    description: "Note.",
+    storage: { folder_pattern: "", note_name_pattern: "{title}" },
+    ...schema,
+  });
   return root;
 }
 const run = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory, mode: "system_definition" });
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test("concrete template values are checked against their effective field contracts", () => {
   const root = fixture({}, { frontmatter: { amount: { type: "integer" } } });
@@ -30,8 +44,10 @@ test("concrete template values are checked against their effective field contrac
 });
 
 test("scaffold values cannot hide an invalid explicit override template", () => {
-  const root = fixture({ scaffold: { notes: [{ path: "New.md", note_type: "note", from_template: "override.md", values: { status: "open" } }] } },
-    { frontmatter: { status: { type: "text", allowed_values: ["open"] } } });
+  const root = fixture(
+    { scaffold: { notes: [{ path: "New.md", note_type: "note", from_template: "override.md", values: { status: "open" } }] } },
+    { frontmatter: { status: { type: "text", allowed_values: ["open"] } } },
+  );
   write(root, ".typedmark/templates/override.md", { status: "bad" });
   expect(run(root).results).toContainEqual(expect.objectContaining({ code: "invalid_template", path: ".typedmark/templates/override.md", rule_id: "RHT-80" }));
 });
@@ -43,11 +59,18 @@ test("nested unknown template fields are not hidden by a known object field", ()
 });
 
 test("a scaffold override is inspected without replacing the canonical drift baseline", () => {
-  const root = fixture({ extensions: { "typedmark:systems": "0.1.0", "typedmark:template-tracking": "0.1.0" },
-    scaffold: { notes: [{ path: "New.md", note_type: "note", from_template: "override.md" }] } });
+  const root = fixture({
+    extensions: { "typedmark:systems": "0.1.0", "typedmark:template-tracking": "0.1.0" },
+    scaffold: { notes: [{ path: "New.md", note_type: "note", from_template: "override.md" }] },
+  });
   const region = (text: string) => `<!-- typedmark:template-region {"id":"body"} -->\n${text}\n<!-- /typedmark:template-region -->\n`;
   write(root, ".typedmark/templates/note.md", {}, region("Canonical"));
-  write(root, ".typedmark/templates/override.md", {}, region("Override") + '<!-- typedmark:template-region {"id":"bad","extra":true} -->\n<!-- /typedmark:template-region -->\n');
+  write(
+    root,
+    ".typedmark/templates/override.md",
+    {},
+    region("Override") + '<!-- typedmark:template-region {"id":"bad","extra":true} -->\n<!-- /typedmark:template-region -->\n',
+  );
   write(root, "A.md", { note_type: "note", template_regions: { body: { baseline: regionDigest("Canonical") } } }, region("Canonical"));
   const report = validateCollection({ collectionRoot: root, schemaDirectory, mode: "both" });
   expect(report.results.some((finding) => finding.code === "template_drift")).toBe(false);
@@ -55,11 +78,14 @@ test("a scaffold override is inspected without replacing the canonical drift bas
 });
 
 test("a skipped template-directory link cannot masquerade as a missing conventional template", () => {
-  const root = fixture(), outside = mkdtempSync(join(tmpdir(), "typedmark-template-outside-")); roots.push(outside);
+  const root = fixture(),
+    outside = mkdtempSync(join(tmpdir(), "typedmark-template-outside-"));
+  roots.push(outside);
   writeFileSync(join(outside, "note.md"), "Outside content");
   symlinkSync(outside, join(root, ".typedmark/templates"), "junction");
   expect(() => run(root)).toThrow("symbolic link");
   expect(() => validateCollection({ collectionRoot: root, schemaDirectory, mode: "both" })).toThrow("symbolic link");
-  expect(validateCollection({ collectionRoot: root, schemaDirectory, mode: "instantiated_collection" }).results)
-    .toContainEqual(expect.objectContaining({ code: "invalid_template", rule_id: "RHT-73" }));
+  expect(validateCollection({ collectionRoot: root, schemaDirectory, mode: "instantiated_collection" }).results).toContainEqual(
+    expect.objectContaining({ code: "invalid_template", rule_id: "RHT-73" }),
+  );
 });

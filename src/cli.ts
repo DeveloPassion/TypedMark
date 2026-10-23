@@ -16,7 +16,12 @@ if (command === "capabilities") {
   const queryVersion = option(rest, "--query-version");
   if (!schemaDirectory || !queryPath || !queryVersion) fail("query requires --query <descriptor.json> --query-version <exact-version> --schemas <directory>");
   try {
-    const result = queryCollection({ collectionRoot: resolve(target), schemaDirectory: resolve(schemaDirectory), queryVersion, query: JSON.parse(decodeUtf8(readFileSync(queryPath), queryPath)) });
+    const result = queryCollection({
+      collectionRoot: resolve(target),
+      schemaDirectory: resolve(schemaDirectory),
+      queryVersion,
+      query: JSON.parse(decodeUtf8(readFileSync(queryPath), queryPath)),
+    });
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
     if (!(error instanceof QueryError)) throw error;
@@ -66,7 +71,9 @@ if (command === "capabilities") {
   console.log(JSON.stringify(readiness, null, 2));
   process.exitCode = readiness.status === "ready" ? 0 : 1;
 } else {
-  fail("Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory>");
+  fail(
+    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory>",
+  );
 }
 
 function option(args: string[], name: string): string | undefined {

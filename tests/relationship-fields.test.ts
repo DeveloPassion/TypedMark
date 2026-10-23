@@ -14,25 +14,52 @@ function write(root: string, path: string, data: unknown) {
 }
 type Schema = { frontmatter?: object; relationships?: object; abstract?: boolean; extends?: string };
 function collection(schemas: Record<string, Schema>, notes: Record<string, object> = {}, config: object = {}) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-relationship-fields-")); roots.push(root);
+  const root = mkdtempSync(join(tmpdir(), "typedmark-relationship-fields-"));
+  roots.push(root);
   const reuse = Object.values(schemas).some((schema) => schema.abstract || schema.extends);
-  write(root, "typedmark.md", { ...version, name: "relationships", description: "Relationships.", ...(reuse ? { extensions: { "typedmark:reuse": "0.1.0" } } : {}), ...config });
+  write(root, "typedmark.md", {
+    ...version,
+    name: "relationships",
+    description: "Relationships.",
+    ...(reuse ? { extensions: { "typedmark:reuse": "0.1.0" } } : {}),
+    ...config,
+  });
   for (const [name, schema] of Object.entries(schemas)) {
-    write(root, `.typedmark/schemas/${name}.md`, { ...version, description: name, ...(schema.abstract ? {} : { storage: { folder_pattern: name, note_name_pattern: "{title}" } }), ...schema });
+    write(root, `.typedmark/schemas/${name}.md`, {
+      ...version,
+      description: name,
+      ...(schema.abstract ? {} : { storage: { folder_pattern: name, note_name_pattern: "{title}" } }),
+      ...schema,
+    });
   }
   for (const [path, stored] of Object.entries(notes)) write(root, path, stored);
   return root;
 }
 const run = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory });
-const rules = (root: string) => run(root).results.map((result) => `${result.code}:${result.rule_id}:${result.path}`).sort();
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+const rules = (root: string) =>
+  run(root)
+    .results.map((result) => `${result.code}:${result.rule_id}:${result.path}`)
+    .sort();
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
-const linkList = (targets?: string[], extra: object = {}) => ({ type: "list", items: { type: "link", format: "note_link", ...(targets ? { targets } : {}) }, default_value: [], ...extra });
-const block = (belongs: object = {}, related: object = {}, extra: object = {}) => ({ belongs_to: { allowed_note_types: belongs }, related_to: { allowed_note_types: related }, ...extra });
+const linkList = (targets?: string[], extra: object = {}) => ({
+  type: "list",
+  items: { type: "link", format: "note_link", ...(targets ? { targets } : {}) },
+  default_value: [],
+  ...extra,
+});
+const block = (belongs: object = {}, related: object = {}, extra: object = {}) => ({
+  belongs_to: { allowed_note_types: belongs },
+  related_to: { allowed_note_types: related },
+  ...extra,
+});
 
 test("field targets must be declared under the field's relationship kind (FDR-164)", () => {
   const schemas = (targets: string[]) => ({
-    project: {}, goal: {},
+    project: {},
+    goal: {},
     task: { relationships: block({ project: {} }), frontmatter: { related_projects: linkList(targets, { relationship_kind: "belongs_to" }) } },
   });
   expect(rules(collection(schemas(["project"])))).toEqual([]);
@@ -41,7 +68,9 @@ test("field targets must be declared under the field's relationship kind (FDR-16
 
 test("abstract field targets are expanded before the declaration check", () => {
   const schemas = (declared: object) => ({
-    work: { abstract: true }, project: { extends: "work" }, program: { extends: "work" },
+    work: { abstract: true },
+    project: { extends: "work" },
+    program: { extends: "work" },
     task: { relationships: block(declared), frontmatter: { parent: linkList(["work"], { relationship_kind: "belongs_to" }) } },
   });
   expect(rules(collection(schemas({ work: {} })))).toEqual([]);
@@ -51,15 +80,25 @@ test("abstract field targets are expanded before the declaration check", () => {
 
 test("one field per relationship kind and concrete target type (RHT-292)", () => {
   const schemas = (second: object) => ({
-    project: {}, person: {},
-    task: { relationships: block({ project: {} }, { person: {} }), frontmatter: { related_projects: linkList(["project"], { relationship_kind: "belongs_to" }), ...second } },
+    project: {},
+    person: {},
+    task: {
+      relationships: block({ project: {} }, { person: {} }),
+      frontmatter: { related_projects: linkList(["project"], { relationship_kind: "belongs_to" }), ...second },
+    },
   });
   expect(rules(collection(schemas({ owners: linkList(["person"], { relationship_kind: "related_to" }) })))).toEqual([]);
-  expect(rules(collection(schemas({ watchers: linkList(["person"], { relationship_kind: "related_to" }), reviewers: linkList(["person"], { relationship_kind: "related_to" }) }))))
-    .toEqual(["invalid_relationship_definition:RHT-292:.typedmark/schemas/task.md"]);
+  expect(
+    rules(
+      collection(
+        schemas({ watchers: linkList(["person"], { relationship_kind: "related_to" }), reviewers: linkList(["person"], { relationship_kind: "related_to" }) }),
+      ),
+    ),
+  ).toEqual(["invalid_relationship_definition:RHT-292:.typedmark/schemas/task.md"]);
   // A field without targets admits every type declared under its kind.
-  expect(rules(collection(schemas({ also_projects: linkList(undefined, { relationship_kind: "belongs_to" }) }))))
-    .toEqual(["invalid_relationship_definition:RHT-292:.typedmark/schemas/task.md"]);
+  expect(rules(collection(schemas({ also_projects: linkList(undefined, { relationship_kind: "belongs_to" }) })))).toEqual([
+    "invalid_relationship_definition:RHT-292:.typedmark/schemas/task.md",
+  ]);
 });
 
 test("fields without relationship_kind are unconstrained by relationship declarations", () => {
@@ -68,19 +107,32 @@ test("fields without relationship_kind are unconstrained by relationship declara
 });
 
 const taskSchemas = (extra: object = {}) => ({
-  project: { relationships: block({}, {}, { contains: { allowed_note_types: { task: { max: 2 } } } }), frontmatter: { tasks: linkList(["task"], { relationship_kind: "contains" }) } },
-  task: { relationships: block({}, {}, { depends_on: { allowed_note_types: { task: {} } } }), frontmatter: { after: linkList(["task"], { relationship_kind: "depends_on" }), ...extra } },
+  project: {
+    relationships: block({}, {}, { contains: { allowed_note_types: { task: { max: 2 } } } }),
+    frontmatter: { tasks: linkList(["task"], { relationship_kind: "contains" }) },
+  },
+  task: {
+    relationships: block({}, {}, { depends_on: { allowed_note_types: { task: {} } } }),
+    frontmatter: { after: linkList(["task"], { relationship_kind: "depends_on" }), ...extra },
+  },
 });
 
 test("contains and depends_on instances count against their declared cardinality", () => {
   const notes = (tasks: string[]) => ({
     "project/P.md": { note_type: "project", title: "P", tasks },
-    "task/A.md": { note_type: "task", title: "A" }, "task/B.md": { note_type: "task", title: "B" }, "task/C.md": { note_type: "task", title: "C" },
+    "task/A.md": { note_type: "task", title: "A" },
+    "task/B.md": { note_type: "task", title: "B" },
+    "task/C.md": { note_type: "task", title: "C" },
   });
   expect(rules(collection(taskSchemas(), notes(["[[A]]", "[[B]]"])))).toEqual([]);
-  expect(run(collection(taskSchemas(), notes(["[[A]]", "[[B]]", "[[C]]"]))).results).toEqual([expect.objectContaining({
-    code: "invalid_relationship_instance", path: "project/P.md", relationship: "contains", rule_id: "RHT-31",
-  })]);
+  expect(run(collection(taskSchemas(), notes(["[[A]]", "[[B]]", "[[C]]"]))).results).toEqual([
+    expect.objectContaining({
+      code: "invalid_relationship_instance",
+      path: "project/P.md",
+      relationship: "contains",
+      rule_id: "RHT-31",
+    }),
+  ]);
 });
 
 test("depends_on cycles are reported on every note in the cycle (RHT-294)", () => {
@@ -111,26 +163,46 @@ test("a long dependency chain does not overflow the cycle check", () => {
 });
 
 test("a topic may both belong to and contain topics", () => {
-  const root = collection({ topic: {
-    relationships: block({ topic: { max: 1 } }, {}, { contains: { allowed_note_types: { topic: {} } } }),
-    frontmatter: { parent: { type: "link", format: "note_link", targets: ["topic"], relationship_kind: "belongs_to", nullable: true, default_value: null },
-      children: linkList(["topic"], { relationship_kind: "contains" }) },
-  } }, {
-    "topic/Root.md": { note_type: "topic", title: "Root", children: ["[[Leaf]]"] },
-    "topic/Leaf.md": { note_type: "topic", title: "Leaf", parent: "[[Root]]" },
-  });
+  const root = collection(
+    {
+      topic: {
+        relationships: block({ topic: { max: 1 } }, {}, { contains: { allowed_note_types: { topic: {} } } }),
+        frontmatter: {
+          parent: { type: "link", format: "note_link", targets: ["topic"], relationship_kind: "belongs_to", nullable: true, default_value: null },
+          children: linkList(["topic"], { relationship_kind: "contains" }),
+        },
+      },
+    },
+    {
+      "topic/Root.md": { note_type: "topic", title: "Root", children: ["[[Leaf]]"] },
+      "topic/Leaf.md": { note_type: "topic", title: "Leaf", parent: "[[Root]]" },
+    },
+  );
   expect(rules(root)).toEqual([]);
 });
 
-const inverseSchemas = (taskInverse: object = { inverse: "related_tasks" }, projectField: object = { relationship_kind: "contains", inverse: "related_projects" }) => ({
-  project: { relationships: block({}, {}, { contains: { allowed_note_types: { task: {} } } }), frontmatter: { related_tasks: linkList(["task"], projectField) } },
-  task: { relationships: block({ project: {} }), frontmatter: { related_projects: linkList(["project"], { relationship_kind: "belongs_to", ...taskInverse }) } },
+const inverseSchemas = (
+  taskInverse: object = { inverse: "related_tasks" },
+  projectField: object = { relationship_kind: "contains", inverse: "related_projects" },
+) => ({
+  project: {
+    relationships: block({}, {}, { contains: { allowed_note_types: { task: {} } } }),
+    frontmatter: { related_tasks: linkList(["task"], projectField) },
+  },
+  task: {
+    relationships: block({ project: {} }),
+    frontmatter: { related_projects: linkList(["project"], { relationship_kind: "belongs_to", ...taskInverse }) },
+  },
 });
 
 test("inverse fields must exist, point back and pair kinds (RHT-297, RHT-298)", () => {
   expect(rules(collection(inverseSchemas()))).toEqual([]);
-  expect(rules(collection(inverseSchemas({ inverse: "missing" })))).toEqual(expect.arrayContaining(["invalid_relationship_definition:RHT-297:.typedmark/schemas/task.md"]));
-  expect(rules(collection(inverseSchemas(undefined, { relationship_kind: "contains" })))).toEqual(["invalid_relationship_definition:RHT-297:.typedmark/schemas/task.md"]);
+  expect(rules(collection(inverseSchemas({ inverse: "missing" })))).toEqual(
+    expect.arrayContaining(["invalid_relationship_definition:RHT-297:.typedmark/schemas/task.md"]),
+  );
+  expect(rules(collection(inverseSchemas(undefined, { relationship_kind: "contains" })))).toEqual([
+    "invalid_relationship_definition:RHT-297:.typedmark/schemas/task.md",
+  ]);
   const mispaired = inverseSchemas(undefined, { relationship_kind: "related_to", inverse: "related_projects" });
   (mispaired.project as { relationships: object }).relationships = block({}, { task: {} });
   expect(rules(collection(mispaired))).toEqual(expect.arrayContaining(["invalid_relationship_definition:RHT-298:.typedmark/schemas/task.md"]));
@@ -159,7 +231,12 @@ test("inverse_mismatch severity follows validation_defaults", () => {
 });
 
 test("a related_to field may be its own inverse", () => {
-  const schemas = { topic: { relationships: block({}, { topic: {} }), frontmatter: { see_also: linkList(["topic"], { relationship_kind: "related_to", inverse: "see_also" }) } } };
+  const schemas = {
+    topic: {
+      relationships: block({}, { topic: {} }),
+      frontmatter: { see_also: linkList(["topic"], { relationship_kind: "related_to", inverse: "see_also" }) },
+    },
+  };
   const root = collection(schemas, {
     "topic/A.md": { note_type: "topic", title: "A", see_also: ["[[B]]"] },
     "topic/B.md": { note_type: "topic", title: "B", see_also: ["[[A]]"] },

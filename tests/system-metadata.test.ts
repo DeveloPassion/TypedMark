@@ -33,16 +33,20 @@ test.each([
   { label: "explicit merge", metadata: "x_defaults: &defaults {color: blue}\nx_editor: {!!merge <<: *defaults}" },
 ])("a system whose typedmark.md uses $label is rejected before import", async ({ metadata, rootAnchor }) => {
   const sourceRoot = writeSource(metadata, rootAnchor);
-  expect(validateCollection({ collectionRoot: sourceRoot, schemaDirectory, mode: "system_definition" }).results)
-    .toContainEqual(expect.objectContaining({ code: "invalid_system", rule_id: "SCE-159" }));
+  expect(validateCollection({ collectionRoot: sourceRoot, schemaDirectory, mode: "system_definition" }).results).toContainEqual(
+    expect.objectContaining({ code: "invalid_system", rule_id: "SCE-159" }),
+  );
   const targetRoot = join(createRoot(), "instance");
-  await expect(instantiateSystem({ sourceRoot, targetRoot, collectionName: "working-notes", description: "My working notes.", schemaDirectory }))
-    .rejects.toThrow(/SCE-159/);
+  await expect(
+    instantiateSystem({ sourceRoot, targetRoot, collectionName: "working-notes", description: "My working notes.", schemaDirectory }),
+  ).rejects.toThrow(/SCE-159/);
   expect(existsSync(targetRoot)).toBe(false);
 });
 
 test("plain vendor metadata is preserved exactly, including values beyond native precision", async () => {
-  const { config, output } = await importMetadata("x_editor:\n  integer: 9007199254740993\n  number: 1e1000\n  nested: {colors: [blue, green], when: 2026-09-15T10:20:30.123456Z}");
+  const { config, output } = await importMetadata(
+    "x_editor:\n  integer: 9007199254740993\n  number: 1e1000\n  nested: {colors: [blue, green], when: 2026-09-15T10:20:30.123456Z}",
+  );
   const metadata = metadataNode(output);
   expect(metadata.get("integer", true)).toMatchObject({ source: "9007199254740993" });
   expect(metadata.get("number", true)).toMatchObject({ source: "1e1000" });
@@ -60,27 +64,37 @@ function writeSource(metadata: string, rootAnchor = false) {
 
 function sourceFiles(metadata: string, rootAnchor = false): Record<string, string> {
   return {
-    "typedmark.md": "\uFEFF" + markdown((rootAnchor ? "&source_root\n" : "") + [
-      "specification_version: 0.1.0",
-      "extensions: {typedmark:systems: 0.1.0}",
-      'name: "@example/metadata"',
-      `description: ${sourceDescription}`,
-      "version: 0.1.0",
-      "publisher: {name: Example Publisher}",
-      "license: MIT",
-      "composition:",
-      '  sources: [{name: "@example/base", version: 0.1.0}]',
-      "scaffold: {folders: [Notes]}",
-    ].join("\n") + `\n${metadata}`, sourceBody),
-    ".typedmark/schemas/note.md": markdown([
-      "specification_version: 0.1.0",
-      "note_type: note",
-      "description: A note.",
-      "storage: {folder_pattern: Notes, note_name_pattern: '{title}'}",
-      "x_editor: {color: blue}",
-    ].join("\n"), "Schema documentation.  \r\n"),
+    "typedmark.md":
+      "\uFEFF" +
+      markdown(
+        (rootAnchor ? "&source_root\n" : "") +
+          [
+            "specification_version: 0.1.0",
+            "extensions: {typedmark:systems: 0.1.0}",
+            'name: "@example/metadata"',
+            `description: ${sourceDescription}`,
+            "version: 0.1.0",
+            "publisher: {name: Example Publisher}",
+            "license: MIT",
+            "composition:",
+            '  sources: [{name: "@example/base", version: 0.1.0}]',
+            "scaffold: {folders: [Notes]}",
+          ].join("\n") +
+          `\n${metadata}`,
+        sourceBody,
+      ),
+    ".typedmark/schemas/note.md": markdown(
+      [
+        "specification_version: 0.1.0",
+        "note_type: note",
+        "description: A note.",
+        "storage: {folder_pattern: Notes, note_name_pattern: '{title}'}",
+        "x_editor: {color: blue}",
+      ].join("\n"),
+      "Schema documentation.  \r\n",
+    ),
     ".typedmark/templates/note.md": markdown("note_type: note\ntitle: null", "# Starter\r\n"),
-    "LICENSE": "Example attribution.\r\n",
+    LICENSE: "Example attribution.\r\n",
   };
 }
 
@@ -90,7 +104,11 @@ async function importMetadata(metadata: string) {
   const sources = sourceFiles(metadata);
   try {
     const result = await instantiateSystem({
-      sourceRoot, targetRoot, collectionName: "working-notes", description: "My working notes.", schemaDirectory,
+      sourceRoot,
+      targetRoot,
+      collectionName: "working-notes",
+      description: "My working notes.",
+      schemaDirectory,
     });
     expect(result.report).toMatchObject({ evaluation: "complete", valid: true, results: [] });
     expect(result.source).toEqual(sourceIdentity);
@@ -98,8 +116,11 @@ async function importMetadata(metadata: string) {
     const document = parseMarkdown(output, { preserveBodyLineEndings: true });
     expect(document.body).toBe(sourceBody);
     expect(document.data).toMatchObject({
-      name: "working-notes", description: "My working notes.",
-      composition: { sources: [sourceIdentity] }, publisher: { name: "Example Publisher" }, license: "MIT",
+      name: "working-notes",
+      description: "My working notes.",
+      composition: { sources: [sourceIdentity] },
+      publisher: { name: "Example Publisher" },
+      license: "MIT",
     });
     expect(Object.hasOwn(document.data, "version")).toBe(false);
     expect(Object.hasOwn(document.data, "scaffold")).toBe(false);

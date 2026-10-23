@@ -8,7 +8,9 @@ import { checkMigrationReadiness, instantiateSystem } from "../src/system";
 const roots: string[] = [];
 const schemaDirectory = resolve(import.meta.dir, "../../TypedMarkSpecification/schema/json-schema");
 
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test("instantiates a self-contained one-source composition without publishing identity", async () => {
   const source = systemFixture();
@@ -53,12 +55,14 @@ test("rejects symbolic links in an imported system before copying", async () => 
   const target = join(mkdtempSync(join(tmpdir(), "typedmark-target-parent-")), "instance");
   roots.push(resolve(target, ".."));
 
-  await expect(instantiateSystem({
-    sourceRoot: source,
-    targetRoot: target,
-    collectionName: "working-notes",
-    schemaDirectory,
-  })).rejects.toThrow("symbolic link");
+  await expect(
+    instantiateSystem({
+      sourceRoot: source,
+      targetRoot: target,
+      collectionName: "working-notes",
+      schemaDirectory,
+    }),
+  ).rejects.toThrow("symbolic link");
   expect(existsSync(target)).toBe(false);
 });
 
@@ -67,7 +71,9 @@ function systemFixture(version = "0.1.0"): string {
   roots.push(root);
   mkdirSync(join(root, ".typedmark", "schemas"), { recursive: true });
   mkdirSync(join(root, ".typedmark", "templates"), { recursive: true });
-  writeFileSync(join(root, "typedmark.md"), `---
+  writeFileSync(
+    join(root, "typedmark.md"),
+    `---
 specification_version: 0.1.0
 extensions:
   typedmark:systems: 0.1.0
@@ -85,8 +91,11 @@ scaffold:
       values:
         title: Welcome
 ---
-`);
-  writeFileSync(join(root, ".typedmark", "schemas", "note.md"), `---
+`,
+  );
+  writeFileSync(
+    join(root, ".typedmark", "schemas", "note.md"),
+    `---
 specification_version: 0.1.0
 note_type: note
 description: A note.
@@ -98,13 +107,17 @@ frontmatter:
     type: text
     nullable: false
 ---
-`);
-  writeFileSync(join(root, ".typedmark", "templates", "note.md"), `---
+`,
+  );
+  writeFileSync(
+    join(root, ".typedmark", "templates", "note.md"),
+    `---
 note_type: note
 title: null
 ---
 
 # Welcome
-`);
+`,
+  );
   return root;
 }

@@ -62,5 +62,6 @@ export function aliasValueFailure(value: unknown): ValueFailure | undefined {
   if (normalized.some((alias) => alias.length === 0) || new Set(normalized).size !== normalized.length) {
     return { rule: "MN-35", message: "aliases must contain unique non-empty text values" };
   }
-  if (normalized.some((alias) => /[/\\#^|\r\n]/u.test(alias))) return { rule: "MN-82", message: "aliases cannot contain path separators, link metacharacters, or line breaks" };
+  if (normalized.some((alias) => /[/\\#^|\r\n]/u.test(alias)))
+    return { rule: "MN-82", message: "aliases cannot contain path separators, link metacharacters, or line breaks" };
 }

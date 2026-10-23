@@ -55,8 +55,11 @@ export async function runConformanceVector(input: RunVectorInput): Promise<Vecto
     const expectedErrors = registry.validate("validation-report.schema.json", expected);
     if (expectedErrors.length > 0) throw new Error("Expected report violates validation-report.schema.json");
     let config: Record<string, unknown> = {};
-    try { config = parseMarkdown(await readFile(join(collectionRoot, "typedmark.md"))).data; }
-    catch (error) { if (!(error instanceof FrontmatterError)) throw error; }
+    try {
+      config = parseMarkdown(await readFile(join(collectionRoot, "typedmark.md"))).data;
+    } catch (error) {
+      if (!(error instanceof FrontmatterError)) throw error;
+    }
     const required = (config.extensions ?? {}) as ExtensionMap;
     const selection = selectVectorCapabilities(required, getCapabilities().extensions, readVectorContext(input.vectorDirectory, registry));
     if (selection.skip) throw new Error(`${selection.skip.status}: ${selection.skip.reason}: ${selection.skip.extensions.join(", ")}`);
@@ -76,11 +79,19 @@ export async function runConformanceVector(input: RunVectorInput): Promise<Vecto
     const queryResults = runQueryCases(input.vectorDirectory, collectionRoot, input.schemaDirectory, getCapabilities().operations, registry);
     const after = await snapshot(collectionRoot);
     const reportErrors = registry.validate("validation-report.schema.json", actual);
-    const differences = reportErrors.length > 0
-      ? [`Actual report violates validation-report.schema.json: ${reportErrors.map((error) => `${error.instancePath} ${error.message}`).join("; ")}`]
-      : compareValidationReports(expected, actual);
+    const differences =
+      reportErrors.length > 0
+        ? [`Actual report violates validation-report.schema.json: ${reportErrors.map((error) => `${error.instancePath} ${error.message}`).join("; ")}`]
+        : compareValidationReports(expected, actual);
     for (const query of queryResults) for (const difference of query.differences) differences.push(`${query.name}: ${difference}`);
-    return { actual, expected, differences, collectionChanged: JSON.stringify(before) !== JSON.stringify(after), requestedExtensions: selection.supportedExtensions, queryResults };
+    return {
+      actual,
+      expected,
+      differences,
+      collectionChanged: JSON.stringify(before) !== JSON.stringify(after),
+      requestedExtensions: selection.supportedExtensions,
+      queryResults,
+    };
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }

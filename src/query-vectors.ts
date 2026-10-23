@@ -20,7 +20,13 @@ interface QueryCase {
   expected_error?: string;
 }
 
-export function runQueryCases(vectorDirectory: string, collectionRoot: string, schemaDirectory: string, enabled: ExtensionMap, registry: SchemaRegistry): QueryCaseResult[] {
+export function runQueryCases(
+  vectorDirectory: string,
+  collectionRoot: string,
+  schemaDirectory: string,
+  enabled: ExtensionMap,
+  registry: SchemaRegistry,
+): QueryCaseResult[] {
   const path = join(vectorDirectory, "query-cases.json");
   if (!existsSync(path)) return [];
   if (enabled["typedmark:queries"] !== "0.1.0") throw new Error("Query cases require the enabled typedmark:queries contract");
@@ -39,7 +45,8 @@ export function runQueryCases(vectorDirectory: string, collectionRoot: string, s
         result.differences.push("Query result differs from the expected normalized result");
       }
       const aliases = entry.query.select.map((column) => column.as);
-      if (actual.rows.some((row) => JSON.stringify(Object.keys(row)) !== JSON.stringify(aliases))) result.differences.push("Projection alias order differs from select order");
+      if (actual.rows.some((row) => JSON.stringify(Object.keys(row)) !== JSON.stringify(aliases)))
+        result.differences.push("Projection alias order differs from select order");
     } catch (error) {
       if (error instanceof QueryError) {
         result.error_rule = error.rule_id;
@@ -53,6 +60,11 @@ export function runQueryCases(vectorDirectory: string, collectionRoot: string, s
 
 function canonical(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonical);
-  if (value !== null && typeof value === "object") return Object.fromEntries(Object.entries(value).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([key, child]) => [key, canonical(child)]));
+  if (value !== null && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, child]) => [key, canonical(child)]),
+    );
   return value;
 }

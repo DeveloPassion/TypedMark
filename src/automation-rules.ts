@@ -5,16 +5,29 @@ import { isExcluded } from "./paths";
 import { posix } from "node:path";
 
 type Data = Record<string, any>;
-export interface AutomationFailure extends ValueFailure { field?: string; note_type?: string }
+export interface AutomationFailure extends ValueFailure {
+  field?: string;
+  note_type?: string;
+}
 
 function storageAccepts(path: string, storage: Data): boolean {
   // A free name is approximated as one unconstrained placeholder.
   const name = `${storage.note_name_prefix?.pattern ?? ""}${storage.note_name_pattern ?? "{free_name}"}${storage.note_name_suffix?.pattern ?? ""}`;
   // Decomposition also handles normalization across a literal/placeholder boundary.
   const pattern = `${storage.folder_pattern ? `${storage.folder_pattern}/` : ""}${name}.md`.normalize("NFD");
-  const formats: Record<string, string> = { YYYY: "[0-9]{4}", GGGG: "[0-9]{4}", MM: "(?:0[1-9]|1[0-2])", DD: "(?:0[1-9]|[12][0-9]|3[01])", Q: "[1-4]", WW: "(?:0[1-9]|[1-4][0-9]|5[0-3])", "YYYY-MM": "[0-9]{4}-(?:0[1-9]|1[0-2])", "YYYY-MM-DD": "[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])" };
+  const formats: Record<string, string> = {
+    YYYY: "[0-9]{4}",
+    GGGG: "[0-9]{4}",
+    MM: "(?:0[1-9]|1[0-2])",
+    DD: "(?:0[1-9]|[12][0-9]|3[01])",
+    Q: "[1-4]",
+    WW: "(?:0[1-9]|[1-4][0-9]|5[0-3])",
+    "YYYY-MM": "[0-9]{4}-(?:0[1-9]|1[0-2])",
+    "YYYY-MM-DD": "[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])",
+  };
   const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  let escaped = ""; let cursor = 0;
+  let escaped = "";
+  let cursor = 0;
   for (const match of pattern.matchAll(/\{[a-z][a-z0-9_]*(?::([^}]+))?\}/gu)) {
     escaped += escape(pattern.slice(cursor, match.index));
     if (match[1] && !Object.hasOwn(formats, match[1])) return false;
@@ -30,40 +43,54 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
   const failures: AutomationFailure[] = [];
   const fail = (rule: string, message: string, context: Partial<AutomationFailure> = {}) => failures.push({ rule, message, ...context });
   const targetless = automation.trigger.kind === "schedule" && !automation.scope && !automation.when;
-  const types: string[] = targetless ? [] : automation.scope?.note_types ?? [...model.schemas].filter(([, schema]) => !schema.abstract).map(([name]) => name);
+  const types: string[] = targetless ? [] : (automation.scope?.note_types ?? [...model.schemas].filter(([, schema]) => !schema.abstract).map(([name]) => name));
   for (const type of types) {
     const schema = model.schemas.get(type);
     if (!schema || schema.abstract) fail("CM-253", `Scope type ${type} does not resolve to a concrete schema`);
     else requireSchemaModel(model, type);
   }
   if (failures.length) return failures;
-  for (const regex of [automation.scope?.path?.regex, ...Object.values(automation.when ?? {}).map((predicate) => (predicate as Data).regex)]) if (regex !== undefined) {
-    try { fullPattern(regex); } catch { fail("FND-31", "Invalid automation predicate regular expression"); }
-  }
+  for (const regex of [automation.scope?.path?.regex, ...Object.values(automation.when ?? {}).map((predicate) => (predicate as Data).regex)])
+    if (regex !== undefined) {
+      try {
+        fullPattern(regex);
+      } catch {
+        fail("FND-31", "Invalid automation predicate regular expression");
+      }
+    }
   const timezone = model.config.timezone ?? "UTC";
   const fieldsByType = new Map(types.map((type) => [type, noteFieldDefinitions(model.schemas.get(type)!)]));
-  for (const [type, fields] of fieldsByType) for (const field of new Set([...Object.keys(automation.when ?? {}), ...Object.keys(automation.trigger.changed ?? {})])) {
-    if (!Object.hasOwn(fields, field)) fail("CM-278", `Predicate field ${field} is undeclared for ${type}`, { field, note_type: type });
-    // Time-relative predicates compare a temporal value with the trigger instant (CM-557).
-    else if (automation.when?.[field]?.older_than !== undefined && !["date", "datetime"].includes(fields[field]!.type)) {
-      fail("CM-557", `older_than needs a date or datetime field, but ${type}.${field} is ${fields[field]!.type}`, { field, note_type: type });
+  for (const [type, fields] of fieldsByType)
+    for (const field of new Set([...Object.keys(automation.when ?? {}), ...Object.keys(automation.trigger.changed ?? {})])) {
+      if (!Object.hasOwn(fields, field)) fail("CM-278", `Predicate field ${field} is undeclared for ${type}`, { field, note_type: type });
+      // Time-relative predicates compare a temporal value with the trigger instant (CM-557).
+      else if (automation.when?.[field]?.older_than !== undefined && !["date", "datetime"].includes(fields[field]!.type)) {
+        fail("CM-557", `older_than needs a date or datetime field, but ${type}.${field} is ${fields[field]!.type}`, { field, note_type: type });
+      }
+      // State predicates need the field's lifecycle annotations on every target type.
+      else if (
+        !fields[field]!.states &&
+        (automation.when?.[field]?.state !== undefined ||
+          automation.trigger.changed?.[field]?.from_state !== undefined ||
+          automation.trigger.changed?.[field]?.to_state !== undefined)
+      ) {
+        fail(automation.when?.[field]?.state !== undefined ? "CM-560" : "CM-562", `${type}.${field} declares no states`, { field, note_type: type });
+      }
     }
-    // State predicates need the field's lifecycle annotations on every target type.
-    else if (!fields[field]!.states && (automation.when?.[field]?.state !== undefined
-      || automation.trigger.changed?.[field]?.from_state !== undefined || automation.trigger.changed?.[field]?.to_state !== undefined)) {
-      fail(automation.when?.[field]?.state !== undefined ? "CM-560" : "CM-562", `${type}.${field} declares no states`, { field, note_type: type });
-    }
-  }
   for (const action of automation.actions) {
     if (action.kind === "create_note") {
       const schema = model.schemas.get(action.note_type);
-      if (!schema || schema.abstract) { fail("CM-274", "create_note requires a known concrete type"); continue; }
+      if (!schema || schema.abstract) {
+        fail("CM-274", "create_note requires a known concrete type");
+        continue;
+      }
       requireSchemaModel(model, action.note_type);
       const fields = noteFieldDefinitions(schema);
       for (const [field, value] of Object.entries(action.values ?? {})) {
         const definition = Object.hasOwn(fields, field) ? fields[field] : undefined;
         const invalid = !definition || validateFieldValue(expandObjectDefaults(value, definition), definition, timezone, model.config.vocabularies);
-        if (invalid || (field === "note_type" && value !== action.note_type)) fail("CM-278", `Creation value ${field} is incompatible with ${action.note_type}`, { field, note_type: action.note_type });
+        if (invalid || (field === "note_type" && value !== action.note_type))
+          fail("CM-278", `Creation value ${field} is incompatible with ${action.note_type}`, { field, note_type: action.note_type });
       }
       continue;
     }
@@ -72,12 +99,22 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
       const context = { note_type: type };
       if (["set_field", "add_list_item", "remove_list_item"].includes(action.kind)) {
         const definition = Object.hasOwn(fields, action.field) ? fields[action.field] : undefined;
-        if (!definition || ["id", "note_type"].includes(action.field) || definition.immutable === true || Object.hasOwn(definition, "computed") || Object.hasOwn(definition, "const_value")) {
-          fail("CM-278", `Field ${action.field} is undeclared or not assignable`, { ...context, field: action.field }); continue;
+        if (
+          !definition ||
+          ["id", "note_type"].includes(action.field) ||
+          definition.immutable === true ||
+          Object.hasOwn(definition, "computed") ||
+          Object.hasOwn(definition, "const_value")
+        ) {
+          fail("CM-278", `Field ${action.field} is undeclared or not assignable`, { ...context, field: action.field });
+          continue;
         }
         if (action.kind !== "set_field") {
           // List-item actions add or remove one item of a list field (MN-311, MN-312).
-          if (definition.type !== "list") { fail("CM-278", `Field ${action.field} is not a list`, { ...context, field: action.field }); continue; }
+          if (definition.type !== "list") {
+            fail("CM-278", `Field ${action.field} is not a list`, { ...context, field: action.field });
+            continue;
+          }
           const invalid = validateFieldValue(expandObjectDefaults(action.value, definition.items!), definition.items!, timezone, model.config.vocabularies);
           if (invalid) fail("CM-278", `Item for ${action.field} ${invalid.message}`, { ...context, field: action.field });
           continue;
@@ -85,25 +122,44 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
         if (action.value_from !== undefined) {
           // Trigger-relative values resolve at run time; only the field type is known here (CM-563).
           const type = action.value_from === "trigger_date" ? "date" : "datetime";
-          if (definition.type !== type) fail("CM-563", `${action.value_from} needs a ${type} field, but ${action.field} is ${definition.type}`, { ...context, field: action.field });
+          if (definition.type !== type)
+            fail("CM-563", `${action.value_from} needs a ${type} field, but ${action.field} is ${definition.type}`, { ...context, field: action.field });
           continue;
         }
         const invalid = validateFieldValue(expandObjectDefaults(action.value, definition), definition, timezone, model.config.vocabularies);
         if (invalid) fail("CM-278", `Assignment to ${action.field} ${invalid.message}`, { ...context, field: action.field });
       } else if (action.kind === "add_tag" || action.kind === "remove_tag") {
         const tags = fields.tags!;
-        const invalid = validateFieldValue([action.tag], { type: "tags", allowed_values: tags.allowed_values, allowed_values_from: tags.allowed_values_from }, timezone, model.config.vocabularies);
+        const invalid = validateFieldValue(
+          [action.tag],
+          { type: "tags", allowed_values: tags.allowed_values, allowed_values_from: tags.allowed_values_from },
+          timezone,
+          model.config.vocabularies,
+        );
         const mandatory: unknown[] = [...(model.config.mandatory_tags ?? []), ...(schema.mandatory_tags ?? [])];
-        if (invalid || (action.kind === "remove_tag" && mandatory.some((tag) => equalFieldValues(tag, action.tag, { type: "text" }, timezone)))) fail("CM-278", "Tag action violates the target tag policy", { ...context, field: "tags" });
+        if (invalid || (action.kind === "remove_tag" && mandatory.some((tag) => equalFieldValues(tag, action.tag, { type: "text" }, timezone))))
+          fail("CM-278", "Tag action violates the target tag policy", { ...context, field: "tags" });
       } else if (action.kind === "move_note") {
         const path = (action.path as string).normalize("NFC");
         const metadata = (model.config.metadata_directory ?? ".typedmark").normalize("NFC");
         const basename = posix.basename(path, ".md");
-        const unsafe = !basename || basename.startsWith(".") || /[\\\p{Cc}]/u.test(path) || path.split("/").some((segment) => segment === "." || segment === ".." || segment === "");
-        if (unsafe || path === "typedmark.md" || path.startsWith(`${metadata}/`) || isExcluded(path, model.config.exclude_paths ?? [".git/**"]) || ![schema.storage, schema.storage?.archive].some((storage) => storage && storageAccepts(path, storage))) fail("CM-278", "Move path is outside the target's managed storage contract", context);
+        const unsafe =
+          !basename ||
+          basename.startsWith(".") ||
+          /[\\\p{Cc}]/u.test(path) ||
+          path.split("/").some((segment) => segment === "." || segment === ".." || segment === "");
+        if (
+          unsafe ||
+          path === "typedmark.md" ||
+          path.startsWith(`${metadata}/`) ||
+          isExcluded(path, model.config.exclude_paths ?? [".git/**"]) ||
+          ![schema.storage, schema.storage?.archive].some((storage) => storage && storageAccepts(path, storage))
+        )
+          fail("CM-278", "Move path is outside the target's managed storage contract", context);
       } else if (action.kind === "archive_note" || action.kind === "logical_delete_note") {
         const field = action.kind === "archive_note" ? "archived" : "deleted";
-        if (validateFieldValue(true, fields[field]!, timezone, model.config.vocabularies)) fail("CM-278", `Action violates ${field} constraints`, { ...context, field });
+        if (validateFieldValue(true, fields[field]!, timezone, model.config.vocabularies))
+          fail("CM-278", `Action violates ${field} constraints`, { ...context, field });
       }
     }
   }

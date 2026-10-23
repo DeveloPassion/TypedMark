@@ -12,16 +12,23 @@ function write(root: string, path: string, data: unknown) {
   writeFileSync(join(root, path), `---\n${stringify(data)}---\n`);
 }
 function collection(mapping: object, notes: Record<string, object> = { "A.md": {} }) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-predicates-")); roots.push(root);
+  const root = mkdtempSync(join(tmpdir(), "typedmark-predicates-"));
+  roots.push(root);
   write(root, "typedmark.md", { specification_version: "0.1.0", name: "predicates", description: "Predicates.", note_type_mappings: [mapping] });
-  write(root, ".typedmark/schemas/note.md", { specification_version: "0.1.0", description: "Note.",
-    storage: { folder_pattern: "", note_name_pattern: "{title}" }, frontmatter: { sample: { type: "any", nullable: true, default_value: "default" } } });
+  write(root, ".typedmark/schemas/note.md", {
+    specification_version: "0.1.0",
+    description: "Note.",
+    storage: { folder_pattern: "", note_name_pattern: "{title}" },
+    frontmatter: { sample: { type: "any", nullable: true, default_value: "default" } },
+  });
   for (const [path, data] of Object.entries(notes)) write(root, path, data);
   return root;
 }
 const fixed = (when: object) => ({ kind: "fixed", note_type: "note", when });
 const paths = (root: string) => readCollectionModel({ collectionRoot: root, schemaDirectory }).notes.map((note) => note.path);
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test.each([
   { predicate: { exists: true }, stored: {}, matches: false },
@@ -56,7 +63,7 @@ test("body-only notes fail frontmatter predicates but an empty block can match",
 });
 
 test("predicate names identify NFC-equivalent stored keys", () => {
-  const root = collection(fixed({ frontmatter: { "é": { exists: true, equals: 1 } } }), { "A.md": { "e\u0301": 1 } });
+  const root = collection(fixed({ frontmatter: { é: { exists: true, equals: 1 } } }), { "A.md": { "e\u0301": 1 } });
   expect(paths(root)).toEqual(["A.md"]);
 });
 

@@ -13,22 +13,40 @@ const registry = new SchemaRegistry(schemaDirectory);
 const roots: string[] = [];
 const kept = { "example:future": "9.0.0-rc.1+build", "typedmark:reuse": "0.1.0" };
 function collection(config: Record<string, unknown> = {}) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-malformed-extensions-")); roots.push(root);
+  const root = mkdtempSync(join(tmpdir(), "typedmark-malformed-extensions-"));
+  roots.push(root);
   mkdirSync(join(root, ".typedmark/schemas"), { recursive: true });
-  writeFileSync(join(root, "typedmark.md"), `---\n${stringify({ specification_version: "0.1.0", name: "extensions", description: "Malformed declarations.", ...config })}---\n`);
-  writeFileSync(join(root, ".typedmark/schemas/note.md"), "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage: {folder_pattern: '', note_name_pattern: '{title}'}\n---\n");
+  writeFileSync(
+    join(root, "typedmark.md"),
+    `---\n${stringify({ specification_version: "0.1.0", name: "extensions", description: "Malformed declarations.", ...config })}---\n`,
+  );
+  writeFileSync(
+    join(root, ".typedmark/schemas/note.md"),
+    "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage: {folder_pattern: '', note_name_pattern: '{title}'}\n---\n",
+  );
   writeFileSync(join(root, "Note.md"), "---\nnote_type: note\n---\n");
   return root;
 }
 const run = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory });
-const query = (root: string) => queryCollection({ collectionRoot: root, schemaDirectory, queryVersion: "0.1.0",
-  query: { specification_version: "0.1.0", select: [{ kind: "path", as: "path" }] } });
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+const query = (root: string) =>
+  queryCollection({
+    collectionRoot: root,
+    schemaDirectory,
+    queryVersion: "0.1.0",
+    query: { specification_version: "0.1.0", select: [{ kind: "path", as: "path" }] },
+  });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test.each([
   ...[null, [], false, "all", 17].map((extensions) => ({ extensions, required: {}, rule: "EXT-2" })),
   ...["bad", "Example:review", "example:review\n", "__proto__"].map((id) => ({ extensions: { ...kept, [id]: "1.0.0" }, required: kept, rule: "EXT-4" })),
-  ...[17, "1", "^1.0.0", "0.1.0\n", { toString: 0, valueOf: 0 }].map((version) => ({ extensions: { ...kept, "typedmark:queries": version }, required: kept, rule: "EXT-6" })),
+  ...[17, "1", "^1.0.0", "0.1.0\n", { toString: 0, valueOf: 0 }].map((version) => ({
+    extensions: { ...kept, "typedmark:queries": version },
+    required: kept,
+    rule: "EXT-6",
+  })),
 ])("malformed declaration retains only well-formed entries: %j", ({ extensions, required, rule }) => {
   const root = collection({ extensions });
   const before = readFileSync(join(root, "typedmark.md"));
@@ -43,8 +61,10 @@ test.each([
 });
 
 test.each(["off", "error", "warn", "info"])("malformed declaration completeness survives severity %s", (severity) => {
-  const root = collection({ extensions: { "typedmark:reuse": "0.1.0", "typedmark:queries": 17 },
-    validation_defaults: { invalid_extension_declaration: severity, invalid_collection_configuration: "off" } });
+  const root = collection({
+    extensions: { "typedmark:reuse": "0.1.0", "typedmark:queries": 17 },
+    validation_defaults: { invalid_extension_declaration: severity, invalid_collection_configuration: "off" },
+  });
   const report = run(root);
   expect(registry.validate("validation-report.schema.json", report)).toEqual([]);
   expect(report).toMatchObject({ evaluation: "incomplete", valid: false, required_extensions: { "typedmark:reuse": "0.1.0" }, evaluated_extensions: {} });
@@ -70,15 +90,23 @@ test.each([{}, { extensions: {} }])("absent and empty declarations stay valid: %
 
 test("well-formed unsupported contracts are retained and negotiated normally", () => {
   const report = run(collection({ extensions: kept }));
-  expect(report).toMatchObject({ evaluation: "incomplete", required_extensions: kept, evaluated_extensions: { "typedmark:reuse": "0.1.0" },
-    results: [expect.objectContaining({ code: "unsupported_extension", extension: "example:future" })] });
+  expect(report).toMatchObject({
+    evaluation: "incomplete",
+    required_extensions: kept,
+    evaluated_extensions: { "typedmark:reuse": "0.1.0" },
+    results: [expect.objectContaining({ code: "unsupported_extension", extension: "example:future" })],
+  });
 });
 
 test("unsupported Core keeps a portable requirement map without wrong-edition diagnostics", () => {
   const report = run(collection({ specification_version: "9.0.0", extensions: { ...kept, bad: "1.0.0" } }));
   expect(registry.validate("validation-report.schema.json", report)).toEqual([]);
-  expect(report).toMatchObject({ evaluation: "incomplete", required_extensions: kept, evaluated_extensions: {},
-    results: [expect.objectContaining({ code: "unsupported_specification_version", rule_id: "FND-92" })] });
+  expect(report).toMatchObject({
+    evaluation: "incomplete",
+    required_extensions: kept,
+    evaluated_extensions: {},
+    results: [expect.objectContaining({ code: "unsupported_specification_version", rule_id: "FND-92" })],
+  });
 });
 
 test("each malformed entry has a separate declaration finding", () => {
@@ -89,8 +117,11 @@ test("each malformed entry has a separate declaration finding", () => {
 
 test("newer compatible Core does not turn malformed requirements into unsupported versions", () => {
   const report = run(collection({ specification_version: "0.1.1", extensions: { ...kept, "typedmark:queries": 17 } }));
-  expect(report).toMatchObject({ evaluation: "incomplete", required_extensions: kept,
-    results: [expect.objectContaining({ code: "invalid_extension_declaration", rule_id: "EXT-6" })] });
+  expect(report).toMatchObject({
+    evaluation: "incomplete",
+    required_extensions: kept,
+    results: [expect.objectContaining({ code: "invalid_extension_declaration", rule_id: "EXT-6" })],
+  });
 });
 
 test.each(["bogus", true, { toString: 0 }])("invalid diagnostic severity %j cannot corrupt the report", (severity) => {
@@ -100,9 +131,14 @@ test.each(["bogus", true, { toString: 0 }])("invalid diagnostic severity %j cann
 });
 
 test("malformed declarations prevent system instantiation and no-op readiness", async () => {
-  const root = collection({ version: "1.0.0", scaffold: {}, extensions: { "typedmark:systems": "0.1.0", "typedmark:queries": 17 },
-    validation_defaults: { invalid_extension_declaration: "off", invalid_collection_configuration: "off" } });
-  const targetParent = mkdtempSync(join(tmpdir(), "typedmark-malformed-target-")); roots.push(targetParent);
+  const root = collection({
+    version: "1.0.0",
+    scaffold: {},
+    extensions: { "typedmark:systems": "0.1.0", "typedmark:queries": 17 },
+    validation_defaults: { invalid_extension_declaration: "off", invalid_collection_configuration: "off" },
+  });
+  const targetParent = mkdtempSync(join(tmpdir(), "typedmark-malformed-target-"));
+  roots.push(targetParent);
   const target = join(targetParent, "instance");
   expect(checkMigrationReadiness({ systemRoot: root, fromVersion: "1.0.0", schemaDirectory }).status).toBe("manual_resolution_required");
   await expect(instantiateSystem({ sourceRoot: root, targetRoot: target, collectionName: "instance", schemaDirectory })).rejects.toThrow();

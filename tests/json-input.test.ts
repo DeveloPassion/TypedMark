@@ -37,10 +37,13 @@ function writeMarkdown(root: string, path: string, data: unknown): void {
 function collection(root: string, status = unicode): string {
   const path = join(root, "collection");
   writeMarkdown(path, "typedmark.md", {
-    specification_version: "0.1.0", name: "json-input", description: "JSON input tests.",
+    specification_version: "0.1.0",
+    name: "json-input",
+    description: "JSON input tests.",
   });
   writeMarkdown(path, ".typedmark/schemas/note.md", {
-    specification_version: "0.1.0", description: "Note.",
+    specification_version: "0.1.0",
+    description: "Note.",
     storage: { folder_pattern: "Notes", note_name_pattern: "{title}" },
     frontmatter: { status: { type: "text" } },
   });
@@ -57,19 +60,22 @@ function query(value = unicode) {
 }
 
 function queryCases(expectedValue = unicode) {
-  return [{
-    name: "unicode-value", query_version: "0.1.0", rules: ["CM-331"], query: query(),
-    expected_result: { evaluation: "complete", rows: [{ status: expectedValue }] },
-  }];
+  return [
+    {
+      name: "unicode-value",
+      query_version: "0.1.0",
+      rules: ["CM-331"],
+      query: query(),
+      expected_result: { evaluation: "complete", rows: [{ status: expectedValue }] },
+    },
+  ];
 }
 
 function rawJson(value: unknown, bytes: readonly number[]): Buffer {
   const json = JSON.stringify(value);
   const offset = json.indexOf(marker);
   if (offset < 0 || json.indexOf(marker, offset + marker.length) >= 0) throw new Error("Expected one byte marker");
-  return Buffer.concat([
-    Buffer.from(json.slice(0, offset)), Buffer.from(bytes), Buffer.from(json.slice(offset + marker.length)),
-  ]);
+  return Buffer.concat([Buffer.from(json.slice(0, offset)), Buffer.from(bytes), Buffer.from(json.slice(offset + marker.length))]);
 }
 
 function snapshot(root: string): Array<[string, string]> {
@@ -83,20 +89,26 @@ function snapshot(root: string): Array<[string, string]> {
     }
   }
   visit(root);
-  return files.sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+  return files.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 async function withoutWrites<T>(root: string, operation: () => T | Promise<T>): Promise<T> {
   const before = snapshot(root);
-  try { return await operation(); }
-  finally { expect(snapshot(root)).toEqual(before); }
+  try {
+    return await operation();
+  } finally {
+    expect(snapshot(root)).toEqual(before);
+  }
 }
 
 async function rejection(root: string, operation: () => unknown): Promise<Error> {
   let caught: unknown;
   await withoutWrites(root, async () => {
-    try { await operation(); }
-    catch (error) { caught = error; }
+    try {
+      await operation();
+    } catch (error) {
+      caught = error;
+    }
   });
   expect(caught).toBeInstanceOf(Error);
   return caught as Error;
@@ -110,10 +122,10 @@ async function expectUtf8Failure(fixture: ApiFixture): Promise<void> {
 }
 
 function cli(collectionRoot: string, path: string) {
-  return Bun.spawnSync([
-    process.execPath, cliPath, "query", collectionRoot, "--query", path,
-    "--query-version", "0.1.0", "--schemas", schemaDirectory,
-  ], { stdout: "pipe", stderr: "pipe" });
+  return Bun.spawnSync([process.execPath, cliPath, "query", collectionRoot, "--query", path, "--query-version", "0.1.0", "--schemas", schemaDirectory], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
 }
 
 type ApiSurface = "expected report" | "query cases" | "vector context" | "schema registry";
@@ -128,7 +140,8 @@ function apiFixture(surface: ApiSurface): ApiFixture {
   if (surface === "expected report") {
     cpSync(join(specificationRoot, "schema/fixtures/golden/core-invalid-field-value"), root, { recursive: true });
     return {
-      root, path: join(root, "expected-validation-report.json"),
+      root,
+      path: join(root, "expected-validation-report.json"),
       run: () => runConformanceVector({ vectorDirectory: root, schemaDirectory }),
     };
   }
@@ -147,7 +160,8 @@ function apiFixture(surface: ApiSurface): ApiFixture {
   const path = join(root, "query-cases.json");
   writeFileSync(path, JSON.stringify(queryCases()));
   return {
-    root, path,
+    root,
+    path,
     run: () => runQueryCases(root, collectionRoot, schemaDirectory, { "typedmark:queries": "0.1.0" }, registry),
   };
 }
@@ -178,8 +192,7 @@ test("the query CLI rejects malformed bytes in a mapped-column label even when r
   const path = join(root, "label-query.json");
   const descriptor = {
     specification_version: "0.1.0",
-    select: [{ kind: "mapped_field", as: "status", definition: { type: "text", label: marker },
-      sources: [{ note_types: ["note"], field: "status" }] }],
+    select: [{ kind: "mapped_field", as: "status", definition: { type: "text", label: marker }, sources: [{ note_types: ["note"], field: "status" }] }],
   };
   writeFileSync(path, rawJson(descriptor, [0xff]));
   const result = await withoutWrites(root, () => cli(collectionRoot, path));
@@ -223,7 +236,8 @@ test("truncated UTF-8 at end of input is rejected before JSON syntax interpretat
 });
 
 test.each<ApiSurface>(["expected report", "query cases", "vector context", "schema registry"])(
-  "%s retains JSON SyntaxError behavior for a leading BOM and malformed JSON text", async (surface) => {
+  "%s retains JSON SyntaxError behavior for a leading BOM and malformed JSON text",
+  async (surface) => {
     const fixture = apiFixture(surface);
     const original = readFileSync(fixture.path);
     await withoutWrites(fixture.root, fixture.run);
@@ -286,9 +300,14 @@ test("the CLI and in-memory query API preserve valid encoded U+FFFD and other Un
   expect(result.exitCode, result.stderr.toString()).toBe(0);
   expect(result.stderr.toString()).toBe("");
   expect(JSON.parse(result.stdout.toString()).rows).toEqual([{ status: unicode }]);
-  const inMemory = await withoutWrites(root, () => queryCollection({
-    collectionRoot, schemaDirectory, queryVersion: "0.1.0", query: descriptor,
-  }));
+  const inMemory = await withoutWrites(root, () =>
+    queryCollection({
+      collectionRoot,
+      schemaDirectory,
+      queryVersion: "0.1.0",
+      query: descriptor,
+    }),
+  );
   expect(inMemory.rows).toEqual([{ status: unicode }]);
   expect(descriptor).toEqual(before);
 });
@@ -298,7 +317,7 @@ test("expected-report messages preserve valid U+FFFD and Unicode while compariso
   const report = JSON.parse(readFileSync(fixture.path, "utf8")) as ValidationReport;
   report.results[0]!.message = unicode;
   writeFileSync(fixture.path, JSON.stringify(report));
-  const result = await withoutWrites(fixture.root, fixture.run) as VectorRunResult;
+  const result = (await withoutWrites(fixture.root, fixture.run)) as VectorRunResult;
   expect(result.expected.results[0]!.message).toBe(unicode);
   expect(result.differences).toEqual([]);
   expect(result.collectionChanged).toBe(false);
@@ -306,14 +325,14 @@ test("expected-report messages preserve valid U+FFFD and Unicode while compariso
 
 test("query cases preserve valid U+FFFD and Unicode in expected and actual rows", async () => {
   const fixture = apiFixture("query cases");
-  const result = await withoutWrites(fixture.root, fixture.run) as QueryCaseResult[];
+  const result = (await withoutWrites(fixture.root, fixture.run)) as QueryCaseResult[];
   expect(result).toHaveLength(1);
   expect(result[0]).toMatchObject({ status: "passed", differences: [], actual_result: { rows: [{ status: unicode }] } });
 });
 
 test("schema registration preserves valid U+FFFD and Unicode enum values exactly", async () => {
   const fixture = apiFixture("schema registry");
-  const registry = await withoutWrites(fixture.root, fixture.run) as SchemaRegistry;
+  const registry = (await withoutWrites(fixture.root, fixture.run)) as SchemaRegistry;
   expect(registry.validate("unicode.schema.json", unicode)).toEqual([]);
   expect(registry.validate("unicode.schema.json", unicode.replace("\ufffd", ""))).not.toEqual([]);
 });
@@ -322,8 +341,12 @@ test("migration readiness preserves its fail-closed adapter for an unreadable sc
   const root = temporaryRoot();
   const systemRoot = collection(root);
   writeMarkdown(systemRoot, "typedmark.md", {
-    specification_version: "0.1.0", name: "json-input", description: "Readiness input.",
-    extensions: { "typedmark:systems": "0.1.0" }, version: "0.1.0", scaffold: {},
+    specification_version: "0.1.0",
+    name: "json-input",
+    description: "Readiness input.",
+    extensions: { "typedmark:systems": "0.1.0" },
+    version: "0.1.0",
+    scaffold: {},
   });
   const schemas = join(root, "schemas");
   cpSync(schemaDirectory, schemas, { recursive: true });

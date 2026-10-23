@@ -6,7 +6,7 @@ import { parseMarkdown } from "../src/frontmatter";
 import { validateCollection } from "../src/validator";
 
 for (const ending of ["\n", "\r\n", "\r"]) {
-  test.each([0, 1, 2, 3])(`text and byte inputs consume one leading BOM at most: ending=${JSON.stringify(ending)} count=%i`, count => {
+  test.each([0, 1, 2, 3])(`text and byte inputs consume one leading BOM at most: ending=${JSON.stringify(ending)} count=%i`, (count) => {
     const source = "\uFEFF".repeat(count) + ["---", "value: yes", "...", "Body  ", "\uFEFFContent", ""].join(ending);
     const bytes = Buffer.from(source);
     const before = Buffer.from(bytes);
@@ -38,7 +38,9 @@ test("a doubled BOM cannot hide a malformed collection-config delimiter", () => 
     const report = validateCollection({ collectionRoot: root, schemaDirectory: join(specification, "schema/json-schema") });
     expect(report.valid).toBe(false);
     expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_collection_configuration", path: "typedmark.md" }));
-    expect(report.results.some(result => result.rule_id === "FND-28")).toBe(false);
+    expect(report.results.some((result) => result.rule_id === "FND-28")).toBe(false);
     expect(readFileSync(path).equals(bytes)).toBe(true);
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

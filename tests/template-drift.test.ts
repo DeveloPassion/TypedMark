@@ -9,10 +9,14 @@ test("digests use UTF-8 and normalize only line endings", () => {
 });
 
 test.each([
-  ["a", "b", "b", "current"], [undefined, undefined, "a", "template_added"],
-  ["a", "a", "b", "template_changed"], ["a", "b", "a", "note_changed"],
-  ["a", "b", "c", "both_changed"], ["a", undefined, "a", "region_missing"],
-  ["a", "a", undefined, "template_removed"], ["a", "b", undefined, "template_removed_note_changed"],
+  ["a", "b", "b", "current"],
+  [undefined, undefined, "a", "template_added"],
+  ["a", "a", "b", "template_changed"],
+  ["a", "b", "a", "note_changed"],
+  ["a", "b", "c", "both_changed"],
+  ["a", undefined, "a", "region_missing"],
+  ["a", "a", undefined, "template_removed"],
+  ["a", "b", undefined, "template_removed_note_changed"],
   ["a", undefined, undefined, "retired"],
 ])("classifies baseline=%j note=%j template=%j as %s", (baseline, note, template, expected) => {
   expect(classifyRegion(baseline, note, template)).toBe(expected);

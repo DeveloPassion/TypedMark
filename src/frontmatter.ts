@@ -7,11 +7,17 @@ export interface MarkdownDocument {
 }
 
 export class FrontmatterError extends Error {
-  constructor(message: string, readonly body = "", readonly rule?: string) { super(message); }
+  constructor(
+    message: string,
+    readonly body = "",
+    readonly rule?: string,
+  ) {
+    super(message);
+  }
 }
 
 export function frontmatterFailureRule(error: unknown, fallback: string): string {
-  return error instanceof FrontmatterError ? error.rule ?? fallback : fallback;
+  return error instanceof FrontmatterError ? (error.rule ?? fallback) : fallback;
 }
 
 // Filesystem consumers pass bytes so invalid UTF-8 cannot be silently replaced
@@ -22,12 +28,16 @@ export function parseMarkdown(source: string | Uint8Array, options: { preserveBo
 }
 
 /** Retain the YAML graph for writers; the ordinary reader's return shape is unchanged. */
-export function parseMarkdownWithNodes(source: string | Uint8Array, options: { preserveBodyLineEndings?: boolean } = {}): MarkdownDocument & { frontmatter: Document | null } {
+export function parseMarkdownWithNodes(
+  source: string | Uint8Array,
+  options: { preserveBodyLineEndings?: boolean } = {},
+): MarkdownDocument & { frontmatter: Document | null } {
   let decoded: string;
   // Retain the decoded BOM here so the grammar below consumes it exactly once.
   // https://nodejs.org/api/util.html#new-textdecoderencoding-options
-  try { decoded = typeof source === "string" ? source : new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(source); }
-  catch (error) {
+  try {
+    decoded = typeof source === "string" ? source : new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(source);
+  } catch (error) {
     if (error instanceof TypeError) throw new FrontmatterError("Markdown is not valid UTF-8", "", "FND-28");
     throw error;
   }
@@ -43,7 +53,11 @@ export function parseMarkdownWithNodes(source: string | Uint8Array, options: { p
   if (options.preserveBodyLineEndings) {
     const endings = /\r\n|\r|\n/g;
     let found = true;
-    for (let line = 0; line <= end; line++) if (!endings.exec(normalized)) { found = false; break; }
+    for (let line = 0; line <= end; line++)
+      if (!endings.exec(normalized)) {
+        found = false;
+        break;
+      }
     body = found ? normalized.slice(endings.lastIndex) : "";
   }
 
@@ -57,7 +71,11 @@ export function parseMarkdownWithNodes(source: string | Uint8Array, options: { p
     // dropping it changes a final keep-chomp scalar (FND-25/FND-33/FND-36).
     const yaml = lines.slice(1, end).join("\n") + (end > 1 ? "\n" : "");
     document = parseDocument(yaml, {
-      version: "1.2", schema: "core", resolveKnownTags: true, merge: false, uniqueKeys: true,
+      version: "1.2",
+      schema: "core",
+      resolveKnownTags: true,
+      merge: false,
+      uniqueKeys: true,
     });
     if (document.errors.length > 0) throw new Error(document.errors.map((error) => error.message).join("; "));
     // An empty document has no content node; an explicit null is a scalar.
@@ -67,8 +85,7 @@ export function parseMarkdownWithNodes(source: string | Uint8Array, options: { p
   } catch (error) {
     throw new FrontmatterError(error instanceof Error ? error.message : String(error), body);
   }
-  if (value === null || typeof value !== "object" || Array.isArray(value)
-    || ![null, Object.prototype].includes(Object.getPrototypeOf(value))) {
+  if (value === null || typeof value !== "object" || Array.isArray(value) || ![null, Object.prototype].includes(Object.getPrototypeOf(value))) {
     throw new FrontmatterError("frontmatter must be a mapping", body);
   }
   return {

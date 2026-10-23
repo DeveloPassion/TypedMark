@@ -3,7 +3,9 @@ import { Hooks, Lexer, Tokenizer, type MarkedOptions, type Token } from "marked"
 class NoteLinkTokenizer extends Tokenizer {
   // Emphasis never excludes note links. Keeping its delimiters as text avoids
   // letting a rendering-only mask change actual link or code-span boundaries.
-  override emStrong(): undefined { return undefined; }
+  override emStrong(): undefined {
+    return undefined;
+  }
 }
 
 class NoteLinkLexer extends Lexer {
@@ -28,11 +30,21 @@ class NoteLinkLexer extends Lexer {
     // unescaping). Suppress them only during the rendering-mask phase.
     // https://github.com/markedjs/marked/blob/v18.0.5/src/Lexer.ts
     // https://marked.js.org/using_pro#hooks
-    tokenizer.rules = { ...rules, inline: { ...rules.inline,
-      get anyPunctuation() { return lexer.#masking ? disabled : punctuation; },
-      get blockSkip() { return lexer.#masking ? disabled : blocks; },
-      get reflinkSearch() { return lexer.#masking ? disabled : references; },
-    } };
+    tokenizer.rules = {
+      ...rules,
+      inline: {
+        ...rules.inline,
+        get anyPunctuation() {
+          return lexer.#masking ? disabled : punctuation;
+        },
+        get blockSkip() {
+          return lexer.#masking ? disabled : blocks;
+        },
+        get reflinkSearch() {
+          return lexer.#masking ? disabled : references;
+        },
+      },
+    };
     hooks.emStrongMask = (source: string): string => {
       this.#masking = false;
       return source;

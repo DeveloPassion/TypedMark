@@ -3,10 +3,18 @@ import type { SchemaRegistry } from "./schema-registry";
 import type { ValueFailure } from "./field-values";
 
 type Data = Record<string, any>;
-interface HistoryIssue extends ValueFailure { code: string; severity?: "error" | "warn" }
+interface HistoryIssue extends ValueFailure {
+  code: string;
+  severity?: "error" | "warn";
+}
 const fieldOperations = new Set(["add_field", "remove_field", "rename_field", "retype_field", "change_field"]);
 const operationKeys: Record<string, string[]> = {
-  ...Object.fromEntries(["add_note_type", "remove_note_type", "change_storage", "change_template", "change_headings", "change_relationships", "change_note_type"].map((op) => [op, ["note_type"]])),
+  ...Object.fromEntries(
+    ["add_note_type", "remove_note_type", "change_storage", "change_template", "change_headings", "change_relationships", "change_note_type"].map((op) => [
+      op,
+      ["note_type"],
+    ]),
+  ),
   ...Object.fromEntries(["rename_note_type", "rename_property_set"].map((op) => [op, ["from", "to"]])),
   ...Object.fromEntries(["add_field", "remove_field", "change_field"].map((op) => [op, ["field", "note_type", "property_set"]])),
   rename_field: ["from", "to", "note_type", "property_set"],
@@ -22,8 +30,9 @@ const record = (value: unknown): value is Data => !!value && typeof value === "o
 // SemVer 2.0.0 section 11: compare validated versions, never build metadata.
 function compareReleaseVersions(left: string, right: string): number {
   const parts = (version: string) => /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?/u.exec(version)!;
-  const a = parts(left), b = parts(right);
-  const lexical = (x: string, y: string) => x < y ? -1 : x > y ? 1 : 0;
+  const a = parts(left),
+    b = parts(right);
+  const lexical = (x: string, y: string) => (x < y ? -1 : x > y ? 1 : 0);
   // Length then ASCII order keeps numeric identifiers exact beyond Number's range.
   const numeric = (x: string, y: string) => x.length - y.length || lexical(x, y);
   for (let index = 1; index <= 3; index++) {
@@ -32,10 +41,13 @@ function compareReleaseVersions(left: string, right: string): number {
   }
   if (a[4] === undefined) return b[4] === undefined ? 0 : 1;
   if (b[4] === undefined) return -1;
-  const aPre = a[4].split("."), bPre = b[4].split(".");
+  const aPre = a[4].split("."),
+    bPre = b[4].split(".");
   for (let index = 0; index < Math.min(aPre.length, bPre.length); index++) {
-    const x = aPre[index]!, y = bPre[index]!;
-    const xNumeric = /^\d+$/u.test(x), yNumeric = /^\d+$/u.test(y);
+    const x = aPre[index]!,
+      y = bPre[index]!;
+    const xNumeric = /^\d+$/u.test(x),
+      yNumeric = /^\d+$/u.test(y);
     let order: number;
     if (xNumeric && yNumeric) order = numeric(x, y);
     else if (xNumeric !== yNumeric) order = xNumeric ? -1 : 1;
@@ -49,8 +61,13 @@ function compareReleaseVersions(left: string, right: string): number {
 export function validateHistoryOrder(entries: readonly { version: string }[]): HistoryIssue[] {
   for (let index = 1; index < entries.length; index++) {
     if (compareReleaseVersions(entries[index - 1]!.version, entries[index]!.version) >= 0) {
-      return [{ code: "invalid_history", rule: "SCE-99",
-        message: `History entry ${index + 1} must have higher SemVer precedence than entry ${index}; build metadata does not distinguish releases` }];
+      return [
+        {
+          code: "invalid_history",
+          rule: "SCE-99",
+          message: `History entry ${index + 1} must have higher SemVer precedence than entry ${index}; build metadata does not distinguish releases`,
+        },
+      ];
     }
   }
   return [];
@@ -72,14 +89,20 @@ function shapeRule(error: ErrorObject, data: Data): string {
 
 function operationMessage(errors: ErrorObject[], data: Data): string {
   const paths = new Set(errors.map((error) => /^\/history\/(\d+)\/changes\/(\d+)/u.exec(error.instancePath)?.[0]).filter((path): path is string => !!path));
-  return [...paths].map((path) => {
-    const [, , release, , offset] = path.split("/");
-    const change = data.history[Number(release)]?.changes?.[Number(offset)];
-    if (!record(change) || typeof change.op !== "string") return `${path} must declare a string op with its operands`;
-    if (!Object.hasOwn(operationKeys, change.op)) return `${path} uses unknown change operation ${change.op}`;
-    const missing = operationKeys[change.op]!.filter((key) => !Object.hasOwn(change, key) && !(fieldOperations.has(change.op) && ["note_type", "property_set"].includes(key)));
-    return missing.length ? `${path} ${change.op} is missing ${missing.join(", ")}` : `${path} ${change.op} has invalid operands`;
-  }).join("; ") || "History changes must declare supported operations and their operands";
+  return (
+    [...paths]
+      .map((path) => {
+        const [, , release, , offset] = path.split("/");
+        const change = data.history[Number(release)]?.changes?.[Number(offset)];
+        if (!record(change) || typeof change.op !== "string") return `${path} must declare a string op with its operands`;
+        if (!Object.hasOwn(operationKeys, change.op)) return `${path} uses unknown change operation ${change.op}`;
+        const missing = operationKeys[change.op]!.filter(
+          (key) => !Object.hasOwn(change, key) && !(fieldOperations.has(change.op) && ["note_type", "property_set"].includes(key)),
+        );
+        return missing.length ? `${path} ${change.op} is missing ${missing.join(", ")}` : `${path} ${change.op} has invalid operands`;
+      })
+      .join("; ") || "History changes must declare supported operations and their operands"
+  );
 }
 
 // Project only known structure on a clone. Inspect the actual operation kind,
@@ -87,30 +110,46 @@ function operationMessage(errors: ErrorObject[], data: Data): string {
 export function validateHistoryShape(data: Data, registry: SchemaRegistry, bestEffort: boolean): { valid: boolean; issues: HistoryIssue[] } {
   const shape = structuredClone(data);
   const issues: HistoryIssue[] = [];
-  const unknown = (path: string) => issues.push({ code: "unknown_field", severity: bestEffort ? "warn" : "error", rule: bestEffort ? "FND-11" : "CM-534", message: `Unrecognized history structure ${path}` });
+  const unknown = (path: string) =>
+    issues.push({
+      code: "unknown_field",
+      severity: bestEffort ? "warn" : "error",
+      rule: bestEffort ? "FND-11" : "CM-534",
+      message: `Unrecognized history structure ${path}`,
+    });
   const keep = (value: Data, keys: string[], path: string, vendor = false) => {
-    for (const key of Object.keys(value)) if (!keys.includes(key) && !(vendor && /^x_[a-z][a-z0-9_]*(?![\s\S])/u.test(key))) {
-      unknown(`${path}/${key}`); delete value[key];
-    }
+    for (const key of Object.keys(value))
+      if (!keys.includes(key) && !(vendor && /^x_[a-z][a-z0-9_]*(?![\s\S])/u.test(key))) {
+        unknown(`${path}/${key}`);
+        delete value[key];
+      }
   };
   keep(shape, ["specification_version", "history"], "", true);
-  if (Array.isArray(shape.history)) shape.history.forEach((entry: unknown, index: number) => {
-    if (!record(entry)) return;
-    keep(entry, ["version", "changes"], `/history/${index}`);
-    if (Array.isArray(entry.changes)) entry.changes = entry.changes.filter((change: unknown, offset: number) => {
-      if (!record(change)) return true;
-      const path = `/history/${index}/changes/${offset}`;
-      if (typeof change.op === "string" && Object.hasOwn(operationKeys, change.op)) keep(change, ["op", ...operationKeys[change.op]!], path);
-      else if (bestEffort && typeof change.op === "string") { unknown(`${path}/op`); return false; }
-      return true;
+  if (Array.isArray(shape.history))
+    shape.history.forEach((entry: unknown, index: number) => {
+      if (!record(entry)) return;
+      keep(entry, ["version", "changes"], `/history/${index}`);
+      if (Array.isArray(entry.changes))
+        entry.changes = entry.changes.filter((change: unknown, offset: number) => {
+          if (!record(change)) return true;
+          const path = `/history/${index}/changes/${offset}`;
+          if (typeof change.op === "string" && Object.hasOwn(operationKeys, change.op)) keep(change, ["op", ...operationKeys[change.op]!], path);
+          else if (bestEffort && typeof change.op === "string") {
+            unknown(`${path}/op`);
+            return false;
+          }
+          return true;
+        });
     });
-  });
   const errors = registry.validate("history.schema.json", shape);
   for (const rule of new Set(errors.map((error) => shapeRule(error, shape)))) {
     const relevant = errors.filter((error) => shapeRule(error, shape) === rule);
-    const message = rule === "SCE-102" ? "A field history operation requires exactly one physical artifact scope"
-      : rule === "SCE-101" ? operationMessage(relevant, shape)
-      : relevant.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ");
+    const message =
+      rule === "SCE-102"
+        ? "A field history operation requires exactly one physical artifact scope"
+        : rule === "SCE-101"
+          ? operationMessage(relevant, shape)
+          : relevant.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ");
     issues.push({ code: "invalid_history", rule, message });
   }
   return { valid: !errors.length && !issues.some((issue) => issue.severity === "error"), issues };

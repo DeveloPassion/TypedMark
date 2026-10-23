@@ -21,9 +21,12 @@ function validate(body: string, headings: HeadingRules, title = "Example") {
   mkdirSync(join(root, ".typedmark", "schemas"), { recursive: true });
   const files = [
     ["typedmark.md", "---\nspecification_version: 0.1.0\nname: headings-test\ndescription: Heading validation.\n---\n"],
-    [".typedmark/schemas/note.md", "---\nspecification_version: 0.1.0\ndescription: Note.\n"
-      + "storage:\n  folder_pattern: ''\n  note_name_pattern: Example\n"
-      + `headings: ${JSON.stringify(headings)}\n---\n`],
+    [
+      ".typedmark/schemas/note.md",
+      "---\nspecification_version: 0.1.0\ndescription: Note.\n" +
+        "storage:\n  folder_pattern: ''\n  note_name_pattern: Example\n" +
+        `headings: ${JSON.stringify(headings)}\n---\n`,
+    ],
     ["Example.md", `---\nnote_type: note\ntitle: ${JSON.stringify(title)}\n---\n\n${body}`],
   ] as const;
   for (const [path, source] of files) writeFileSync(join(root, path), source);
@@ -60,11 +63,12 @@ test("a longer matching fence closes code before the next heading", () => {
 });
 
 test("indented and container code do not contribute headings", () => {
-  const body = "    ## Indented\n\n"
-    + "> ~~~\n> ## Quoted code\n> ~~~\n\n"
-    + "- item\n\n      ## List code\n\n"
-    + "- item\n\n  ~~~\n  ## Fenced list code\n  ~~~\n\n"
-    + "## Context\n";
+  const body =
+    "    ## Indented\n\n" +
+    "> ~~~\n> ## Quoted code\n> ~~~\n\n" +
+    "- item\n\n      ## List code\n\n" +
+    "- item\n\n  ~~~\n  ## Fenced list code\n  ~~~\n\n" +
+    "## Context\n";
   expect(validate(body, contextOnly)).toMatchObject(complete);
 });
 
@@ -78,9 +82,17 @@ test("headings inside list items satisfy the H1 and H2 contracts", () => {
 
 test("multiline setext H1 and H2 content lines join with spaces", () => {
   const body = "A long\ntitle\n===\n\nProject\ncontext\n---\n";
-  expect(validate(body, {
-    require_h1_title: true, required_h2: ["Project context"], allow_other_h2: false,
-  }, "A long title")).toMatchObject(complete);
+  expect(
+    validate(
+      body,
+      {
+        require_h1_title: true,
+        required_h2: ["Project context"],
+        allow_other_h2: false,
+      },
+      "A long title",
+    ),
+  ).toMatchObject(complete);
 });
 
 // RHT-54 and RHT-56: compare the inline source, retaining literal Markdown.
@@ -89,17 +101,23 @@ test("whitespace-separated ATX closing hashes are delimiters", () => {
 });
 
 test("ATX trailing hashes without preceding whitespace remain heading text", () => {
-  expect(validate("# Example#\n\n## Context#\n", {
-    require_h1_title: true, required_h2: ["Context#"], allow_other_h2: false,
-  }, "Example#")).toMatchObject(complete);
+  expect(
+    validate(
+      "# Example#\n\n## Context#\n",
+      {
+        require_h1_title: true,
+        required_h2: ["Context#"],
+        allow_other_h2: false,
+      },
+      "Example#",
+    ),
+  ).toMatchObject(complete);
 });
 
 test("an empty ATX H2 is still an undeclared heading", () => {
   const report = validate("##\n", { allow_other_h2: false });
   expect(report).toMatchObject({ evaluation: "complete", valid: false });
-  expect(report.results).toEqual([
-    expect.objectContaining({ code: "invalid_heading", path: "Example.md" }),
-  ]);
+  expect(report.results).toEqual([expect.objectContaining({ code: "invalid_heading", path: "Example.md" })]);
 });
 
 test("escaped heading markers and code spans do not create headings", () => {
@@ -110,9 +128,17 @@ test("escaped heading markers and code spans do not create headings", () => {
 test("inline emphasis, code and entity spelling remain raw H1 and H2 text", () => {
   const title = "*Example* `code` &amp;";
   const heading = "*Context* `code` &amp;";
-  expect(validate(`# ${title}\n\n## ${heading}\n`, {
-    require_h1_title: true, required_h2: [heading], allow_other_h2: false,
-  }, title)).toMatchObject(complete);
+  expect(
+    validate(
+      `# ${title}\n\n## ${heading}\n`,
+      {
+        require_h1_title: true,
+        required_h2: [heading],
+        allow_other_h2: false,
+      },
+      title,
+    ),
+  ).toMatchObject(complete);
 });
 
 // FND-38 and FND-40 apply to both operands, without rewriting source bytes.
@@ -121,9 +147,18 @@ test("H1 titles and both declared H2 lists compare after NFC normalization", () 
     ["Caf\u00e9", "Cafe\u0301", "R\u00e9sum\u00e9", "Re\u0301sume\u0301", "Na\u00efve", "Nai\u0308ve"],
     ["Cafe\u0301", "Caf\u00e9", "Re\u0301sume\u0301", "R\u00e9sum\u00e9", "Nai\u0308ve", "Na\u00efve"],
   ]) {
-    expect(validate(`# ${bodyTitle}\r\n\r\n## ${bodyRequired}\r\n\r\n## ${bodyOptional}\r\n`, {
-      require_h1_title: true, required_h2: [required!], optional_h2: [optional!], allow_other_h2: false,
-    }, title)).toMatchObject(complete);
+    expect(
+      validate(
+        `# ${bodyTitle}\r\n\r\n## ${bodyRequired}\r\n\r\n## ${bodyOptional}\r\n`,
+        {
+          require_h1_title: true,
+          required_h2: [required!],
+          optional_h2: [optional!],
+          allow_other_h2: false,
+        },
+        title,
+      ),
+    ).toMatchObject(complete);
   }
 });
 
@@ -131,15 +166,19 @@ test("H1 title and declared H2 matching remain case-sensitive", () => {
   const report = validate("# example\n\n## context\n", titledContext);
   expect(report).toMatchObject({ evaluation: "complete", valid: false });
   expect(report.results).toHaveLength(3);
-  expect(report.results).toEqual(expect.arrayContaining([
-    expect.objectContaining({ code: "invalid_heading", path: "Example.md", heading: "Context" }),
-    expect.objectContaining({ code: "invalid_heading", path: "Example.md", heading: "context" }),
-  ]));
+  expect(report.results).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ code: "invalid_heading", path: "Example.md", heading: "Context" }),
+      expect.objectContaining({ code: "invalid_heading", path: "Example.md", heading: "context" }),
+    ]),
+  );
 });
 
 const ordered = {
-  required_h2: ["Context", "Decision"], optional_h2: ["Notes", "References"],
-  allow_other_h2: false, require_order: true,
+  required_h2: ["Context", "Decision"],
+  optional_h2: ["Notes", "References"],
+  allow_other_h2: false,
+  require_order: true,
 };
 
 test("required and optional H2 lists preserve order independently when interleaved", () => {
@@ -148,15 +187,10 @@ test("required and optional H2 lists preserve order independently when interleav
 });
 
 test("a reversed required or optional H2 list violates its own order", () => {
-  for (const body of [
-    "## Decision\n\n## Notes\n\n## Context\n\n## References\n",
-    "## Context\n\n## References\n\n## Decision\n\n## Notes\n",
-  ]) {
+  for (const body of ["## Decision\n\n## Notes\n\n## Context\n\n## References\n", "## Context\n\n## References\n\n## Decision\n\n## Notes\n"]) {
     const report = validate(body, ordered);
     expect(report).toMatchObject({ evaluation: "complete", valid: false });
-    expect(report.results).toEqual([
-      expect.objectContaining({ code: "invalid_heading", path: "Example.md" }),
-    ]);
+    expect(report.results).toEqual([expect.objectContaining({ code: "invalid_heading", path: "Example.md" })]);
   }
 });
 

@@ -22,20 +22,26 @@ test.each([
   const before = Buffer.from(bytes);
   for (const input of [source, bytes]) {
     expect(parseMarkdown(input)).toEqual({
-      data: { x_text: value }, body: "Body  \nsecond\n---\n...\n", hasFrontmatter: true,
+      data: { x_text: value },
+      body: "Body  \nsecond\n---\n...\n",
+      hasFrontmatter: true,
     });
     expect(parseMarkdown(input, { preserveBodyLineEndings: true })).toEqual({
-      data: { x_text: value }, body, hasFrontmatter: true,
+      data: { x_text: value },
+      body,
+      hasFrontmatter: true,
     });
   }
   expect(bytes).toEqual(before);
 });
 
-test.each(["---", "..."])("keeps YAML content when closing %s is at EOF", closing => {
+test.each(["---", "..."])("keeps YAML content when closing %s is at EOF", (closing) => {
   const source = `---\nx_text: |+\n  retained\n\n${closing}`;
   for (const preserveBodyLineEndings of [false, true]) {
     expect(parseMarkdown(source, { preserveBodyLineEndings })).toEqual({
-      data: { x_text: "retained\n\n" }, body: "", hasFrontmatter: true,
+      data: { x_text: "retained\n\n" },
+      body: "",
+      hasFrontmatter: true,
     });
   }
 });
@@ -58,9 +64,11 @@ test.each([
   expect(parseMarkdown(`---\n${yaml}---\n`).data).toEqual({ x_text: value });
 });
 
-test.each(["", "# Only a comment\n"])("keeps empty frontmatter a mapping: %j", yaml => {
+test.each(["", "# Only a comment\n"])("keeps empty frontmatter a mapping: %j", (yaml) => {
   expect(parseMarkdown(`---\n${yaml}---\nBody\n`)).toEqual({
-    data: {}, body: "Body\n", hasFrontmatter: true,
+    data: {},
+    body: "Body\n",
+    hasFrontmatter: true,
   });
 });
 
@@ -68,7 +76,9 @@ test("indented delimiter text remains scalar content and one leading BOM is igno
   const source = "\uFEFF---\r\nx_text: |+\r\n  ---\r\n  ...\r\n\r\n...\r\nBody\r\n";
   for (const input of [source, Buffer.from(source)]) {
     expect(parseMarkdown(input, { preserveBodyLineEndings: true })).toEqual({
-      data: { x_text: "---\n...\n\n" }, body: "Body\r\n", hasFrontmatter: true,
+      data: { x_text: "---\n...\n\n" },
+      body: "Body\r\n",
+      hasFrontmatter: true,
     });
   }
 });
@@ -77,7 +87,7 @@ test.each([
   "--- \r\nx_text: |+\r\n  retained\r\n\r\n---\r\n",
   "---\r\nx_text: |+\r\n  retained\r\n\r\n... \r\n",
   "\uFEFF---\r\nx_text: |+\r\n  retained\r\n\r\n---\r\n",
-])("non-exact or unclosed delimiters remain body after consuming one BOM: %j", body => {
+])("non-exact or unclosed delimiters remain body after consuming one BOM: %j", (body) => {
   const source = "\uFEFF" + body;
   expect(parseMarkdown(Buffer.from(source))).toEqual({ data: {}, body, hasFrontmatter: false });
 });
@@ -86,7 +96,12 @@ test("collection validation counts kept terminal breaks without rewriting source
   const root = mkdtempSync(join(tmpdir(), "typedmark-terminal-newline-"));
   const fixtures = new Map([
     ["typedmark.md", Buffer.from("---\nspecification_version: 0.1.0\nname: terminal-newline\ndescription: Parsing.\n---\n")],
-    [".typedmark/schemas/note.md", Buffer.from("---\nspecification_version: 0.1.0\ndescription: Note.\nstorage:\n  folder_pattern: ''\n  note_name_pattern: '{title}'\nfrontmatter:\n  text:\n    type: text\n    min: 10\n    max: 10\n---\n")],
+    [
+      ".typedmark/schemas/note.md",
+      Buffer.from(
+        "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage:\n  folder_pattern: ''\n  note_name_pattern: '{title}'\nfrontmatter:\n  text:\n    type: text\n    min: 10\n    max: 10\n---\n",
+      ),
+    ],
     ["Example.md", Buffer.from("\uFEFF---\r\nnote_type: note\r\ntext: |+\r\n  retained\r\n\r\n...\r\nBody  \r\nsecond\r\n")],
   ]);
   try {
@@ -101,17 +116,28 @@ test("collection validation counts kept terminal breaks without rewriting source
     });
     for (const [relative, bytes] of fixtures) expect(readFileSync(join(root, relative))).toEqual(bytes);
     expect(report).toMatchObject({ evaluation: "complete", valid: true, results: [] });
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("system import retains final keep-chomp values in root metadata and scaffold notes", async () => {
   const parent = mkdtempSync(join(tmpdir(), "typedmark-import-newline-"));
-  const sourceRoot = join(parent, "source"), targetRoot = join(parent, "instance");
+  const sourceRoot = join(parent, "source"),
+    targetRoot = join(parent, "instance");
   const schemaDirectory = resolve(import.meta.dir, "../../TypedMarkSpecification/schema/json-schema");
-  const rootBody = "Root documentation.  \r\nNext line.\n", noteBody = "Note content.  \r\nNext line.\n";
+  const rootBody = "Root documentation.  \r\nNext line.\n",
+    noteBody = "Note content.  \r\nNext line.\n";
   const fixtures = new Map([
-    ["typedmark.md", "---\nspecification_version: 0.1.0\nname: '@example/newlines'\ndescription: Parsing.\nversion: 0.1.0\nextensions: {typedmark:systems: 0.1.0}\nscaffold:\n  notes: [{path: Notes/Example.md, note_type: note}]\nx_text: |+\n  retained\n\n---\n" + rootBody],
-    [".typedmark/schemas/note.md", "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage: {folder_pattern: Notes, note_name_pattern: Example}\n---\n"],
+    [
+      "typedmark.md",
+      "---\nspecification_version: 0.1.0\nname: '@example/newlines'\ndescription: Parsing.\nversion: 0.1.0\nextensions: {typedmark:systems: 0.1.0}\nscaffold:\n  notes: [{path: Notes/Example.md, note_type: note}]\nx_text: |+\n  retained\n\n---\n" +
+        rootBody,
+    ],
+    [
+      ".typedmark/schemas/note.md",
+      "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage: {folder_pattern: Notes, note_name_pattern: Example}\n---\n",
+    ],
     [".typedmark/templates/note.md", "---\nnote_type: note\ndescription: |+\n  retained\n\n---\n" + noteBody],
   ]);
   try {
@@ -120,8 +146,11 @@ test("system import retains final keep-chomp values in root metadata and scaffol
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, source);
     }
-    expect(validateCollection({ collectionRoot: sourceRoot, schemaDirectory, mode: "system_definition" }))
-      .toMatchObject({ valid: true, evaluation: "complete", results: [] });
+    expect(validateCollection({ collectionRoot: sourceRoot, schemaDirectory, mode: "system_definition" })).toMatchObject({
+      valid: true,
+      evaluation: "complete",
+      results: [],
+    });
     const result = await instantiateSystem({ sourceRoot, targetRoot, schemaDirectory, collectionName: "working" });
     expect(result.report).toMatchObject({ valid: true, evaluation: "complete", results: [] });
     const root = parseMarkdown(readFileSync(join(targetRoot, "typedmark.md")), { preserveBodyLineEndings: true });
@@ -136,13 +165,20 @@ test("system import retains final keep-chomp values in root metadata and scaffol
   }
 });
 
-test.each([" \n", " \n \n", "\n \n", "retained\n\n"])("scaffold serialization preserves explicit multiline whitespace %j", async value => {
+test.each([" \n", " \n \n", "\n \n", "retained\n\n"])("scaffold serialization preserves explicit multiline whitespace %j", async (value) => {
   const parent = mkdtempSync(join(tmpdir(), "typedmark-scaffold-whitespace-"));
-  const sourceRoot = join(parent, "source"), targetRoot = join(parent, "instance");
+  const sourceRoot = join(parent, "source"),
+    targetRoot = join(parent, "instance");
   const schemaDirectory = resolve(import.meta.dir, "../../TypedMarkSpecification/schema/json-schema");
   const fixtures = new Map([
-    ["typedmark.md", `---\nspecification_version: 0.1.0\nname: '@example/whitespace'\ndescription: Parsing.\nversion: 0.1.0\nextensions: {typedmark:systems: 0.1.0}\nscaffold:\n  notes:\n    - path: Notes/Example.md\n      note_type: note\n      values: {description: ${JSON.stringify(value)}}\n---\n`],
-    [".typedmark/schemas/note.md", "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage: {folder_pattern: Notes, note_name_pattern: Example}\n---\n"],
+    [
+      "typedmark.md",
+      `---\nspecification_version: 0.1.0\nname: '@example/whitespace'\ndescription: Parsing.\nversion: 0.1.0\nextensions: {typedmark:systems: 0.1.0}\nscaffold:\n  notes:\n    - path: Notes/Example.md\n      note_type: note\n      values: {description: ${JSON.stringify(value)}}\n---\n`,
+    ],
+    [
+      ".typedmark/schemas/note.md",
+      "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage: {folder_pattern: Notes, note_name_pattern: Example}\n---\n",
+    ],
   ]);
   try {
     for (const [relative, source] of fixtures) {
@@ -150,8 +186,11 @@ test.each([" \n", " \n \n", "\n \n", "retained\n\n"])("scaffold serialization pr
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, source);
     }
-    expect(validateCollection({ collectionRoot: sourceRoot, schemaDirectory, mode: "system_definition" }))
-      .toMatchObject({ valid: true, evaluation: "complete", results: [] });
+    expect(validateCollection({ collectionRoot: sourceRoot, schemaDirectory, mode: "system_definition" })).toMatchObject({
+      valid: true,
+      evaluation: "complete",
+      results: [],
+    });
     const result = await instantiateSystem({ sourceRoot, targetRoot, schemaDirectory, collectionName: "working" });
     expect(result.report).toMatchObject({ valid: true, evaluation: "complete", results: [] });
     expect(parseMarkdown(readFileSync(join(targetRoot, "Notes/Example.md"))).data.description).toBe(value);

@@ -3,11 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { cp, readdir, readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import {
-  compareValidationReports,
-  getCapabilities,
-  runConformanceVector,
-} from "../src/adapter";
+import { compareValidationReports, getCapabilities, runConformanceVector } from "../src/adapter";
 import type { ValidationReport } from "../src/types";
 
 const specificationRoot = resolve(import.meta.dir, "../../TypedMarkSpecification");
@@ -40,14 +36,16 @@ test("report comparison ignores messages but not machine fields or duplicates", 
     required_extensions: {},
     evaluated_extensions: {},
     valid: false,
-    results: [{
-      code: "invalid_field_value",
-      severity: "error",
-      path: "Note.md",
-      rule_id: "FDR-13",
-      message: "expected wording",
-      field: "when",
-    }],
+    results: [
+      {
+        code: "invalid_field_value",
+        severity: "error",
+        path: "Note.md",
+        rule_id: "FDR-13",
+        message: "expected wording",
+        field: "when",
+      },
+    ],
   };
   const localized = structuredClone(expected);
   localized.results[0]!.message = "localized wording";
@@ -59,36 +57,82 @@ test("report comparison ignores messages but not machine fields or duplicates", 
 });
 
 test.each([
-  "core-valid", "core-invalid-field-value", "mandatory-tags-missing", "unsupported-required-extension",
+  "core-valid",
+  "core-invalid-field-value",
+  "mandatory-tags-missing",
+  "unsupported-required-extension",
   "unsupported-extension-version",
-  "limited-required-extension", "supported-required-extension", "undeclared-reuse",
-  "views-valid", "views-invalid",
-  "explicit-type-property-set-valid", "reuse-composition-valid", "reuse-conditions-invalid",
-  "optional-artifacts-valid", "derived-contracts-valid", "derived-contracts-invalid",
-  "authoring-tracking-valid", "authoring-tracking-invalid",
-  "core-association-valid", "core-association-invalid", "core-mapping-declarations-invalid",
-  "core-fields-valid", "core-fields-invalid", "storage-valid", "storage-invalid",
-  "storage-declarations-invalid", "storage-timezone-invalid",
-  "core-cardinality-valid", "core-cardinality-invalid", "core-count-range-invalid",
-  "history-valid", "history-unsupported-version", "history-best-effort", "composition-provenance-invalid",
-  "history-order-valid", "history-order-invalid",
-  "root-best-effort", "root-unsupported",
-  "scaffold-references-valid", "scaffold-references-invalid", "scaffold-references-unavailable",
-  "template-values-invalid", "template-placeholders-valid", "scaffold-template-override-invalid",
-  "headings-commonmark-valid", "headings-constraints-invalid",
-  "nested-links-valid", "nested-links-invalid",
+  "limited-required-extension",
+  "supported-required-extension",
+  "undeclared-reuse",
+  "views-valid",
+  "views-invalid",
+  "explicit-type-property-set-valid",
+  "reuse-composition-valid",
+  "reuse-conditions-invalid",
+  "optional-artifacts-valid",
+  "derived-contracts-valid",
+  "derived-contracts-invalid",
+  "authoring-tracking-valid",
+  "authoring-tracking-invalid",
+  "core-association-valid",
+  "core-association-invalid",
+  "core-mapping-declarations-invalid",
+  "core-fields-valid",
+  "core-fields-invalid",
+  "storage-valid",
+  "storage-invalid",
+  "storage-declarations-invalid",
+  "storage-timezone-invalid",
+  "core-cardinality-valid",
+  "core-cardinality-invalid",
+  "core-count-range-invalid",
+  "history-valid",
+  "history-unsupported-version",
+  "history-best-effort",
+  "composition-provenance-invalid",
+  "history-order-valid",
+  "history-order-invalid",
+  "root-best-effort",
+  "root-unsupported",
+  "scaffold-references-valid",
+  "scaffold-references-invalid",
+  "scaffold-references-unavailable",
+  "template-values-invalid",
+  "template-placeholders-valid",
+  "scaffold-template-override-invalid",
+  "headings-commonmark-valid",
+  "headings-constraints-invalid",
+  "nested-links-valid",
+  "nested-links-invalid",
   "unknown-field-contexts",
-  "target-scope-system-definition", "target-scope-instantiated-collection", "target-scope-both",
+  "target-scope-system-definition",
+  "target-scope-instantiated-collection",
+  "target-scope-both",
   "pending-template-references-invalid",
   "html-body-links-invalid",
-  "body-links-escaped-labels-valid", "body-links-html-context-invalid",
-  "note-link-entities-valid", "note-link-entities-invalid",
-  "note-link-percent-valid", "note-link-percent-invalid", "note-link-percent-suppressed",
-  "note-link-unicode-valid", "note-link-unicode-invalid", "note-link-unicode-suppressed",
-  "note-link-fragment-valid", "note-link-fragment-invalid", "note-link-fragment-suppressed",
-  "uri-syntax-valid", "uri-syntax-invalid", "uri-syntax-defaults-invalid",
-  "inline-lexer-unicode-valid", "inline-lexer-backticks-invalid",
-  "yaml-core-valid", "yaml-core-invalid", "yaml-terminal-valid", "yaml-terminal-invalid",
+  "body-links-escaped-labels-valid",
+  "body-links-html-context-invalid",
+  "note-link-entities-valid",
+  "note-link-entities-invalid",
+  "note-link-percent-valid",
+  "note-link-percent-invalid",
+  "note-link-percent-suppressed",
+  "note-link-unicode-valid",
+  "note-link-unicode-invalid",
+  "note-link-unicode-suppressed",
+  "note-link-fragment-valid",
+  "note-link-fragment-invalid",
+  "note-link-fragment-suppressed",
+  "uri-syntax-valid",
+  "uri-syntax-invalid",
+  "uri-syntax-defaults-invalid",
+  "inline-lexer-unicode-valid",
+  "inline-lexer-backticks-invalid",
+  "yaml-core-valid",
+  "yaml-core-invalid",
+  "yaml-terminal-valid",
+  "yaml-terminal-invalid",
 ])("runs %s without modifying its collection", async (name) => {
   const supportedExtensions = getCapabilities().extensions;
   const vectorDirectory = join(goldenDirectory, name);
@@ -103,8 +147,7 @@ test("a caller cannot manufacture an unsupported case by hiding an implemented c
   try {
     await cp(join(goldenDirectory, "limited-required-extension"), vectorDirectory, { recursive: true });
     writeFileSync(join(vectorDirectory, "vector.json"), '{"unsupported_extensions":["typedmark:systems"]}');
-    await expect(runConformanceVector({ vectorDirectory, schemaDirectory, supportedExtensions: {} }))
-      .rejects.toThrow("not_run_precondition");
+    await expect(runConformanceVector({ vectorDirectory, schemaDirectory, supportedExtensions: {} })).rejects.toThrow("not_run_precondition");
   } finally {
     rmSync(vectorDirectory, { recursive: true, force: true });
   }
@@ -125,7 +168,9 @@ test("expected reports cannot select the actual report edition", async () => {
     expect(result.actual.specification_version).toBe("0.1.0");
     expect(result.differences.length).toBeGreaterThan(0);
     expect(result.collectionChanged).toBe(false);
-  } finally { rmSync(root, { recursive: true, force: true }); }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test.each(["missing-extension-dependency", "conflicting-extension-dependency"])("does not run expired negotiation preconditions for %s", async (name) => {
@@ -134,7 +179,9 @@ test.each(["missing-extension-dependency", "conflicting-extension-dependency"])(
 
 test("caller scope can omit an irrelevant version during exact-version negotiation", async () => {
   const result = await runConformanceVector({
-    vectorDirectory: join(goldenDirectory, "unsupported-extension-version"), schemaDirectory, supportedExtensions: {},
+    vectorDirectory: join(goldenDirectory, "unsupported-extension-version"),
+    schemaDirectory,
+    supportedExtensions: {},
   });
   expect(result.differences).toEqual([]);
   expect(result.requestedExtensions).toEqual({});

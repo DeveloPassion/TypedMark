@@ -14,10 +14,15 @@ test("compares objects independently of key order and sequences in order", () =>
 });
 
 test.each([
-  ["integer", "number", "lossless"], ["number", "integer", "conditional"],
-  ["date", "text", "lossless"], ["text", "date", "conditional"],
-  ["datetime", "date", "incompatible"], ["checkbox", "text", "incompatible"],
-  ["object", "object", "exact"], ["object", "any", "lossless"], ["any", "object", "conditional"],
+  ["integer", "number", "lossless"],
+  ["number", "integer", "conditional"],
+  ["date", "text", "lossless"],
+  ["text", "date", "conditional"],
+  ["datetime", "date", "incompatible"],
+  ["checkbox", "text", "incompatible"],
+  ["object", "object", "exact"],
+  ["object", "any", "lossless"],
+  ["any", "object", "conditional"],
 ] as const)("classifies %s to %s as %s", (source, target, expected) => {
   expect(classifyConversion({ type: source }, { type: target })).toBe(expected);
 });
@@ -39,7 +44,14 @@ test.each([
   { name: "template", validate: validateTemplateValue },
 ])("$name value validation still checks note-link syntax without a managed-note graph", ({ validate }) => {
   expect(validate("[bad](N.md#bad%)", { type: "link", format: "note_link" }, "UTC")?.rule).toBe("FDR-142");
-  expect(validate({ reference: "[bad](N%GG.md)" }, {
-    type: "object", fields: { reference: { type: "link", format: "note_link" } },
-  }, "UTC")?.rule).toBe("FDR-142");
+  expect(
+    validate(
+      { reference: "[bad](N%GG.md)" },
+      {
+        type: "object",
+        fields: { reference: { type: "link", format: "note_link" } },
+      },
+      "UTC",
+    )?.rule,
+  ).toBe("FDR-142");
 });

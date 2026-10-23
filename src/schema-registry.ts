@@ -71,7 +71,10 @@ function shapeValue(value: unknown): unknown {
     const { source, target } = pending.pop()!;
     for (const [key, child] of Object.entries(source)) {
       Object.defineProperty(target, key, {
-        value: project(child), enumerable: true, writable: true, configurable: true,
+        value: project(child),
+        enumerable: true,
+        writable: true,
+        configurable: true,
       });
     }
   }

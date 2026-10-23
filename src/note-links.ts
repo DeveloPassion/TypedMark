@@ -26,12 +26,15 @@ export interface ExtractedNoteLink extends ParsedNoteLink {
 }
 export class NoteLinkError extends Error {
   field?: string;
-  constructor(readonly rule_id: string, message: string, readonly schemaIssue?: SchemaIssue) { super(`${rule_id}: ${message}`); }
+  constructor(
+    readonly rule_id: string,
+    message: string,
+    readonly schemaIssue?: SchemaIssue,
+  ) {
+    super(`${rule_id}: ${message}`);
+  }
 }
-type NoteLinkInspection =
-  | { kind: "parsed"; link: ParsedNoteLink }
-  | { kind: "invalid"; error: NoteLinkError }
-  | { kind: "ignored" };
+type NoteLinkInspection = { kind: "parsed"; link: ParsedNoteLink } | { kind: "invalid"; error: NoteLinkError } | { kind: "ignored" };
 
 export function parseNoteLink(raw: string): ParsedNoteLink | undefined {
   const inspected = inspectNoteLink(raw);
@@ -65,8 +68,9 @@ function decodeMarkdownComponent(value: string, component: "target" | "anchor"):
   // NL-11 decodes internal Unicode targets/anchors as UTF-8; URI fields are separate.
   // decodeURIComponent performs one strict UTF-8 pass and leaves '+' literal.
   // https://tc39.es/ecma262/#sec-decodeuricomponent-encodeduricomponent
-  try { return decodeURIComponent(value); }
-  catch (error) {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
     if (!(error instanceof URIError)) throw error;
     const rule = /%(?![0-9A-Fa-f]{2})/u.test(value) ? "NL-6" : "NL-11";
     throw new NoteLinkError(rule, `Markdown ${component} contains malformed or non-UTF-8 percent encoding`);
@@ -76,12 +80,21 @@ function decodeMarkdownComponent(value: string, component: "target" | "anchor"):
 function inspectNoteLink(raw: string): NoteLinkInspection {
   const wiki = /^(!?)\[\[([^\]\r\n]+)\]\](?![\s\S])/u.exec(raw);
   if (wiki) {
-    const inner = wiki[2]!, pipe = inner.indexOf("|");
+    const inner = wiki[2]!,
+      pipe = inner.indexOf("|");
     const destination = pipe < 0 ? inner : inner.slice(0, pipe);
     const hash = destination.indexOf("#");
-    return { kind: "parsed", link: { raw, form: "wikilink", target: hash < 0 ? destination : destination.slice(0, hash), embed: wiki[1] === "!",
-      ...(hash < 0 ? {} : { anchor: destination.slice(hash + 1) }),
-      ...(pipe < 0 ? {} : { displayText: inner.slice(pipe + 1) }) } };
+    return {
+      kind: "parsed",
+      link: {
+        raw,
+        form: "wikilink",
+        target: hash < 0 ? destination : destination.slice(0, hash),
+        embed: wiki[1] === "!",
+        ...(hash < 0 ? {} : { anchor: destination.slice(hash + 1) }),
+        ...(pipe < 0 ? {} : { displayText: inner.slice(pipe + 1) }),
+      },
+    };
   }
   const tokens = createNoteLinkLexer().inlineTokens(raw);
   if (tokens.length !== 1 || !["link", "image"].includes(tokens[0]!.type) || tokens[0]!.raw !== raw) return { kind: "ignored" };
@@ -108,11 +121,20 @@ function inspectNoteLink(raw: string): NoteLinkInspection {
   // Fragment interpretation remains separate; target spelling is checked
   // before decoding so encoded delimiters stay data during URI parsing.
   if (!isUriReference(parsed.target)) {
-    return { kind: "invalid", error: new NoteLinkError("NL-6", "Markdown target must use valid RFC 3986 URI-reference syntax; encode reserved or non-ASCII filename characters") };
+    return {
+      kind: "invalid",
+      error: new NoteLinkError("NL-6", "Markdown target must use valid RFC 3986 URI-reference syntax; encode reserved or non-ASCII filename characters"),
+    };
   }
   try {
-    const link: ParsedNoteLink = { raw, form: "markdown", target: decodeMarkdownComponent(parsed.target, "target"), embed: token.type === "image",
-      displayText: source[1], ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }) };
+    const link: ParsedNoteLink = {
+      raw,
+      form: "markdown",
+      target: decodeMarkdownComponent(parsed.target, "target"),
+      embed: token.type === "image",
+      displayText: source[1],
+      ...(parsed.anchor === undefined ? {} : { anchor: parsed.anchor }),
+    };
     interpretNoteLinkAnchor(link);
     return { kind: "parsed", link };
   } catch (error) {
@@ -122,7 +144,8 @@ function inspectNoteLink(raw: string): NoteLinkInspection {
 }
 
 const wikilinks: TokenizerExtension = {
-  name: "typedmarkWikilink", level: "inline",
+  name: "typedmarkWikilink",
+  level: "inline",
   // Marked's text rule already stops at '['/'!'; a start callback would
   // repeatedly scan a long remaining suffix before every plain-text token.
   tokenizer(source) {
@@ -137,17 +160,23 @@ markdown.use({ extensions: [wikilinks] });
 // HTML tags hide its links. Custom inline tokens run before the built-in tag rule.
 // https://marked.js.org/using_pro#extensions
 const htmlContent = new Marked({ gfm: false });
-htmlContent.use({ extensions: [wikilinks, {
-  name: "typedmarkLiteralHtmlOpen", level: "inline",
-  tokenizer(source) {
-    if (!source.startsWith("<")) return;
-    // This lexer only extracts links. Consume literal HTML prose in one chunk,
-    // stopping before link/embed starts, escapes or code spans, rather than
-    // making every tag delimiter re-enter Marked's full inline-rule pipeline.
-    const boundary = source.search(/[\\`\[]|!\[/u);
-    return { type: "typedmarkLiteralHtmlOpen", raw: boundary < 0 ? source : source.slice(0, boundary) };
-  },
-}] });
+htmlContent.use({
+  extensions: [
+    wikilinks,
+    {
+      name: "typedmarkLiteralHtmlOpen",
+      level: "inline",
+      tokenizer(source) {
+        if (!source.startsWith("<")) return;
+        // This lexer only extracts links. Consume literal HTML prose in one chunk,
+        // stopping before link/embed starts, escapes or code spans, rather than
+        // making every tag delimiter re-enter Marked's full inline-rule pipeline.
+        const boundary = source.search(/[\\`\[]|!\[/u);
+        return { type: "typedmarkLiteralHtmlOpen", raw: boundary < 0 ? source : source.slice(0, boundary) };
+      },
+    },
+  ],
+});
 
 export interface BodyLinkInspection {
   links: ExtractedNoteLink[];
@@ -173,9 +202,9 @@ export function inspectBodyLinks(body: string): BodyLinkInspection {
       if (["typedmarkWikilink", "link", "image"].includes(token.type)) {
         const candidate = inspectNoteLink(token.raw);
         if (candidate.kind !== "ignored") {
-          const start = frame.offsets[offset], last = frame.offsets[end - 1];
-          if (start === undefined || last === undefined || start < 0 || last < start
-            || body[start] !== token.raw[0] || body[last] !== token.raw.at(-1)) {
+          const start = frame.offsets[offset],
+            last = frame.offsets[end - 1];
+          if (start === undefined || last === undefined || start < 0 || last < start || body[start] !== token.raw[0] || body[last] !== token.raw.at(-1)) {
             throw new Error("Body link source span is unavailable");
           }
           const source = { start, end: last + 1, raw: body.slice(start, last + 1) };
@@ -209,7 +238,8 @@ function sliceSource(frame: MarkdownBlockSource, start: number, end: number): Ma
 
 function withoutMarkerLines(frame: MarkdownBlockSource): MarkdownBlockSource {
   if (!frame.text.includes("<!-- typedmark:") && !frame.text.includes("<!-- /typedmark:")) return frame;
-  const text: string[] = [], offsets: number[] = [];
+  const text: string[] = [],
+    offsets: number[] = [];
   let start = 0;
   let removed = false;
   for (const line of frame.text.split("\n")) {
@@ -228,7 +258,12 @@ function inlineLexer(parser: Marked): Lexer {
 }
 
 type Resolution = { kind: "note" | "asset"; path: string } | { kind: "unresolved" };
-export function resolveNoteLink(link: Pick<ParsedNoteLink, "form" | "target" | "embed">, source: string, model: CollectionModel, targets?: (note: ManagedNote) => boolean): Resolution {
+export function resolveNoteLink(
+  link: Pick<ParsedNoteLink, "form" | "target" | "embed">,
+  source: string,
+  model: CollectionModel,
+  targets?: (note: ManagedNote) => boolean,
+): Resolution {
   const target = link.target.normalize("NFC");
   const named = link.form === "wikilink" && !target.includes("/");
   if (!named) {
@@ -256,10 +291,22 @@ export function resolveNoteLink(link: Pick<ParsedNoteLink, "form" | "target" | "
   const names = documents.filter((note) => posix.basename(note.path, ".md") === target).map((note) => note.path);
   const byName = choose(names, "note");
   if (byName) return byName;
-  const aliases = managed.filter((note) => Array.isArray(note.stored.aliases) && note.stored.aliases.some((alias: unknown) => typeof alias === "string" && alias.normalize("NFC") === target));
-  return choose(aliases.map((note) => note.path), "note")
-    ?? (target.includes(".") ? choose([...model.assets].filter((path) => posix.basename(path) === target), "asset") : undefined)
-    ?? { kind: "unresolved" };
+  const aliases = managed.filter(
+    (note) =>
+      Array.isArray(note.stored.aliases) && note.stored.aliases.some((alias: unknown) => typeof alias === "string" && alias.normalize("NFC") === target),
+  );
+  return (
+    choose(
+      aliases.map((note) => note.path),
+      "note",
+    ) ??
+    (target.includes(".")
+      ? choose(
+          [...model.assets].filter((path) => posix.basename(path) === target),
+          "asset",
+        )
+      : undefined) ?? { kind: "unresolved" }
+  );
 }
 
 export interface RelationshipGraph {
@@ -277,7 +324,10 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
     const fieldEdges = new Map<string, Set<string>>();
     graph.fieldTargets.set(note.path, fieldEdges);
     const issue = model.schemaIssues?.get(note.noteType);
-    if (issue) { graph.failures.set(note.path, [new NoteLinkError("CM-308", issue.message, issue)]); continue; }
+    if (issue) {
+      graph.failures.set(note.path, [new NoteLinkError("CM-308", issue.message, issue)]);
+      continue;
+    }
     const schema = model.schemas.get(note.noteType)!;
     const record = (link: ParsedNoteLink, kind?: RelationshipKind, targets?: string[], validateExists = false, field = false, fieldName?: string) => {
       const allowed = targets ? (candidate: ManagedNote) => targets.some((type) => matchesType(candidate.noteType, type)) : undefined;
@@ -302,10 +352,13 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
     const recordFailure = (error: NoteLinkError, field?: string) => {
       error.field = field;
       const failures = graph.failures.get(note.path) ?? [];
-      failures.push(error); graph.failures.set(note.path, failures);
+      failures.push(error);
+      graph.failures.set(note.path, failures);
     };
     const attempt = (action: () => void, field?: string) => {
-      try { action(); } catch (error) {
+      try {
+        action();
+      } catch (error) {
         if (!(error instanceof NoteLinkError)) throw error;
         recordFailure(error, field);
       }
@@ -324,14 +377,18 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
       if (definition.type === "object") {
         if (typeof value !== "object" || ![null, Object.prototype].includes(Object.getPrototypeOf(value))) return;
         const effective = value as Record<string, unknown>;
-        const physical = present && stored !== null && typeof stored === "object" && !Array.isArray(stored)
-          ? stored as Record<string, unknown> : undefined;
+        const physical = present && stored !== null && typeof stored === "object" && !Array.isArray(stored) ? (stored as Record<string, unknown>) : undefined;
         for (const [name, child] of Object.entries(definition.fields ?? {})) {
           const childPresent = physical !== undefined && Object.hasOwn(physical, name);
           // FDR-151/160 depend on stored leaves, not a stored parent or defaults.
           // Nested fields never inherit a top-level relationship contribution.
-          visit(child, Object.hasOwn(effective, name) ? effective[name] : undefined,
-            childPresent ? physical[name] : undefined, childPresent, `${field}.${name}`);
+          visit(
+            child,
+            Object.hasOwn(effective, name) ? effective[name] : undefined,
+            childPresent ? physical[name] : undefined,
+            childPresent,
+            `${field}.${name}`,
+          );
         }
         return;
       }
@@ -345,8 +402,14 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
     };
     for (const [name, definition] of Object.entries(note.fields)) {
       const present = Object.hasOwn(note.stored, name);
-      visit(definition, Object.hasOwn(note.values, name) ? note.values[name] : undefined,
-        present ? note.stored[name] : undefined, present, name, definition.relationship_kind);
+      visit(
+        definition,
+        Object.hasOwn(note.values, name) ? note.values[name] : undefined,
+        present ? note.stored[name] : undefined,
+        present,
+        name,
+        definition.relationship_kind,
+      );
     }
     const body = inspectBodyLinks(note.body);
     for (const failure of body.failures) recordFailure(failure.error);

@@ -25,7 +25,10 @@ test.each([
 
   expect(links).toHaveLength(1);
   expect(links[0]).toMatchObject({
-    raw, form, embed, displayText: "📝 Label",
+    raw,
+    form,
+    embed,
+    displayText: "📝 Label",
     target: form === "wikilink" ? "Cafe\u0301" : "Cafe\u0301.md",
     anchor: form === "wikilink" ? "Re\u0301sume\u0301" : "Re%CC%81sume%CC%81",
   });
@@ -39,8 +42,12 @@ test.each(lineEndings)("preserves physical $name line endings in a flat multilin
 
   expect(links).toHaveLength(1);
   expect(links[0]).toMatchObject({
-    raw: "[first\nsecond](Target.md#Heading)", form: "markdown", target: "Target.md",
-    displayText: "first\nsecond", anchor: "Heading", embed: false,
+    raw: "[first\nsecond](Target.md#Heading)",
+    form: "markdown",
+    target: "Target.md",
+    displayText: "first\nsecond",
+    anchor: "Heading",
+    embed: false,
   });
   expectSource(links[0], prefix.length, raw);
 });
@@ -61,8 +68,12 @@ test.each(lineEndings.flatMap((ending) => containers.map((container) => ({ ...en
 
     expect(links).toHaveLength(1);
     expect(links[0]).toMatchObject({
-      raw: "[first\nsecond](Target.md#Heading)", form: "markdown", target: "Target.md",
-      displayText: "first\nsecond", anchor: "Heading", embed: false,
+      raw: "[first\nsecond](Target.md#Heading)",
+      form: "markdown",
+      target: "Target.md",
+      displayText: "first\nsecond",
+      anchor: "Heading",
+      embed: false,
     });
     expectSource(links[0], prefix.length, raw);
   },
@@ -75,20 +86,23 @@ test.each(lineEndings)("includes a multiline destination and title in the $name 
 
   expect(links).toHaveLength(1);
   expect(links[0]).toMatchObject({
-    raw: '[label](\nTarget.md#Heading\n"A title")', form: "markdown", target: "Target.md",
-    displayText: "label", anchor: "Heading", embed: false,
+    raw: '[label](\nTarget.md#Heading\n"A title")',
+    form: "markdown",
+    target: "Target.md",
+    displayText: "label",
+    anchor: "Heading",
+    embed: false,
   });
   expectSource(links[0], prefix.length, raw);
 });
 
-test.each(lineEndings.flatMap((ending) => [
-  { ...ending, form: "wikilink", raw: "[[Same]]", target: "Same" },
-  { ...ending, form: "markdown", raw: "[Same](Same.md)", target: "Same.md" },
-]))("locates repeated $form occurrences after excluded decoys with $name endings", ({ eol, raw, target }) => {
-  const prefix = [
-    `\`${raw}\``, "", "```md", raw, "```", "", "~~~md", raw, "~~~", "",
-    `    ${raw}`, "", `\\${raw}`, "", "Before ",
-  ].join(eol);
+test.each(
+  lineEndings.flatMap((ending) => [
+    { ...ending, form: "wikilink", raw: "[[Same]]", target: "Same" },
+    { ...ending, form: "markdown", raw: "[Same](Same.md)", target: "Same.md" },
+  ]),
+)("locates repeated $form occurrences after excluded decoys with $name endings", ({ eol, raw, target }) => {
+  const prefix = [`\`${raw}\``, "", "```md", raw, "```", "", "~~~md", raw, "~~~", "", `    ${raw}`, "", `\\${raw}`, "", "Before "].join(eol);
   const between = " and ";
   const htmlOpening = `${eol}${eol}<div>`;
   const body = prefix + raw + between + raw + htmlOpening + raw + "</div>";
@@ -108,8 +122,12 @@ test.each(lineEndings)("maps an HTML-contained multiline link through a blockquo
 
   expect(links.map((link) => link.target)).toEqual(["Target.md", "Last"]);
   expect(links[0]).toMatchObject({
-    raw: "![first\nsecond](<Target.md#Heading> 'title')", form: "markdown", target: "Target.md",
-    displayText: "first\nsecond", anchor: "Heading", embed: true,
+    raw: "![first\nsecond](<Target.md#Heading> 'title')",
+    form: "markdown",
+    target: "Target.md",
+    displayText: "first\nsecond",
+    anchor: "Heading",
+    embed: true,
   });
   expectSource(links[0], prefix.length, raw);
   expectSource(links[1], prefix.length + raw.length + suffix.length - "[[Last]]".length, "[[Last]]");
@@ -117,12 +135,10 @@ test.each(lineEndings)("maps an HTML-contained multiline link through a blockquo
 
 test.each(lineEndings)("retains offsets past marker metadata while excluding its links with $name endings", ({ eol }) => {
   const raw = "[[Same]]";
-  const expansionStart = '<!-- typedmark:expansion {"id":"summary","mode":"manual","state":"materialized","source":{"kind":"note_field","note":"[[Same]]","field":"summary"},"render":{"item":"${value}"}} -->';
+  const expansionStart =
+    '<!-- typedmark:expansion {"id":"summary","mode":"manual","state":"materialized","source":{"kind":"note_field","note":"[[Same]]","field":"summary"},"render":{"item":"${value}"}} -->';
   const prefix = expansionStart + eol;
-  const between = [
-    "", "<!-- /typedmark:expansion -->", "",
-    '<!-- typedmark:template-region {"id":"guidance"} -->', "",
-  ].join(eol);
+  const between = ["", "<!-- /typedmark:expansion -->", "", '<!-- typedmark:template-region {"id":"guidance"} -->', ""].join(eol);
   const suffix = `${eol}<!-- /typedmark:template-region -->${eol}`;
   const links = extractBodyLinks(prefix + raw + between + raw + suffix);
 
@@ -153,29 +169,27 @@ test.each([
   expect(extractBodyLinks(body).map((link) => link.target)).toEqual([...targets]);
 });
 
-test.each([
-  "<!-- start\n\n[x]: [[Visible]]\n\nend -->",
-  "<!-- start\n\n    [[Visible]]\n\nend -->",
-  "<!-- start\n```\n[[Visible]]\nend -->",
-])("HTML content does not acquire invented reference/code blocks: %j", (body) => {
-  const links = extractBodyLinks(body);
-  expect(links.map((link) => link.target)).toEqual(["Visible"]);
-  expectSource(links[0], body.indexOf("[[Visible]]"), "[[Visible]]");
-});
+test.each(["<!-- start\n\n[x]: [[Visible]]\n\nend -->", "<!-- start\n\n    [[Visible]]\n\nend -->", "<!-- start\n```\n[[Visible]]\nend -->"])(
+  "HTML content does not acquire invented reference/code blocks: %j",
+  (body) => {
+    const links = extractBodyLinks(body);
+    expect(links.map((link) => link.target)).toEqual(["Visible"]);
+    expectSource(links[0], body.indexOf("[[Visible]]"), "[[Visible]]");
+  },
+);
 
-test.each([
-  "[ref]: Elsewhere.md\r\n[[Visible]]\r\n---",
-  ">\t[[Visible]]",
-  "-\t[[Visible]]",
-  "[[Visible]]\r",
-])("source positions survive reference-prefix, tab, and EOF processing: %j", (body) => {
-  const links = extractBodyLinks(body);
-  expect(links.map((link) => link.target)).toEqual(["Visible"]);
-  expectSource(links[0], body.indexOf("[[Visible]]"), "[[Visible]]");
-});
+test.each(["[ref]: Elsewhere.md\r\n[[Visible]]\r\n---", ">\t[[Visible]]", "-\t[[Visible]]", "[[Visible]]\r"])(
+  "source positions survive reference-prefix, tab, and EOF processing: %j",
+  (body) => {
+    const links = extractBodyLinks(body);
+    expect(links.map((link) => link.target)).toEqual(["Visible"]);
+    expectSource(links[0], body.indexOf("[[Visible]]"), "[[Visible]]");
+  },
+);
 
 test("block preprocessing does not coerce original note-link characters", () => {
-  const raw = "[[A\0B#H\0I|D\0E]]", body = "> " + raw;
+  const raw = "[[A\0B#H\0I|D\0E]]",
+    body = "> " + raw;
   const links = extractBodyLinks(body);
   expect(links[0]).toMatchObject({ raw, target: "A\0B", anchor: "H\0I", displayText: "D\0E" });
   expectSource(links[0], 2, raw);
@@ -186,7 +200,8 @@ test("a blank line ending an HTML block still permits a real indented code block
 });
 
 test.each(["## [[Visible]] ###", "> # [[Visible]] #", "- ## [[Visible]]", ">\t## [[Visible]]", "-\t# [[Visible]]", "#\t[[Visible]]"])(
-  "captures ATX source without treating heading/container prefixes as link text: %j", (body) => {
+  "captures ATX source without treating heading/container prefixes as link text: %j",
+  (body) => {
     const links = extractBodyLinks(body);
     expect(links.map((link) => link.target)).toEqual(["Visible"]);
     expectSource(links[0], body.indexOf("[[Visible]]"), "[[Visible]]");
@@ -201,26 +216,29 @@ test("maps partially consumed tabs without inventing physical spaces", () => {
   expectSource(links[0], body.indexOf("[one"), raw);
 });
 
-test.each([
-  "[ref]: Elsewhere.md\n=\n[[Visible]]",
-  "[ref]: Elsewhere.md\n===\n[[Visible]]",
-  "> [ref]: Elsewhere.md\n> =\n> [[Visible]]",
-])("a removed reference prefix can be followed by more paragraph content: %j", (body) => {
-  const links = extractBodyLinks(body);
-  expect(links.map((link) => link.target)).toEqual(["Visible"]);
-  expectSource(links[0], body.indexOf("[[Visible]]"), "[[Visible]]");
-});
+test.each(["[ref]: Elsewhere.md\n=\n[[Visible]]", "[ref]: Elsewhere.md\n===\n[[Visible]]", "> [ref]: Elsewhere.md\n> =\n> [[Visible]]"])(
+  "a removed reference prefix can be followed by more paragraph content: %j",
+  (body) => {
+    const links = extractBodyLinks(body);
+    expect(links.map((link) => link.target)).toEqual(["Visible"]);
+    expectSource(links[0], body.indexOf("[[Visible]]"), "[[Visible]]");
+  },
+);
 
 test("a reference followed by an empty setext candidate does not require any links", () => {
   expect(extractBodyLinks("[ref]: Elsewhere.md\n=")).toEqual([]);
 });
 
-test.each(["[[A]]", "[[A]] <!-- typedmark:ordinary -->"])("nested emphasis does not repeatedly lex unchanged subtrees: %s", (content) => {
-  let body: string = content;
-  for (let depth = 0; depth < 320; depth++) body = `*x ${body} x*`;
-  const started = performance.now();
-  const links = extractBodyLinks(body);
-  expect(links.map((link) => link.target)).toEqual(["A"]);
-  expectSource(links[0], body.indexOf("[[A]]"), "[[A]]");
-  expect(performance.now() - started).toBeLessThan(1_000);
-}, 20_000);
+test.each(["[[A]]", "[[A]] <!-- typedmark:ordinary -->"])(
+  "nested emphasis does not repeatedly lex unchanged subtrees: %s",
+  (content) => {
+    let body: string = content;
+    for (let depth = 0; depth < 320; depth++) body = `*x ${body} x*`;
+    const started = performance.now();
+    const links = extractBodyLinks(body);
+    expect(links.map((link) => link.target)).toEqual(["A"]);
+    expectSource(links[0], body.indexOf("[[A]]"), "[[A]]");
+    expect(performance.now() - started).toBeLessThan(1_000);
+  },
+  20_000,
+);

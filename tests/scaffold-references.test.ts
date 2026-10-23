@@ -18,16 +18,31 @@ function write(root: string, path: string, data: Data) {
   writeFileSync(join(root, path), `---\n${stringify(data)}---\n`);
 }
 function system(noteType: string, config: Data = {}, schema: Data = {}) {
-  const root = mkdtempSync(join(tmpdir(), "typedmark-scaffold-references-")); roots.push(root);
-  write(root, "typedmark.md", { specification_version: "0.1.0", name: "scaffold-system", description: "Scaffold references.", version: "1.0.0",
-    scaffold: { notes: [{ path: "Starter.md", note_type: noteType }] }, extensions, ...config });
-  write(root, ".typedmark/schemas/note.md", { specification_version: "0.1.0", description: "Note.", storage: { folder_pattern: "", note_name_pattern: "{title}" }, ...schema });
+  const root = mkdtempSync(join(tmpdir(), "typedmark-scaffold-references-"));
+  roots.push(root);
+  write(root, "typedmark.md", {
+    specification_version: "0.1.0",
+    name: "scaffold-system",
+    description: "Scaffold references.",
+    version: "1.0.0",
+    scaffold: { notes: [{ path: "Starter.md", note_type: noteType }] },
+    extensions,
+    ...config,
+  });
+  write(root, ".typedmark/schemas/note.md", {
+    specification_version: "0.1.0",
+    description: "Note.",
+    storage: { folder_pattern: "", note_name_pattern: "{title}" },
+    ...schema,
+  });
   write(root, ".typedmark/schemas/base.md", { specification_version: "0.1.0", description: "Base.", abstract: true });
   return root;
 }
 const run = (root: string, mode: ValidationMode = "system_definition", supportedExtensions?: ExtensionMap) =>
   validateCollection({ collectionRoot: root, schemaDirectory, mode, supportedExtensions });
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test.each(["missing", "base"])("scaffold target %s must resolve to a concrete note type", (noteType) => {
   const root = system(noteType);
@@ -104,7 +119,18 @@ test("unsupported history does not hide independently known scaffold failures", 
 });
 
 test("invalid sibling references remain visible beside an unavailable target", () => {
-  const root = system("note", { scaffold: { notes: [{ path: "Future.md", note_type: "note" }, { path: "Missing.md", note_type: "missing" }] } }, { specification_version: "9.0.0" });
+  const root = system(
+    "note",
+    {
+      scaffold: {
+        notes: [
+          { path: "Future.md", note_type: "note" },
+          { path: "Missing.md", note_type: "missing" },
+        ],
+      },
+    },
+    { specification_version: "9.0.0" },
+  );
   const report = run(root);
   expect(report.evaluation).toBe("incomplete");
   expect(report.results.filter((finding) => finding.rule_id === "SCE-17").map((finding) => finding.note_type)).toEqual(["missing"]);

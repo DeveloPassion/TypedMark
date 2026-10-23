@@ -25,7 +25,11 @@ test.each([
 ])("decodes the Markdown target once without inventing an anchor: $destination", ({ destination, target }) => {
   const raw = `[**Label** &amp; text](${destination})`;
   expect(parseNoteLink(raw)).toEqual({
-    raw, form: "markdown", target, displayText: "**Label** &amp; text", embed: false,
+    raw,
+    form: "markdown",
+    target,
+    displayText: "**Label** &amp; text",
+    embed: false,
   });
 });
 
@@ -41,7 +45,12 @@ test.each([
 ])("keeps the authored tail after the interpreted fragment separator: $destination", ({ destination, target, anchor }) => {
   const raw = `![a\\[b\\]](<${destination}> 'title#part')`;
   expect(parseNoteLink(raw)).toEqual({
-    raw, form: "markdown", target, anchor, displayText: "a\\[b\\]", embed: true,
+    raw,
+    form: "markdown",
+    target,
+    anchor,
+    displayText: "a\\[b\\]",
+    embed: true,
   });
 });
 
@@ -89,12 +98,17 @@ test("body extraction retains physical source and lexical components around deco
   const prefix = "🧭 Before\r\n\r\n> ";
   const physical = "![first &amp;\r\n> second](<N&#46;md&num;Head&amp;Tail> 'title#part')";
   const body = prefix + physical + " after.";
-  expect(extractBodyLinks(body)).toEqual([{
-    raw: "![first &amp;\nsecond](<N&#46;md&num;Head&amp;Tail> 'title#part')",
-    form: "markdown", target: "N.md", anchor: "Head&amp;Tail",
-    displayText: "first &amp;\nsecond", embed: true,
-    source: { start: prefix.length, end: prefix.length + physical.length, raw: physical },
-  }]);
+  expect(extractBodyLinks(body)).toEqual([
+    {
+      raw: "![first &amp;\nsecond](<N&#46;md&num;Head&amp;Tail> 'title#part')",
+      form: "markdown",
+      target: "N.md",
+      anchor: "Head&amp;Tail",
+      displayText: "first &amp;\nsecond",
+      embed: true,
+      source: { start: prefix.length, end: prefix.length + physical.length, raw: physical },
+    },
+  ]);
 });
 
 test.each([
@@ -109,42 +123,62 @@ test.each([
 test("decoded note links create real relationships without an external-link edge to Notes/https&.md", () => {
   const parent = "[parent](P&#46;md)";
   const source: ManagedNote = {
-    path: "Notes/Source.md", noteType: "source", stored: { parent }, values: { parent }, problems: [],
+    path: "Notes/Source.md",
+    noteType: "source",
+    stored: { parent },
+    values: { parent },
+    problems: [],
     body: "[external](https&#58;//example.com) [actual](N&period;md)",
     fields: { parent: { type: "link", format: "note_link", relationship_kind: "belongs_to", validate_exists: true } },
   };
   const targets: ManagedNote[] = ["Notes/P.md", "Notes/N.md", "Notes/https&.md"].map((path) => ({
-    path, noteType: path === "Notes/P.md" ? "parent" : "note", stored: {}, values: {}, fields: {}, body: "", problems: [],
+    path,
+    noteType: path === "Notes/P.md" ? "parent" : "note",
+    stored: {},
+    values: {},
+    fields: {},
+    body: "",
+    problems: [],
   }));
   const notes = [source, ...targets];
   const model = {
-    notes, documents: notes, assets: new Set<string>(),
-    schemas: new Map([["note", {}], ["parent", {}], ["source", { relationships: {
-      belongs_to: { allowed_note_types: { parent: {} } },
-      related_to: { allowed_note_types: { note: {} } },
-    } }]]),
+    notes,
+    documents: notes,
+    assets: new Set<string>(),
+    schemas: new Map([
+      ["note", {}],
+      ["parent", {}],
+      [
+        "source",
+        {
+          relationships: {
+            belongs_to: { allowed_note_types: { parent: {} } },
+            related_to: { allowed_note_types: { note: {} } },
+          },
+        },
+      ],
+    ]),
   } as unknown as CollectionModel;
 
   const graph = buildRelationshipGraph(model, (actual, requested) => actual === requested);
   expect(graph.targets.get(source.path)).toEqual({
-    belongs_to: new Set(["Notes/P.md"]), related_to: new Set(["Notes/N.md"]), contains: new Set(), depends_on: new Set(),
+    belongs_to: new Set(["Notes/P.md"]),
+    related_to: new Set(["Notes/N.md"]),
+    contains: new Set(),
+    depends_on: new Set(),
   });
   expect(graph.failures.size).toBe(0);
 });
 
 // CommonMark numeric references name Unicode scalars, not Windows-1252 bytes.
 // These helper checks concern Markdown processing, not URI-spelling validity.
-test.each(Array.from({ length: 32 }, (_, index) => index + 0x80))(
-  "preserves numeric reference code point %i without HTML C1 remapping", (code) => {
-    const target = `N${String.fromCodePoint(code)}.md`;
-    for (const spelling of [`&#${code};`, `&#x${code.toString(16)};`]) {
-      expect(markdownLinkDestination(`N${spelling}.md`)).toEqual({ uri: target, target });
-    }
-  },
-);
+test.each(Array.from({ length: 32 }, (_, index) => index + 0x80))("preserves numeric reference code point %i without HTML C1 remapping", (code) => {
+  const target = `N${String.fromCodePoint(code)}.md`;
+  for (const spelling of [`&#${code};`, `&#x${code.toString(16)};`]) {
+    expect(markdownLinkDestination(`N${spelling}.md`)).toEqual({ uri: target, target });
+  }
+});
 
-test.each(["&#0;", "&#x0;", "&#55296;", "&#xDFFF;", "&#1114112;", "&#xFFFFFF;"])(
-  "replaces zero and invalid scalar references with U+FFFD: %s", (spelling) => {
-    expect(markdownLinkDestination(`N${spelling}.md`)).toEqual({ uri: "N�.md", target: "N�.md" });
-  },
-);
+test.each(["&#0;", "&#x0;", "&#55296;", "&#xDFFF;", "&#1114112;", "&#xFFFFFF;"])("replaces zero and invalid scalar references with U+FFFD: %s", (spelling) => {
+  expect(markdownLinkDestination(`N${spelling}.md`)).toEqual({ uri: "N�.md", target: "N�.md" });
+});

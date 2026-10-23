@@ -13,18 +13,30 @@ test("decoded escaping is single-pass and substitution text is not reparsed", ()
   expect(evaluateExpression(compileExpression(template), { value: "${uppercase(secret)}" })).toBe("a\\b ${value} ${uppercase(secret)}");
 });
 
-test.each(["${", "${name", "${ name}", "${name.x}", "${uppercase(name, other)}", "${uppercase(lowercase(name))}", "${unknown(name)}", String.raw`\n`, "${Name}"])("rejects unsupported expression syntax: %j", (source) => {
+test.each([
+  "${",
+  "${name",
+  "${ name}",
+  "${name.x}",
+  "${uppercase(name, other)}",
+  "${uppercase(lowercase(name))}",
+  "${unknown(name)}",
+  String.raw`\n`,
+  "${Name}",
+])("rejects unsupported expression syntax: %j", (source) => {
   expect(() => compileExpression(source)).toThrow();
 });
 
 test("references do not read inherited object properties or coerce absent/null/non-text values", () => {
-  for (const values of [{}, { value: null }, { value: 1 }, Object.create({ value: "secret" })]) expect(() => evaluateExpression(compileExpression("${value}"), values)).toThrow();
+  for (const values of [{}, { value: null }, { value: 1 }, Object.create({ value: "secret" })])
+    expect(() => evaluateExpression(compileExpression("${value}"), values)).toThrow();
 });
 
 test("computed definitions prohibit self, computed, missing and non-text dependencies", () => {
   const fields = { first: { type: "text" }, count: { type: "integer" }, full: { type: "text", computed: "${first}" } };
   expect(validateComputedFields(fields)).toEqual([]);
-  for (const dependency of ["missing", "full", "count"]) expect(validateComputedFields({ ...fields, full: { type: "text", computed: `\${${dependency}}` } })).toHaveLength(1);
+  for (const dependency of ["missing", "full", "count"])
+    expect(validateComputedFields({ ...fields, full: { type: "text", computed: `\${${dependency}}` } })).toHaveLength(1);
 });
 
 test("computed validation compares stored values without replacing them", () => {

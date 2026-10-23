@@ -180,16 +180,20 @@ test("an empty conventional licensing directory remains importable and preserved
 });
 
 test("suppressed required-value failures cannot publish an unresolved scaffold", async () => {
-  const fixture = systemFixture({ config: { validation_defaults: { missing_required_field: "off" } },
+  const fixture = systemFixture({
+    config: { validation_defaults: { missing_required_field: "off" } },
     schema: { frontmatter: { status: { type: "text", nullable: false } } },
-    scaffold: { values: { title: "Welcome", status: null } } });
+    scaffold: { values: { title: "Welcome", status: null } },
+  });
   await expect(instantiateSystem(fixture.input)).rejects.toThrow("missing_required_field");
   expect(existsSync(fixture.target)).toBe(false);
 });
 
 test("scaffold creation cannot overwrite a preserved metadata artifact", async () => {
-  const fixture = systemFixture({ schema: { storage: { folder_pattern: ".typedmark/schemas", note_name_pattern: "note" } },
-    scaffold: { path: ".typedmark/schemas/note.md" } });
+  const fixture = systemFixture({
+    schema: { storage: { folder_pattern: ".typedmark/schemas", note_name_pattern: "note" } },
+    scaffold: { path: ".typedmark/schemas/note.md" },
+  });
   await expect(instantiateSystem(fixture.input)).rejects.toThrow("NTS-152");
   expect(existsSync(fixture.target)).toBe(false);
 });
@@ -206,14 +210,16 @@ test.each([false, true])("a target inside the source is rejected, including a ju
   expect(existsSync(targetRoot)).toBe(false);
 });
 
-function systemFixture(options: {
-  config?: Record<string, unknown>;
-  schema?: Record<string, unknown>;
-  scaffold?: Record<string, unknown>;
-  templates?: Record<string, string>;
-  files?: Record<string, string>;
-  body?: string;
-} = {}) {
+function systemFixture(
+  options: {
+    config?: Record<string, unknown>;
+    schema?: Record<string, unknown>;
+    scaffold?: Record<string, unknown>;
+    templates?: Record<string, string>;
+    files?: Record<string, string>;
+    body?: string;
+  } = {},
+) {
   const root = mkdtempSync(join(tmpdir(), "typedmark-template-starters-"));
   roots.push(root);
   const source = join(root, "system");
@@ -221,25 +227,34 @@ function systemFixture(options: {
   const metadataDirectory = String(options.config?.metadata_directory ?? ".typedmark");
   mkdirSync(join(source, metadataDirectory, "schemas"), { recursive: true });
   mkdirSync(join(source, metadataDirectory, "templates"), { recursive: true });
-  writeFileSync(join(source, "typedmark.md"), markdown({
-    specification_version: "0.1.0",
-    extensions: { "typedmark:systems": "0.1.0" },
-    name: "@example/template-starters",
-    description: "A self-contained starter-template regression system.",
-    version: "0.1.0",
-    scaffold: {
-      folders: ["Notes"],
-      notes: [{ path: "Notes/Welcome.md", note_type: "note", values: { title: "Welcome" }, ...options.scaffold }],
-    },
-    ...options.config,
-  }, options.body));
-  writeFileSync(join(source, metadataDirectory, "schemas", "note.md"), markdown({
-    specification_version: "0.1.0",
-    note_type: "note",
-    description: "A starter note.",
-    storage: { folder_pattern: "Notes", note_name_pattern: "{title}" },
-    ...options.schema,
-  }));
+  writeFileSync(
+    join(source, "typedmark.md"),
+    markdown(
+      {
+        specification_version: "0.1.0",
+        extensions: { "typedmark:systems": "0.1.0" },
+        name: "@example/template-starters",
+        description: "A self-contained starter-template regression system.",
+        version: "0.1.0",
+        scaffold: {
+          folders: ["Notes"],
+          notes: [{ path: "Notes/Welcome.md", note_type: "note", values: { title: "Welcome" }, ...options.scaffold }],
+        },
+        ...options.config,
+      },
+      options.body,
+    ),
+  );
+  writeFileSync(
+    join(source, metadataDirectory, "schemas", "note.md"),
+    markdown({
+      specification_version: "0.1.0",
+      note_type: "note",
+      description: "A starter note.",
+      storage: { folder_pattern: "Notes", note_name_pattern: "{title}" },
+      ...options.schema,
+    }),
+  );
   for (const [path, content] of Object.entries(options.templates ?? {})) {
     const destination = join(source, metadataDirectory, "templates", path);
     mkdirSync(dirname(destination), { recursive: true });
@@ -247,7 +262,8 @@ function systemFixture(options: {
   }
   for (const [path, content] of Object.entries(options.files ?? {})) {
     const destination = join(source, path);
-    mkdirSync(dirname(destination), { recursive: true }); writeFileSync(destination, content);
+    mkdirSync(dirname(destination), { recursive: true });
+    writeFileSync(destination, content);
   }
   sources.push({ root: source, contents: snapshot(source) });
   return {

@@ -30,7 +30,11 @@ test("finds a link after large escaped prose without repeatedly scanning the who
   expect(inspected.failures).toEqual([]);
   expect(inspected.links).toHaveLength(1);
   expect(inspected.links[0]).toMatchObject({
-    raw, form: "markdown", target: "N! note.md", displayText: "📝 label", embed: false,
+    raw,
+    form: "markdown",
+    target: "N! note.md",
+    displayText: "📝 label",
+    embed: false,
   });
   expectSource(body, inspected.links[0]!, prefix.length, raw);
   expect(elapsed).toBeLessThan(3_000);
@@ -49,7 +53,11 @@ test("retains a large escaped multiline label and its physical body span promptl
   expect(inspected.failures).toEqual([]);
   expect(inspected.links).toHaveLength(1);
   expect(inspected.links[0]).toMatchObject({
-    raw, form: "markdown", target: "N.md", displayText: `${label}\n📝 end`, embed: false,
+    raw,
+    form: "markdown",
+    target: "N.md",
+    displayText: `${label}\n📝 end`,
+    embed: false,
   });
   expectSource(body, inspected.links[0]!, prefix.length, physical);
   expect(elapsed).toBeLessThan(3_000);
@@ -84,16 +92,27 @@ test.each([
   const inspected = inspectBodyLinks(body);
 
   expect(parseNoteLink(physical)).toEqual({
-    raw: physical, form: "markdown", target: "Outer! note.md",
-    displayText: `${firstLine}${eol}> ${image}`, embed: false,
+    raw: physical,
+    form: "markdown",
+    target: "Outer! note.md",
+    displayText: `${firstLine}${eol}> ${image}`,
+    embed: false,
   });
   expect(inspected.failures).toEqual([]);
   expect(inspected.links).toHaveLength(2);
   expect(inspected.links[0]).toMatchObject({
-    raw, form: "markdown", target: "Outer! note.md", displayText: `${firstLine}\n${image}`, embed: false,
+    raw,
+    form: "markdown",
+    target: "Outer! note.md",
+    displayText: `${firstLine}\n${image}`,
+    embed: false,
   });
   expect(inspected.links[1]).toMatchObject({
-    raw: image, form: "markdown", target: "Image note.md", displayText: "📝 \\[alt\\]", embed: true,
+    raw: image,
+    form: "markdown",
+    target: "Image note.md",
+    displayText: "📝 \\[alt\\]",
+    embed: true,
   });
   expectSource(body, inspected.links[0]!, prefix.length, physical);
   expectSource(body, inspected.links[1]!, prefix.length + 1 + firstLine.length + eol.length + 2, image);
@@ -112,7 +131,11 @@ test("retains literal HTML, escaped decoys and code exclusions beside Unicode li
   expect(inspected.links).toHaveLength(3);
   expect(inspected.links[0]).toMatchObject({ raw: "[[Attribute]]", form: "wikilink", target: "Attribute", embed: false });
   expect(inspected.links[1]).toMatchObject({
-    raw, form: "markdown", target: "N! note.md", displayText: "<em>é 📝 \\[label\\]</em>\nnext", embed: false,
+    raw,
+    form: "markdown",
+    target: "N! note.md",
+    displayText: "<em>é 📝 \\[label\\]</em>\nnext",
+    embed: false,
   });
   expect(inspected.links[2]).toMatchObject({ raw: "[[Comment]]", form: "wikilink", target: "Comment", embed: false });
   expectSource(body, inspected.links[0]!, prefix.indexOf("[[Attribute]]"), "[[Attribute]]");

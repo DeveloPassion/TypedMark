@@ -6,14 +6,20 @@ import { parseMarkdown } from "./frontmatter";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 
 export class SnapshotChangedError extends Error {}
-export interface SnapshotInfo { blockedPaths: ReadonlySet<string> }
+export interface SnapshotInfo {
+  blockedPaths: ReadonlySet<string>;
+}
 interface SnapshotOptions {
   includePaths?: readonly string[];
   rejectMetadataLinks?: boolean;
   /** Capture configuration, metadata and explicit inclusions, not current notes/assets. */
   artifactsOnly?: boolean;
 }
-interface Capture { files: Map<string, Buffer>; blockedPaths: Set<string>; includedDirectories: Set<string> }
+interface Capture {
+  files: Map<string, Buffer>;
+  blockedPaths: Set<string>;
+  includedDirectories: Set<string>;
+}
 
 export function readStableCollection<T>(root: string, read: (snapshotRoot: string, info: SnapshotInfo) => T, options: SnapshotOptions = {}): T {
   const captured = capture(root, options);
@@ -29,7 +35,9 @@ export function readStableCollection<T>(root: string, read: (snapshotRoot: strin
     const result = read(snapshotRoot, { blockedPaths: captured.blockedPaths });
     if (fingerprint(capture(root, options)) !== before) throw new SnapshotChangedError("The collection changed while its snapshot was being read");
     return result;
-  } finally { rmSync(snapshotRoot, { recursive: true, force: true }); }
+  } finally {
+    rmSync(snapshotRoot, { recursive: true, force: true });
+  }
 }
 
 function capture(root: string, options: SnapshotOptions): Capture {
@@ -42,7 +50,11 @@ function capture(root: string, options: SnapshotOptions): Capture {
   if (existsSync(configuration) && !lstatSync(configuration).isSymbolicLink()) {
     const content = readFileSync(configuration);
     files.set("typedmark.md", content);
-    try { config = parseMarkdown(content).data; } catch { /* The validator reports malformed configuration. */ }
+    try {
+      config = parseMarkdown(content).data;
+    } catch {
+      /* The validator reports malformed configuration. */
+    }
   }
   const excludes = exclusionPatterns(config.exclude_paths);
   const metadata = (typeof config.metadata_directory === "string" ? config.metadata_directory : ".typedmark").normalize("NFC");
@@ -54,8 +66,7 @@ function capture(root: string, options: SnapshotOptions): Capture {
       const logicalPath = path.normalize("NFC");
       const included = selections.some((selected) => logicalPath === selected || logicalPath.startsWith(`${selected}/`));
       const leadsToSelection = selections.some((selected) => selected.startsWith(`${logicalPath}/`));
-      const governed = logicalPath === "typedmark.md" || logicalPath === metadata || logicalPath.startsWith(`${metadata}/`)
-        || included;
+      const governed = logicalPath === "typedmark.md" || logicalPath === metadata || logicalPath.startsWith(`${metadata}/`) || included;
       if (onlyGoverned && !governed && !leadsToSelection) continue;
       if (entry.isSymbolicLink() || lstatSync(absolute).isSymbolicLink()) {
         if (governed || leadsToSelection) {
@@ -81,6 +92,11 @@ function capture(root: string, options: SnapshotOptions): Capture {
 }
 
 function fingerprint(captured: Capture): string {
-  return JSON.stringify({ files: [...captured.files].map(([path, content]) => [path, createHash("sha256").update(content).digest("hex")])
-    .sort(([left], [right]) => left! < right! ? -1 : left! > right! ? 1 : 0), blockedPaths: [...captured.blockedPaths].sort(), includedDirectories: [...captured.includedDirectories].sort() });
+  return JSON.stringify({
+    files: [...captured.files]
+      .map(([path, content]) => [path, createHash("sha256").update(content).digest("hex")])
+      .sort(([left], [right]) => (left! < right! ? -1 : left! > right! ? 1 : 0)),
+    blockedPaths: [...captured.blockedPaths].sort(),
+    includedDirectories: [...captured.includedDirectories].sort(),
+  });
 }

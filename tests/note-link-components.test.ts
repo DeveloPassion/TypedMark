@@ -43,30 +43,47 @@ test.each([
 
 test("keeps an empty Markdown label distinct from an absent wiki display text", () => {
   expect(parseNoteLink("[](Target.md)")).toMatchObject({
-    raw: "[](Target.md)", form: "markdown", target: "Target.md", displayText: "", embed: false,
+    raw: "[](Target.md)",
+    form: "markdown",
+    target: "Target.md",
+    displayText: "",
+    embed: false,
   });
 });
 
 test("preserves source spelling and whitespace in Unicode wikilink components", () => {
   const raw = "![[Notes/Cafe\u0301#Re\u0301sume\u0301|  Re\u0301fe\u0301rence 📝  ]]";
   expect(parseNoteLink(raw)).toMatchObject({
-    raw, form: "wikilink", target: "Notes/Cafe\u0301", anchor: "Re\u0301sume\u0301",
-    displayText: "  Re\u0301fe\u0301rence 📝  ", embed: true,
+    raw,
+    form: "wikilink",
+    target: "Notes/Cafe\u0301",
+    anchor: "Re\u0301sume\u0301",
+    displayText: "  Re\u0301fe\u0301rence 📝  ",
+    embed: true,
   });
 });
 
 test("preserves Markdown source and URL-decodes the target", () => {
   const raw = "![Cafe\u0301 📝](../Notes/Cafe%CC%81%20%23draft.md#Heading)";
   expect(parseNoteLink(raw)).toMatchObject({
-    raw, form: "markdown", target: "../Notes/Cafe\u0301 #draft.md", anchor: "Heading",
-    displayText: "Cafe\u0301 📝", embed: true,
+    raw,
+    form: "markdown",
+    target: "../Notes/Cafe\u0301 #draft.md",
+    anchor: "Heading",
+    displayText: "Cafe\u0301 📝",
+    embed: true,
   });
 });
 
 test("keeps the anchor tail after the first hash separate from the wiki label", () => {
   const raw = "[[Target#Heading#Detail|Label#Tag]]";
   expect(parseNoteLink(raw)).toMatchObject({
-    raw, form: "wikilink", target: "Target", anchor: "Heading#Detail", displayText: "Label#Tag", embed: false,
+    raw,
+    form: "wikilink",
+    target: "Target",
+    anchor: "Heading#Detail",
+    displayText: "Label#Tag",
+    embed: false,
   });
 });
 
@@ -74,7 +91,11 @@ test("a hash in wiki display text does not invent an anchor", () => {
   const raw = "[[Target|Label #tag]]";
   const parsed = parseNoteLink(raw);
   expect(parsed).toMatchObject({
-    raw, form: "wikilink", target: "Target", displayText: "Label #tag", embed: false,
+    raw,
+    form: "wikilink",
+    target: "Target",
+    displayText: "Label #tag",
+    embed: false,
   });
   expect(parsed).not.toHaveProperty("anchor");
 });
@@ -107,8 +128,13 @@ test("a hash in the optional Markdown title does not invent an anchor", () => {
 });
 
 test.each([
-  "prefix [[Target]]", "[[Target]] suffix", "[[Target]]\n", "[[Target]][[Other]]",
-  "prefix [Label](Target.md)", "[Label](Target.md) suffix", "[Label](Target.md)\n",
+  "prefix [[Target]]",
+  "[[Target]] suffix",
+  "[[Target]]\n",
+  "[[Target]][[Other]]",
+  "prefix [Label](Target.md)",
+  "[Label](Target.md) suffix",
+  "[Label](Target.md)\n",
 ])("does not silently consume only part of the supplied source: %j", (raw) => {
   expect(parseNoteLink(raw)).toBeUndefined();
 });
@@ -125,7 +151,8 @@ test.each([
   const model = { notes, documents: notes, assets: new Set() } as unknown as CollectionModel;
   for (const raw of sources) {
     expect(resolveNoteLink(parseNoteLink(raw)!, "Notes/Source.md", model)).toEqual({
-      kind: "note", path: "Notes/Target.md",
+      kind: "note",
+      path: "Notes/Target.md",
     });
   }
 });

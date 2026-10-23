@@ -11,13 +11,17 @@ function collection(note = "---\nnote_type: note\n---\n\n# Example\n", fields = 
   roots.push(root);
   mkdirSync(join(root, ".typedmark", "schemas"), { recursive: true });
   writeFileSync(join(root, "typedmark.md"), "---\nspecification_version: 0.1.0\nname: test\ndescription: Test.\n---\n");
-  writeFileSync(join(root, ".typedmark", "schemas", "note.md"),
-    "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage:\n  folder_pattern: ''\n  note_name_pattern: '{title}'\n" + fields + "---\n");
+  writeFileSync(
+    join(root, ".typedmark", "schemas", "note.md"),
+    "---\nspecification_version: 0.1.0\ndescription: Note.\nstorage:\n  folder_pattern: ''\n  note_name_pattern: '{title}'\n" + fields + "---\n",
+  );
   writeFileSync(join(root, "Example.md"), note);
   return root;
 }
 const run = (root: string) => validateCollection({ collectionRoot: root, schemaDirectory });
-afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+afterEach(() => {
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
 
 test("validates a real Core collection with a derived template", () => {
   const report = run(collection());
@@ -65,8 +69,10 @@ test("does not let a caller claim support for an unimplemented extension", () =>
 test("suppression cannot turn unsupported evaluation into conformance", () => {
   const root = collection();
   const file = join(root, "typedmark.md");
-  writeFileSync(file, readFileSync(file, "utf8").replace("name: test",
-    "extensions: {example:review: 1.2.0}\nvalidation_defaults: {unsupported_extension: off}\nname: test"));
+  writeFileSync(
+    file,
+    readFileSync(file, "utf8").replace("name: test", "extensions: {example:review: 1.2.0}\nvalidation_defaults: {unsupported_extension: off}\nname: test"),
+  );
   expect(run(root)).toMatchObject({ evaluation: "incomplete", valid: false, results: [] });
 });
 
@@ -79,8 +85,7 @@ test("nested roots are excluded even when malformed", () => {
 });
 
 test("detects required field types and storage mismatches", () => {
-  const root = collection("---\nnote_type: note\ntitle: Wrong\namount: text\n---\n",
-    "frontmatter:\n  amount:\n    type: integer\n");
+  const root = collection("---\nnote_type: note\ntitle: Wrong\namount: text\n---\n", "frontmatter:\n  amount:\n    type: integer\n");
   const report = run(root);
   expect(report.results).toContainEqual(expect.objectContaining({ code: "invalid_field_value", field: "amount" }));
   expect(report.results).toContainEqual(expect.objectContaining({ code: "path" }));
@@ -99,8 +104,7 @@ test("accepts a body-only explicit template", () => {
 });
 
 test("honors real calendar dates and rejects DST ambiguity", () => {
-  const root = collection("---\nnote_type: note\nwhen: 2026-10-25T02:30\n---\n",
-    "frontmatter:\n  when:\n    type: datetime\n");
+  const root = collection("---\nnote_type: note\nwhen: 2026-10-25T02:30\n---\n", "frontmatter:\n  when:\n    type: datetime\n");
   const config = join(root, "typedmark.md");
   writeFileSync(config, readFileSync(config, "utf8").replace("name: test", "timezone: Europe/Brussels\nname: test"));
   expect(run(root).results).toContainEqual(expect.objectContaining({ code: "invalid_field_value", field: "when" }));
@@ -115,9 +119,13 @@ test("exercises a subset of the checked-in semantic vectors", () => {
     const actual = run(join(base, name, "collection"));
     expect(actual.valid).toBe(expected.valid);
     for (const finding of expected.results) {
-      expect(actual.results).toContainEqual(expect.objectContaining({
-        code: finding.code, path: finding.path, field: finding.field,
-      }));
+      expect(actual.results).toContainEqual(
+        expect.objectContaining({
+          code: finding.code,
+          path: finding.path,
+          field: finding.field,
+        }),
+      );
     }
   }
 });
@@ -126,6 +134,8 @@ test("orders findings by Unicode code point rather than UTF-16 code unit", () =>
   const root = collection();
   writeFileSync(join(root, "\uE000.md"), "---\nnote_type: note\ntitle: \uE000\nextra: true\n---\n");
   writeFileSync(join(root, "\u{10000}.md"), "---\nnote_type: note\ntitle: \u{10000}\nextra: true\n---\n");
-  const paths = run(root).results.filter((result) => result.code === "unknown_field").map((result) => result.path);
+  const paths = run(root)
+    .results.filter((result) => result.code === "unknown_field")
+    .map((result) => result.path);
   expect(paths).toEqual(["\uE000.md", "\u{10000}.md"]);
 });

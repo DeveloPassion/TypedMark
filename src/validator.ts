@@ -7,7 +7,15 @@ import { plainDataViolation } from "./plain-yaml";
 import type { Document } from "yaml";
 import { compareUnicodeCodePoints } from "./order";
 import { SchemaRegistry } from "./schema-registry";
-import { compareFieldValues, comparisonDomain, expandObjectDefaults, fullPattern, validateFieldValue, validateManagedFieldConstraints, type FieldDefinition } from "./field-values";
+import {
+  compareFieldValues,
+  comparisonDomain,
+  expandObjectDefaults,
+  fullPattern,
+  validateFieldValue,
+  validateManagedFieldConstraints,
+  type FieldDefinition,
+} from "./field-values";
 import { aliasValueFailure, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
@@ -27,13 +35,7 @@ import { resolveTemplate, validateTemplateFields } from "./templates";
 export { noteFieldDefinitions } from "./collection-model";
 export type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 export { isExcluded } from "./paths";
-import type {
-  ExtensionMap,
-  Severity,
-  ValidateCollectionInput,
-  ValidationReport,
-  ValidationResult,
-} from "./types";
+import type { ExtensionMap, Severity, ValidateCollectionInput, ValidationReport, ValidationResult } from "./types";
 
 type Data = Record<string, any>;
 
@@ -46,14 +48,28 @@ const DEFAULT_SEVERITIES: Record<string, "error" | "warn"> = {
 };
 
 const RESULT_ORDER = [
-  "path", "rule_id", "code", "note_type", "field", "relationship", "heading",
-  "expansion", "dataset", "view", "template_region", "drift_kind", "extension",
+  "path",
+  "rule_id",
+  "code",
+  "note_type",
+  "field",
+  "relationship",
+  "heading",
+  "expansion",
+  "dataset",
+  "view",
+  "template_region",
+  "drift_kind",
+  "extension",
 ] as const;
 
 export function validateCollection(input: ValidateCollectionInput): ValidationReport {
   const mode = validationMode(input.mode);
-  return readStableCollection(input.collectionRoot, (root, info) => readCollectionModel({ ...input, mode, collectionRoot: root }, { blockedPaths: info.blockedPaths }),
-    { artifactsOnly: mode === "system_definition", rejectMetadataLinks: mode !== "instantiated_collection" }).report;
+  return readStableCollection(
+    input.collectionRoot,
+    (root, info) => readCollectionModel({ ...input, mode, collectionRoot: root }, { blockedPaths: info.blockedPaths }),
+    { artifactsOnly: mode === "system_definition", rejectMetadataLinks: mode !== "instantiated_collection" },
+  ).report;
 }
 
 function validationMode(value: unknown): ValidationReport["mode"] {
@@ -62,7 +78,10 @@ function validationMode(value: unknown): ValidationReport["mode"] {
   throw new RangeError("mode must be system_definition, instantiated_collection, or both");
 }
 
-export function readCollectionModel(input: ValidateCollectionInput, options: { diagnosticPolicy?: "configured" | "strict"; blockedPaths?: ReadonlySet<string> } = {}): CollectionModel {
+export function readCollectionModel(
+  input: ValidateCollectionInput,
+  options: { diagnosticPolicy?: "configured" | "strict"; blockedPaths?: ReadonlySet<string> } = {},
+): CollectionModel {
   if (input.referenceEdition !== undefined && input.referenceEdition !== IMPLEMENTED_CORE) {
     throw new RangeError(`Only referenceEdition ${IMPLEMENTED_CORE} is implemented`);
   }
@@ -84,7 +103,19 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   let associationIssue: string | undefined;
   let configurationIssue: string | undefined;
   let unsupportedConfigurationVersion: string | undefined;
-  const model = (validation: ValidationReport): CollectionModel => ({ report: validation, config, schemas, schemaIssues, schemaSources, documents, notes: effectiveNotes, assets, associationIssue, configurationIssue, unsupportedConfigurationVersion });
+  const model = (validation: ValidationReport): CollectionModel => ({
+    report: validation,
+    config,
+    schemas,
+    schemaIssues,
+    schemaSources,
+    documents,
+    notes: effectiveNotes,
+    assets,
+    associationIssue,
+    configurationIssue,
+    unsupportedConfigurationVersion,
+  });
 
   if (!existsSync(configPath)) {
     configurationIssue = "typedmark.md is missing";
@@ -94,7 +125,8 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
 
   try {
     const parsed = parseMarkdownWithNodes(readFileSync(configPath));
-    config = parsed.data; configDocument = parsed.frontmatter;
+    config = parsed.data;
+    configDocument = parsed.frontmatter;
   } catch (error) {
     configurationIssue = errorMessage(error);
     add(results, {}, "invalid_collection_configuration", "typedmark.md", frontmatterFailureRule(error, "CM-537"), errorMessage(error));
@@ -120,13 +152,15 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   }
 
   if (malformedDeclaration) configurationIssue = "Malformed extension declaration";
-  for (const issue of declaration.issues) add(results, config, "invalid_extension_declaration", "typedmark.md", issue.rule, issue.message,
-    issue.extension ? { extension: issue.extension } : {});
+  for (const issue of declaration.issues)
+    add(results, config, "invalid_extension_declaration", "typedmark.md", issue.rule, issue.message, issue.extension ? { extension: issue.extension } : {});
   const configShape = structuredClone(normalizedMandatoryTags(config));
   // Declaration errors are reported separately; this copy checks other fields.
   if (Object.hasOwn(config, "extensions")) configShape.extensions = requiredExtensions;
-  if (!requiredExtensions["typedmark:reuse"] || supportedExtensions["typedmark:reuse"] !== requiredExtensions["typedmark:reuse"]) delete configShape.default_property_sets;
-  if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"]) delete configShape.automation_defaults;
+  if (!requiredExtensions["typedmark:reuse"] || supportedExtensions["typedmark:reuse"] !== requiredExtensions["typedmark:reuse"])
+    delete configShape.default_property_sets;
+  if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"])
+    delete configShape.automation_defaults;
   const unknownConfigKeys: Array<{ path: string; key: string }> = [];
   const projectConfigKey = (path: string, key: string) => {
     if (removePropertyAt(configShape, path, key)) unknownConfigKeys.push({ path, key });
@@ -134,13 +168,16 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   // The root's only oneOf is mapping-kind selection. Project the actual kind,
   // never keys rejected by a different mapping alternative.
   const mappingKeys: Record<string, string[]> = {
-    frontmatter_field: ["kind", "field"], tag: ["kind", "tag", "note_type"],
-    folder: ["kind", "folder", "note_type"], fixed: ["kind", "note_type", "when"],
+    frontmatter_field: ["kind", "field"],
+    tag: ["kind", "tag", "note_type"],
+    folder: ["kind", "folder", "note_type"],
+    fixed: ["kind", "note_type", "when"],
   };
-  if (Array.isArray(configShape.note_type_mappings)) configShape.note_type_mappings.forEach((mapping: unknown, index: number) => {
-    if (!isRecord(mapping) || typeof mapping.kind !== "string" || !Object.hasOwn(mappingKeys, mapping.kind)) return;
-    for (const key of Object.keys(mapping)) if (!mappingKeys[mapping.kind]!.includes(key)) projectConfigKey(`/note_type_mappings/${index}`, key);
-  });
+  if (Array.isArray(configShape.note_type_mappings))
+    configShape.note_type_mappings.forEach((mapping: unknown, index: number) => {
+      if (!isRecord(mapping) || typeof mapping.kind !== "string" || !Object.hasOwn(mappingKeys, mapping.kind)) return;
+      for (const key of Object.keys(mapping)) if (!mappingKeys[mapping.kind]!.includes(key)) projectConfigKey(`/note_type_mappings/${index}`, key);
+    });
   let configErrors = registry.validate("typedmark.schema.json", configShape);
   for (const error of configErrors) {
     if (error.keyword === "additionalProperties" && !/^\/note_type_mappings\/\d+$/u.test(error.instancePath)) {
@@ -151,8 +188,14 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   configErrors = configErrors.filter((error) => error.keyword !== "additionalProperties");
   const bestEffortRoot = isBestEffortVersion(declaredVersion);
   const invalidConfigUnknown = unknownConfigKeys.length > 0 && !bestEffortRoot;
-  for (const { path, key } of unknownConfigKeys) results.push({ code: "unknown_field", severity: bestEffortRoot ? "warn" : "error",
-    path: "typedmark.md", rule_id: bestEffortRoot ? "FND-11" : "CM-534", message: `Unrecognized structural key ${path}/${key}` });
+  for (const { path, key } of unknownConfigKeys)
+    results.push({
+      code: "unknown_field",
+      severity: bestEffortRoot ? "warn" : "error",
+      path: "typedmark.md",
+      rule_id: bestEffortRoot ? "FND-11" : "CM-534",
+      message: `Unrecognized structural key ${path}/${key}`,
+    });
   if (bestEffortRoot && unknownConfigKeys.length) {
     // Keep unavailable extension-owned fields omitted only from schema checking;
     // remove genuinely unknown keys from the interpreted copy, not source bytes.
@@ -162,7 +205,14 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   if (invalidConfigUnknown) configurationIssue = "Unrecognized structural key in typedmark.md";
   if (configErrors.length > 0) {
     configurationIssue = schemaError(configErrors);
-    add(results, config, "invalid_collection_configuration", "typedmark.md", configErrors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "CM-226" : "CM-537", schemaError(configErrors));
+    add(
+      results,
+      config,
+      "invalid_collection_configuration",
+      "typedmark.md",
+      configErrors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "CM-226" : "CM-537",
+      schemaError(configErrors),
+    );
   }
   if (!configurationIssue) {
     try {
@@ -211,7 +261,14 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   if (configurationIssue) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
   if (metadataEntries.length !== 1 && !(mode === "system_definition" && metadataNames.length === 0)) {
     configurationIssue = "The metadata directory must resolve unambiguously to the collection's schema artifacts";
-    add(results, config, "invalid_collection_configuration", "typedmark.md", metadataEntries.length ? "CM-24" : "FND-76", "The metadata directory must resolve unambiguously to the collection's schema artifacts");
+    add(
+      results,
+      config,
+      "invalid_collection_configuration",
+      "typedmark.md",
+      metadataEntries.length ? "CM-24" : "FND-76",
+      "The metadata directory must resolve unambiguously to the collection's schema artifacts",
+    );
     return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
   }
 
@@ -236,7 +293,13 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     const known = errors.filter((error) => {
       if (error.keyword !== "additionalProperties") return true;
       if (!bestEffort) invalidUnknown = true;
-      results.push({ code: "unknown_field", severity: bestEffort ? "warn" : "error", path, rule_id: bestEffort ? "FND-11" : "CM-534", message: `Unrecognized structural key ${error.instancePath}/${error.params.additionalProperty}` });
+      results.push({
+        code: "unknown_field",
+        severity: bestEffort ? "warn" : "error",
+        path,
+        rule_id: bestEffort ? "FND-11" : "CM-534",
+        message: `Unrecognized structural key ${error.instancePath}/${error.params.additionalProperty}`,
+      });
       return false;
     });
     return { errors: known, invalidUnknown };
@@ -263,28 +326,55 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     if (authoring) requireExtension("typedmark:authoring", path, requiredExtensions, config, results);
     return shape;
   };
-  if (evaluatedExtensions["typedmark:reuse"]) for (const artifact of loadArtifacts(join(root, metadataDirectory, "property-sets"), root, "invalid_property_set", "CM-146", results, config)) {
-    const name = basename(artifact.path, ".md");
-    propertySets.set(name, artifact.data);
-    const unavailable = checkVersion(artifact.data, artifact.relativePath);
-    if (unavailable) { propertySetIssues.set(name, unavailable); continue; }
-    const { errors, invalidUnknown } = shapeErrors("property-set.schema.json", fieldContractShape(artifact.data, artifact.relativePath), artifact.relativePath);
-    if (errors.length || invalidUnknown || artifact.data.property_set !== name) {
-      const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Property set identity differs from ${name}`;
-      const first = errors[0];
-      const rule = first?.keyword === "required" ? "CM-146" : first?.instancePath.startsWith("/frontmatter") ? "CM-150" : first?.instancePath.startsWith("/relationships") ? "CM-152" : first?.instancePath.startsWith("/headings") ? "CM-153" : first?.instancePath === "/specification_version" ? "FND-5" : first ? "CM-146" : "CM-144";
-      if (errors.length || (!invalidUnknown && artifact.data.property_set !== name)) add(results, config, "invalid_property_set", artifact.relativePath, rule, message);
-      propertySetIssues.set(name, { kind: "invalid", path: artifact.relativePath, message });
+  if (evaluatedExtensions["typedmark:reuse"])
+    for (const artifact of loadArtifacts(join(root, metadataDirectory, "property-sets"), root, "invalid_property_set", "CM-146", results, config)) {
+      const name = basename(artifact.path, ".md");
+      propertySets.set(name, artifact.data);
+      const unavailable = checkVersion(artifact.data, artifact.relativePath);
+      if (unavailable) {
+        propertySetIssues.set(name, unavailable);
+        continue;
+      }
+      const { errors, invalidUnknown } = shapeErrors(
+        "property-set.schema.json",
+        fieldContractShape(artifact.data, artifact.relativePath),
+        artifact.relativePath,
+      );
+      if (errors.length || invalidUnknown || artifact.data.property_set !== name) {
+        const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Property set identity differs from ${name}`;
+        const first = errors[0];
+        const rule =
+          first?.keyword === "required"
+            ? "CM-146"
+            : first?.instancePath.startsWith("/frontmatter")
+              ? "CM-150"
+              : first?.instancePath.startsWith("/relationships")
+                ? "CM-152"
+                : first?.instancePath.startsWith("/headings")
+                  ? "CM-153"
+                  : first?.instancePath === "/specification_version"
+                    ? "FND-5"
+                    : first
+                      ? "CM-146"
+                      : "CM-144";
+        if (errors.length || (!invalidUnknown && artifact.data.property_set !== name))
+          add(results, config, "invalid_property_set", artifact.relativePath, rule, message);
+        propertySetIssues.set(name, { kind: "invalid", path: artifact.relativePath, message });
+      }
     }
-  }
 
   for (const artifact of schemaArtifacts) {
     const inferredName = basename(artifact.path, ".md");
     schemas.set(inferredName, artifact.data);
     const unavailable = checkVersion(artifact.data, artifact.relativePath);
-    if (unavailable) { schemaIssues.set(inferredName, unavailable); continue; }
-    if (artifact.data.abstract === true || ["extends", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"]
-      .some((key) => Object.hasOwn(artifact.data, key))) {
+    if (unavailable) {
+      schemaIssues.set(inferredName, unavailable);
+      continue;
+    }
+    if (
+      artifact.data.abstract === true ||
+      ["extends", "property_sets", "exclude_property_sets", "frontmatter_remove", "conditions"].some((key) => Object.hasOwn(artifact.data, key))
+    ) {
       requireExtension("typedmark:reuse", artifact.relativePath, requiredExtensions, config, results);
     }
     const shape = fieldContractShape(artifact.data, artifact.relativePath);
@@ -295,9 +385,20 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     const { errors, invalidUnknown } = shapeErrors("note-type.schema.json", shape, artifact.relativePath);
     const name = typeof artifact.data.note_type === "string" ? artifact.data.note_type : inferredName;
     if (errors.length > 0 || invalidUnknown || name !== inferredName) {
-      const message = errors.length ? schemaError(errors) : invalidUnknown ? "Unrecognized structural key" : `Schema identity ${name} does not match ${inferredName}`;
-      if (errors.length || (!invalidUnknown && name !== inferredName)) add(results, config, "invalid_note_type_schema", artifact.relativePath,
-        errors.length && errors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "NTS-170" : "NTS-4", message);
+      const message = errors.length
+        ? schemaError(errors)
+        : invalidUnknown
+          ? "Unrecognized structural key"
+          : `Schema identity ${name} does not match ${inferredName}`;
+      if (errors.length || (!invalidUnknown && name !== inferredName))
+        add(
+          results,
+          config,
+          "invalid_note_type_schema",
+          artifact.relativePath,
+          errors.length && errors.every((error) => error.instancePath.startsWith("/mandatory_tags")) ? "NTS-170" : "NTS-4",
+          message,
+        );
       schemaIssues.set(inferredName, { kind: "invalid", path: artifact.relativePath, message });
       continue;
     }
@@ -317,9 +418,20 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
       propertySetIssues.set(name, { kind: "invalid", path, message: failure.message });
     }
   }
-  const resolved = resolveSchemas({ schemas, propertySets, config, metadataDirectory, enabled: !!evaluatedExtensions["typedmark:reuse"], schemaIssues, propertySetIssues });
-  schemas = resolved.schemas; schemaIssues = resolved.issues; schemaSources = resolved.sources;
-  for (const finding of resolved.results) add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { ...(finding.note_type ? { note_type: finding.note_type } : {}) });
+  const resolved = resolveSchemas({
+    schemas,
+    propertySets,
+    config,
+    metadataDirectory,
+    enabled: !!evaluatedExtensions["typedmark:reuse"],
+    schemaIssues,
+    propertySetIssues,
+  });
+  schemas = resolved.schemas;
+  schemaIssues = resolved.issues;
+  schemaSources = resolved.sources;
+  for (const finding of resolved.results)
+    add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { ...(finding.note_type ? { note_type: finding.note_type } : {}) });
   if ([...schemaIssues.values()].some((issue) => issue.kind === "unavailable" && issue.specificationVersion)) evaluation = "incomplete";
   for (const [name, schema] of schemas) {
     if (schemaIssues.has(name)) continue;
@@ -328,7 +440,9 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     const failures = validateReusableBlocks(schema, schemas, config);
     const reportFailures = () => {
       for (const failure of failures) {
-        const code = ["RHT-15", "RHT-21", "RHT-26", "RHT-292", "RHT-297", "RHT-298", "FDR-164"].includes(failure.rule) ? "invalid_relationship_definition" : "invalid_note_type_schema";
+        const code = ["RHT-15", "RHT-21", "RHT-26", "RHT-292", "RHT-297", "RHT-298", "FDR-164"].includes(failure.rule)
+          ? "invalid_relationship_definition"
+          : "invalid_note_type_schema";
         add(results, config, code, path, failure.rule, failure.message);
         schemaIssues.set(name, { kind: "invalid", path, message: failure.message });
       }
@@ -347,7 +461,8 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     if (evaluatedExtensions["typedmark:expressions"]) failures.push(...validateComputedFields(fields, !schema.abstract));
     if (!schema.abstract) failures.push(...validateConditions(schema.conditions ?? [], noteFieldDefinitions(schema)));
     reportFailures();
-    if (!schema.abstract && !schemaIssues.has(name)) validateTemplate(root, metadataDirectory, name, schema, results, config, templates, undefined, options.blockedPaths);
+    if (!schema.abstract && !schemaIssues.has(name))
+      validateTemplate(root, metadataDirectory, name, schema, results, config, templates, undefined, options.blockedPaths);
   }
 
   if (systemsEnabled && isRecord(config.scaffold)) {
@@ -360,16 +475,31 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     for (const [index, note] of (Array.isArray(config.scaffold?.notes) ? config.scaffold.notes : []).entries()) {
       if (!isRecord(note) || typeof note.note_type !== "string") continue;
       const issue = schemaIssues.get(note.note_type);
-      if (issue?.kind === "unavailable") { scaffoldUnavailable = true; continue; }
+      if (issue?.kind === "unavailable") {
+        scaffoldUnavailable = true;
+        continue;
+      }
       // An invalid schema already has its own findings. Unknown contracts do
       // not establish that a scaffold reference is missing or abstract.
       if (issue) continue;
       const schema = schemas.get(note.note_type);
-      if (!schema || schema.abstract === true) add(results, config, "invalid_system", "typedmark.md", "SCE-17",
-        `scaffold.notes[${index}].note_type must resolve to a concrete note type: ${note.note_type}`, { note_type: note.note_type });
-      else if (typeof note.from_template === "string") validateTemplate(root, metadataDirectory, note.note_type, schema, results, config, templates, note.from_template, options.blockedPaths);
+      if (!schema || schema.abstract === true)
+        add(
+          results,
+          config,
+          "invalid_system",
+          "typedmark.md",
+          "SCE-17",
+          `scaffold.notes[${index}].note_type must resolve to a concrete note type: ${note.note_type}`,
+          { note_type: note.note_type },
+        );
+      else if (typeof note.from_template === "string")
+        validateTemplate(root, metadataDirectory, note.note_type, schema, results, config, templates, note.from_template, options.blockedPaths);
     }
-    if (scaffoldUnavailable) { delete evaluatedExtensions["typedmark:systems"]; evaluation = "incomplete"; }
+    if (scaffoldUnavailable) {
+      delete evaluatedExtensions["typedmark:systems"];
+      evaluation = "incomplete";
+    }
   }
 
   const mappingFailures = validateMappingDeclarations(config, schemas);
@@ -389,12 +519,25 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
       document = parseMarkdown(readFileSync(join(root, notePath)), { preserveBodyLineEndings: true });
     } catch (error) {
       add(results, config, "invalid_note_frontmatter", notePath, frontmatterFailureRule(error, "MN-118"), errorMessage(error));
-      documents.push({ path: notePath.normalize("NFC"), stored: {}, body: error instanceof FrontmatterError ? error.body : "", frontmatterValid: false, candidates: candidateTypes(selectNoteType(config, notePath, {}, false)) });
+      documents.push({
+        path: notePath.normalize("NFC"),
+        stored: {},
+        body: error instanceof FrontmatterError ? error.body : "",
+        frontmatterValid: false,
+        candidates: candidateTypes(selectNoteType(config, notePath, {}, false)),
+      });
       continue;
     }
     const association = selectNoteType(config, notePath, document.data, document.hasFrontmatter);
     const candidates = candidateTypes(association);
-    documents.push({ path: notePath.normalize("NFC"), stored: document.data, body: document.body, hasFrontmatter: document.hasFrontmatter, frontmatterValid: true, candidates });
+    documents.push({
+      path: notePath.normalize("NFC"),
+      stored: document.data,
+      body: document.body,
+      hasFrontmatter: document.hasFrontmatter,
+      frontmatterValid: true,
+      candidates,
+    });
     if (!association.matched) continue;
     if (!candidates.length || !schemas.has(candidates[0]!)) {
       add(results, config, "invalid_note_type_mapping", notePath, "CM-114", "The winning mapping does not resolve to one known concrete note type");
@@ -406,10 +549,26 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
       add(results, config, "invalid_note_type_mapping", notePath, "CM-114", `Unknown or abstract note type ${noteType}`);
       continue;
     }
-    const validation = validateNote(notePath, document.data, document.body, noteType, schemaIssues.has(noteType) ? {} : schema, config, schemaIssues.has(noteType), !!requiredExtensions["typedmark:template-tracking"]);
+    const validation = validateNote(
+      notePath,
+      document.data,
+      document.body,
+      noteType,
+      schemaIssues.has(noteType) ? {} : schema,
+      config,
+      schemaIssues.has(noteType),
+      !!requiredExtensions["typedmark:template-tracking"],
+    );
     results.push(...validation.results);
-    effectiveNotes.push({ path: notePath.normalize("NFC"), noteType, values: validation.values, fields: validation.fields,
-      stored: document.data, body: document.body, problems: validation.results });
+    effectiveNotes.push({
+      path: notePath.normalize("NFC"),
+      noteType,
+      values: validation.values,
+      fields: validation.fields,
+      stored: document.data,
+      body: document.body,
+      problems: validation.results,
+    });
   }
 
   const concreteSchemas = new Map([...schemas].filter(([name, schema]) => !schemaIssues.has(name) && !schema.abstract));
@@ -419,20 +578,38 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
   // against the materialized target in instantiated_collection mode.
   if (mode !== "system_definition" && (!associationIssue || notes.length === 0)) validateCounts(effectiveNotes, concreteSchemas, config, results);
   for (const finding of validateRelationships(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)))) {
-    add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { note_type: finding.note_type, ...(finding.field ? { field: finding.field } : {}), ...(finding.relationship ? { relationship: finding.relationship } : {}) });
+    add(results, config, finding.code, finding.path, finding.rule_id, finding.message, {
+      note_type: finding.note_type,
+      ...(finding.field ? { field: finding.field } : {}),
+      ...(finding.relationship ? { relationship: finding.relationship } : {}),
+    });
   }
   const views = validateViews(root, metadataDirectory, model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry);
   results.push(...views.results);
-  const expansions = validateExpansions(model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry, views.sources, templates);
+  const expansions = validateExpansions(
+    model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)),
+    registry,
+    views.sources,
+    templates,
+  );
   results.push(...expansions.results);
   if (expansions.incomplete) evaluation = "incomplete";
-  for (const extension of expansions.blocked) if (evaluatedExtensions[extension]) { delete evaluatedExtensions[extension]; evaluation = "incomplete"; }
+  for (const extension of expansions.blocked)
+    if (evaluatedExtensions[extension]) {
+      delete evaluatedExtensions[extension];
+      evaluation = "incomplete";
+    }
   if (views.incomplete) evaluation = "incomplete";
   for (const extension of views.blocked.keys()) {
     delete evaluatedExtensions[extension];
     evaluation = "incomplete";
   }
-  const automations = validateAutomations(root, metadataDirectory, model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)), registry);
+  const automations = validateAutomations(
+    root,
+    metadataDirectory,
+    model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results)),
+    registry,
+  );
   results.push(...automations.results);
   if (automations.incomplete) evaluation = "incomplete";
   if (automations.blocked) delete evaluatedExtensions["typedmark:automation"];
@@ -444,7 +621,14 @@ export function readCollectionModel(input: ValidateCollectionInput, options: { d
     // Static interpretation above is still useful, but it cannot certify the
     // Core note model or extension semantics that depend on associated notes.
     evaluation = "incomplete";
-    for (const extension of ["typedmark:reuse", "typedmark:expressions", "typedmark:queries", "typedmark:views", "typedmark:expansion", "typedmark:template-tracking"]) {
+    for (const extension of [
+      "typedmark:reuse",
+      "typedmark:expressions",
+      "typedmark:queries",
+      "typedmark:views",
+      "typedmark:expansion",
+      "typedmark:template-tracking",
+    ]) {
       delete evaluatedExtensions[extension];
     }
   }
@@ -476,8 +660,7 @@ function validateExtensionDependencies(required: ExtensionMap, config: Data, res
     for (const [dependency, version] of Object.entries(needed)) {
       if (required[dependency] === version) continue;
       const rule = Object.hasOwn(required, dependency) ? "EXT-15" : "EXT-14";
-      add(results, config, "invalid_extension_declaration", "typedmark.md", rule,
-        `${extension} at 0.1.0 requires ${dependency} at ${version}`, { extension });
+      add(results, config, "invalid_extension_declaration", "typedmark.md", rule, `${extension} at 0.1.0 requires ${dependency} at ${version}`, { extension });
     }
   }
 }
@@ -501,11 +684,23 @@ function validateReuseDeclaration(root: string, metadataDirectory: string, confi
   }
 }
 
-function validateSystemContract(root: string, metadataDirectory: string, mode: ValidationReport["mode"], config: Data, required: ExtensionMap, evaluated: ExtensionMap, registry: SchemaRegistry, results: ValidationResult[], checkVersion: (data: Data, path: string) => SchemaIssue | undefined) {
+function validateSystemContract(
+  root: string,
+  metadataDirectory: string,
+  mode: ValidationReport["mode"],
+  config: Data,
+  required: ExtensionMap,
+  evaluated: ExtensionMap,
+  registry: SchemaRegistry,
+  results: ValidationResult[],
+  checkVersion: (data: Data, path: string) => SchemaIssue | undefined,
+) {
   const historyPath = join(root, metadataDirectory, "history.md");
   const usesSystems = config.version !== undefined || config.scaffold !== undefined || config.composition !== undefined || existsSync(historyPath);
   if (usesSystems && !required["typedmark:systems"]) {
-    add(results, config, "invalid_extension_declaration", "typedmark.md", "EXT-16", "System fields, composition, and history require typedmark:systems", { extension: "typedmark:systems" });
+    add(results, config, "invalid_extension_declaration", "typedmark.md", "EXT-16", "System fields, composition, and history require typedmark:systems", {
+      extension: "typedmark:systems",
+    });
   }
   if ((mode === "system_definition" || mode === "both") && (typeof config.version !== "string" || !isRecord(config.scaffold))) {
     add(results, config, "invalid_system", "typedmark.md", "SCE-7", "A system definition requires version and scaffold");
@@ -515,7 +710,8 @@ function validateSystemContract(root: string, metadataDirectory: string, mode: V
     const names = new Set<string>();
     for (const source of config.composition.sources) {
       if (!isRecord(source) || typeof source.name !== "string") continue;
-      if (source.name === config.name) add(results, config, "invalid_composition", "typedmark.md", "CM-131", "Composition cannot reference its own collection identity");
+      if (source.name === config.name)
+        add(results, config, "invalid_composition", "typedmark.md", "CM-131", "Composition cannot reference its own collection identity");
       if (names.has(source.name)) add(results, config, "invalid_composition", "typedmark.md", "CM-130", `Duplicate composition source ${source.name}`);
       names.add(source.name);
     }
@@ -524,7 +720,10 @@ function validateSystemContract(root: string, metadataDirectory: string, mode: V
   try {
     const history = parseMarkdown(readFileSync(historyPath)).data;
     const path = normalized(relative(root, historyPath));
-    if (checkVersion(history, path)) { delete evaluated["typedmark:systems"]; return; }
+    if (checkVersion(history, path)) {
+      delete evaluated["typedmark:systems"];
+      return;
+    }
     const bestEffort = isBestEffortVersion(history.specification_version);
     const shape = validateHistoryShape(history, registry, bestEffort);
     for (const issue of shape.issues) {
@@ -534,7 +733,8 @@ function validateSystemContract(root: string, metadataDirectory: string, mode: V
     if (!shape.valid) return;
     const entries = Array.isArray(history.history) ? history.history : [];
     for (const issue of validateHistoryOrder(entries)) add(results, config, issue.code, path, issue.rule, issue.message);
-    if (typeof config.version === "string" && entries.at(-1)?.version !== config.version) add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-100", "The last history version must equal the system version");
+    if (typeof config.version === "string" && entries.at(-1)?.version !== config.version)
+      add(results, config, "invalid_history", normalized(relative(root, historyPath)), "SCE-100", "The last history version must equal the system version");
   } catch (error) {
     add(results, config, "invalid_history", normalized(relative(root, historyPath)), frontmatterFailureRule(error, "SCE-95"), errorMessage(error));
   }
@@ -563,12 +763,26 @@ function validateOptionalArtifacts(root: string, metadataDirectory: string, requ
   ] as const;
   for (const [extension, directory] of definitions) {
     const path = join(root, metadataDirectory, directory);
-    const hasArtifacts = existsSync(path) && lstatSync(path).isDirectory() && readdirSync(path, { withFileTypes: true }).some((entry) => entry.isFile() && entry.name.endsWith(".md"));
-    if (hasArtifacts && !required[extension]) add(results, config, "invalid_extension_declaration", "typedmark.md", "EXT-16", `${directory} requires ${extension}`, { extension });
+    const hasArtifacts =
+      existsSync(path) &&
+      lstatSync(path).isDirectory() &&
+      readdirSync(path, { withFileTypes: true }).some((entry) => entry.isFile() && entry.name.endsWith(".md"));
+    if (hasArtifacts && !required[extension])
+      add(results, config, "invalid_extension_declaration", "typedmark.md", "EXT-16", `${directory} requires ${extension}`, { extension });
   }
 }
 
-function validateTemplate(root: string, metadataDirectory: string, noteType: string, schema: Data, results: ValidationResult[], config: Data, templates: ExpansionTemplate[], overrideFile?: string, blockedPaths?: ReadonlySet<string>) {
+function validateTemplate(
+  root: string,
+  metadataDirectory: string,
+  noteType: string,
+  schema: Data,
+  results: ValidationResult[],
+  config: Data,
+  templates: ExpansionTemplate[],
+  overrideFile?: string,
+  blockedPaths?: ReadonlySet<string>,
+) {
   const selected = resolveTemplate(root, metadataDirectory, noteType, schema, overrideFile, blockedPaths);
   if (selected.kind === "derived" || templates.some((template) => template.path === selected.path && template.noteType === noteType)) return;
   const context = { path: selected.path, version: schema.specification_version, noteType, canonical: overrideFile === undefined };
@@ -590,7 +804,16 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   const values: Data = {};
 
   if (Object.hasOwn(stored, "note_type") && stored.note_type !== noteType) {
-    add(results, config, "invalid_field_value", path, "MN-40", "Stored note_type differs from the associated concrete type", { note_type: noteType, field: "note_type" }, schema);
+    add(
+      results,
+      config,
+      "invalid_field_value",
+      path,
+      "MN-40",
+      "Stored note_type differs from the associated concrete type",
+      { note_type: noteType, field: "note_type" },
+      schema,
+    );
   }
 
   for (const [name, definition] of Object.entries(fields)) {
@@ -608,7 +831,17 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
     value = expandObjectDefaults(value, definition);
     values[name] = value;
     if (value === null) {
-      if (definition.nullable !== true || (name === "id" && present)) add(results, config, "missing_required_field", path, "MN-99", `${name} is explicitly null but is not nullable`, { note_type: noteType, field: name }, schema);
+      if (definition.nullable !== true || (name === "id" && present))
+        add(
+          results,
+          config,
+          "missing_required_field",
+          path,
+          "MN-99",
+          `${name} is explicitly null but is not nullable`,
+          { note_type: noteType, field: name },
+          schema,
+        );
       continue;
     }
     const failure = validateManagedFieldConstraints(value, definition, config.timezone ?? "UTC", config.vocabularies);
@@ -625,7 +858,8 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   });
   const declared = new Set(Object.keys(fields));
   for (const field of Object.keys(stored)) {
-    if (!partial && !declared.has(field) && !(trackingDeclared && field === "template_regions")) add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, unknownContext([field]), schema);
+    if (!partial && !declared.has(field) && !(trackingDeclared && field === "template_regions"))
+      add(results, config, "unknown_field", path, "MN-111", `${field} is not declared`, unknownContext([field]), schema);
   }
   const unknownChildren = (value: unknown, definition: FieldDefinition, names: readonly string[], location: string): void => {
     if (definition.type === "list" && definition.items && Array.isArray(value)) {
@@ -635,7 +869,8 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
       for (const [name, child] of Object.entries(value)) {
         const field = `${location}.${name}`;
         const childNames = [...names, name];
-        if (!Object.hasOwn(definition.fields ?? {}, name)) add(results, config, "unknown_field", path, "MN-112", `${field} is not declared`, unknownContext(childNames), schema);
+        if (!Object.hasOwn(definition.fields ?? {}, name))
+          add(results, config, "unknown_field", path, "MN-112", `${field} is not declared`, unknownContext(childNames), schema);
         else unknownChildren(child, definition.fields![name]!, childNames, field);
       }
     }
@@ -645,23 +880,35 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   const mandatory = new Set([...arrayOfStrings(config.mandatory_tags), ...arrayOfStrings(schema.mandatory_tags)].map((value) => value.normalize("NFC")));
   const tags = new Set(arrayOfStrings(values.tags).map((value) => value.normalize("NFC")));
   for (const tag of mandatory) {
-    if (!tags.has(tag)) add(results, config, "invalid_field_value", path, "MN-128", `tags is missing the effective mandatory tag ${tag}`, { note_type: noteType, field: "tags" }, schema);
+    if (!tags.has(tag))
+      add(
+        results,
+        config,
+        "invalid_field_value",
+        path,
+        "MN-128",
+        `tags is missing the effective mandatory tag ${tag}`,
+        { note_type: noteType, field: "tags" },
+        schema,
+      );
   }
 
   validateStorage(path, values, fields, schema, noteType, config, results);
   validateHeadings(path, body, values.title, schema.headings, noteType, config, results);
-  for (const failure of computedFailures(fields, stored, values, config.timezone ?? "UTC", config.vocabularies)) add(results, config, "invalid_field_value", path, failure.rule, failure.message, { note_type: noteType, field: failure.field }, schema);
-  for (const failure of conditionFailures(schema.conditions ?? [], stored, values)) add(results, config, failure.code, path, failure.rule, failure.message, { note_type: noteType, field: failure.field }, schema);
+  for (const failure of computedFailures(fields, stored, values, config.timezone ?? "UTC", config.vocabularies))
+    add(results, config, "invalid_field_value", path, failure.rule, failure.message, { note_type: noteType, field: failure.field }, schema);
+  for (const failure of conditionFailures(schema.conditions ?? [], stored, values))
+    add(results, config, failure.code, path, failure.rule, failure.message, { note_type: noteType, field: failure.field }, schema);
   return { values, fields, results };
 }
-
 
 function validateStorage(path: string, values: Data, fields: Data, schema: Data, noteType: string, config: Data, results: ValidationResult[]) {
   const storage = values.archived === true && schema.storage?.archive ? schema.storage.archive : schema.storage;
   if (!storage) return;
   const resolved = checkStoragePath(storage, path, values, fields, config.timezone ?? "UTC");
   if ("failure" in resolved) add(results, config, "path", path, resolved.failure.rule, resolved.failure.message, { note_type: noteType }, schema);
-  else if (path.normalize("NFC") !== resolved.path) add(results, config, "path", path, "NTS-146", `Expected managed-note path ${resolved.path}`, { note_type: noteType }, schema);
+  else if (path.normalize("NFC") !== resolved.path)
+    add(results, config, "path", path, "NTS-146", `Expected managed-note path ${resolved.path}`, { note_type: noteType }, schema);
 }
 
 function validateHeadings(path: string, body: string, title: unknown, headings: Data | undefined, noteType: string, config: Data, results: ValidationResult[]) {
@@ -669,18 +916,23 @@ function validateHeadings(path: string, body: string, title: unknown, headings: 
   const found = extractHeadings(body);
   const h1 = found.filter((item) => item.depth === 1);
   const h2 = found.filter((item) => item.depth === 2).map((item) => item.text);
-  const fail = (rule: string, message: string, heading?: string) => add(results, config, "invalid_heading", path, rule, message, { note_type: noteType, ...(heading ? { heading } : {}) });
+  const fail = (rule: string, message: string, heading?: string) =>
+    add(results, config, "invalid_heading", path, rule, message, { note_type: noteType, ...(heading ? { heading } : {}) });
   const nfc = (value: string) => value.normalize("NFC");
-  if (headings.require_h1_title === true && (h1.length !== 1 || typeof title !== "string" || nfc(h1[0]!.text) !== nfc(title) || found[0]?.depth !== 1)) fail("RHT-53", "The body must have one H1 before other headings, equal to the effective title");
-  for (const required of arrayOfStrings(headings.required_h2)) if (h2.filter((value) => nfc(value) === nfc(required)).length !== 1) fail("RHT-58", `Required H2 ${required} must appear exactly once`, required);
-  for (const optional of arrayOfStrings(headings.optional_h2)) if (h2.filter((value) => nfc(value) === nfc(optional)).length > 1) fail("RHT-59", `Optional H2 ${optional} appears more than once`, optional);
+  if (headings.require_h1_title === true && (h1.length !== 1 || typeof title !== "string" || nfc(h1[0]!.text) !== nfc(title) || found[0]?.depth !== 1))
+    fail("RHT-53", "The body must have one H1 before other headings, equal to the effective title");
+  for (const required of arrayOfStrings(headings.required_h2))
+    if (h2.filter((value) => nfc(value) === nfc(required)).length !== 1) fail("RHT-58", `Required H2 ${required} must appear exactly once`, required);
+  for (const optional of arrayOfStrings(headings.optional_h2))
+    if (h2.filter((value) => nfc(value) === nfc(optional)).length > 1) fail("RHT-59", `Optional H2 ${optional} appears more than once`, optional);
   const declared = new Set([...arrayOfStrings(headings.required_h2), ...arrayOfStrings(headings.optional_h2)].map(nfc));
   if (headings.allow_other_h2 === false) for (const value of h2) if (!declared.has(nfc(value))) fail("RHT-60", `Undeclared H2 ${value} is not allowed`, value);
   if (headings.require_order === true) {
     for (const list of [arrayOfStrings(headings.required_h2), arrayOfStrings(headings.optional_h2)]) {
       const normalized = list.map(nfc);
       const seen = h2.map(nfc).filter((value) => normalized.includes(value));
-      if (seen.some((value, index) => normalized.indexOf(value) < normalized.indexOf(seen[index - 1] ?? value))) fail("RHT-62", "Declared H2 headings are out of order");
+      if (seen.some((value, index) => normalized.indexOf(value) < normalized.indexOf(seen[index - 1] ?? value)))
+        fail("RHT-62", "Declared H2 headings are out of order");
     }
   }
 }
@@ -693,14 +945,15 @@ function validateUniqueness(notes: ManagedNote[], schemas: Map<string, Data>, co
   policies.set(JSON.stringify(["id", "text"]), { collection: true, types: new Set() });
   // A collection-wide declaration governs same-named, same-typed fields, not
   // just notes whose schema repeats the declaration (or currently has notes).
-  for (const [noteType, schema] of schemas) for (const [field, definition] of Object.entries(noteFieldDefinitions(schema))) {
-    if (!definition.unique || !comparisonDomain(definition)) continue;
-    const key = JSON.stringify([field, definition.type]);
-    const policy = policies.get(key) ?? { collection: false, types: new Set<string>() };
-    if (definition.unique === "collection") policy.collection = true;
-    else policy.types.add(noteType);
-    policies.set(key, policy);
-  }
+  for (const [noteType, schema] of schemas)
+    for (const [field, definition] of Object.entries(noteFieldDefinitions(schema))) {
+      if (!definition.unique || !comparisonDomain(definition)) continue;
+      const key = JSON.stringify([field, definition.type]);
+      const policy = policies.get(key) ?? { collection: false, types: new Set<string>() };
+      if (definition.unique === "collection") policy.collection = true;
+      else policy.types.add(noteType);
+      policies.set(key, policy);
+    }
   const groups = new Map<string, Group>();
   for (const note of notes) {
     for (const [field, definition] of Object.entries(note.fields)) {
@@ -723,7 +976,10 @@ function validateUniqueness(notes: ManagedNote[], schemas: Map<string, Data>, co
     for (const entry of group.entries) {
       if (first && compare(first, entry) === 0) {
         const rule = group.field === "id" ? "MN-48" : group.collection ? "FDR-84" : "FDR-83";
-        add(results, config, "duplicate_unique_value", entry.note.path, rule, `${group.field} duplicates ${first.note.path}`, { note_type: entry.note.noteType, field: group.field });
+        add(results, config, "duplicate_unique_value", entry.note.path, rule, `${group.field} duplicates ${first.note.path}`, {
+          note_type: entry.note.noteType,
+          field: group.field,
+        });
       } else first = entry;
     }
   }
@@ -771,9 +1027,14 @@ function validateMappingDeclarations(config: Data, schemas: Map<string, Data>) {
       failures.push({ rule: mapping.kind === "fixed" ? "CM-83" : "CM-92", message: `Mapping target ${mapping.note_type} is not a known concrete note type` });
     }
     const patterns = [mapping.when?.path?.regex, ...Object.values(mapping.when?.frontmatter ?? {}).map((predicate) => (predicate as Data).regex)];
-    for (const pattern of patterns) if (pattern !== undefined) {
-      try { fullPattern(pattern); } catch { failures.push({ rule: "FND-31", message: "Invalid note-type mapping regular expression" }); }
-    }
+    for (const pattern of patterns)
+      if (pattern !== undefined) {
+        try {
+          fullPattern(pattern);
+        } catch {
+          failures.push({ rule: "FND-31", message: "Invalid note-type mapping regular expression" });
+        }
+      }
   }
   return failures;
 }
@@ -786,7 +1047,11 @@ function selectNoteType(config: Data, path: string, frontmatter: Data, hasFrontm
     if (mapping.kind === "folder" && path.startsWith(mapping.folder.normalize("NFC"))) return { matched: true, candidate: mapping.note_type };
     if (mapping.kind === "tag" && Array.isArray(frontmatter.tags)) {
       const expected = mapping.tag.normalize("NFC");
-      if (frontmatter.tags.some((tag: unknown) => typeof tag === "string" && (tag.normalize("NFC") === expected || tag.normalize("NFC").startsWith(`${expected}/`)))) {
+      if (
+        frontmatter.tags.some(
+          (tag: unknown) => typeof tag === "string" && (tag.normalize("NFC") === expected || tag.normalize("NFC").startsWith(`${expected}/`)),
+        )
+      ) {
         return { matched: true, candidate: mapping.note_type };
       }
     }
@@ -803,15 +1068,30 @@ function matchesWhen(when: Data, path: string, frontmatter: Data, hasFrontmatter
   return true;
 }
 
-function add(results: ValidationResult[], config: Data, code: string, path: string, rule_id: string, message: string, context: Partial<ValidationResult> = {}, schema?: Data) {
+function add(
+  results: ValidationResult[],
+  config: Data,
+  code: string,
+  path: string,
+  rule_id: string,
+  message: string,
+  context: Partial<ValidationResult> = {},
+  schema?: Data,
+) {
   const configured = code === "unknown_field" && schema?.unknown_field ? schema.unknown_field : config.validation_defaults?.[code];
-  const severity = ["error", "warn", "info", "off"].includes(configured)
-    ? configured : DEFAULT_SEVERITIES[code] ?? "error";
+  const severity = ["error", "warn", "info", "off"].includes(configured) ? configured : (DEFAULT_SEVERITIES[code] ?? "error");
   if (severity === "off") return;
   results.push({ code, severity: severity as Severity, path: normalized(path), rule_id, message, ...context });
 }
 
-function report(specification_version: string, mode: ValidationReport["mode"], required_extensions: ExtensionMap, evaluated_extensions: ExtensionMap, evaluation: "complete" | "incomplete", results: ValidationResult[]): ValidationReport {
+function report(
+  specification_version: string,
+  mode: ValidationReport["mode"],
+  required_extensions: ExtensionMap,
+  evaluated_extensions: ExtensionMap,
+  evaluation: "complete" | "incomplete",
+  results: ValidationResult[],
+): ValidationReport {
   sortResults(results);
   return {
     specification_version,
@@ -846,7 +1126,10 @@ function isSpecificationVersion(version: unknown): version is string {
 
 function removePropertyAt(data: Data, pointer: string, key: string): boolean {
   let parent: any = data;
-  for (const segment of pointer.split("/").slice(1).map((part) => part.replaceAll("~1", "/").replaceAll("~0", "~"))) {
+  for (const segment of pointer
+    .split("/")
+    .slice(1)
+    .map((part) => part.replaceAll("~1", "/").replaceAll("~0", "~"))) {
     if (parent === null || typeof parent !== "object" || !Object.hasOwn(parent, segment)) return false;
     const child = parent[segment];
     if (child === null || typeof child !== "object") return false;
@@ -860,17 +1143,23 @@ function removePropertyAt(data: Data, pointer: string, key: string): boolean {
 }
 
 function isBestEffortVersion(version: unknown): boolean {
-  return isSpecificationVersion(version)
-    && sameCompatibilityLine(version, IMPLEMENTED_CORE)
-    && BigInt(version.split(".")[2]!) > BigInt(IMPLEMENTED_CORE.split(".")[2]!);
+  return (
+    isSpecificationVersion(version) &&
+    sameCompatibilityLine(version, IMPLEMENTED_CORE) &&
+    BigInt(version.split(".")[2]!) > BigInt(IMPLEMENTED_CORE.split(".")[2]!)
+  );
 }
 
 function safeMetadataDirectory(value: unknown): string {
   return typeof value === "string" && value !== "." && value !== ".." && /^[^/\\]+$/.test(value) ? value : ".typedmark";
 }
 
-function readExtensionDeclaration(config: Data, registry: SchemaRegistry): {
-  required: ExtensionMap; issues: Array<{ rule: string; message: string; extension?: string }>;
+function readExtensionDeclaration(
+  config: Data,
+  registry: SchemaRegistry,
+): {
+  required: ExtensionMap;
+  issues: Array<{ rule: string; message: string; extension?: string }>;
 } {
   if (!Object.hasOwn(config, "extensions")) return { required: {}, issues: [] };
   // YAML tags can produce Map/Set objects whose Object.entries() looks empty.
@@ -898,17 +1187,28 @@ function arrayOfStrings(value: unknown): string[] {
 // Validate the governed tag grammar and uniqueness on logical strings, without
 // normalizing arbitrary data or changing the authored collection/schema model.
 function normalizedMandatoryTags(data: Data): Data {
-  return { ...data, ...(Array.isArray(data.mandatory_tags) ? {
-    mandatory_tags: data.mandatory_tags.map((tag: unknown) => typeof tag === "string" ? tag.normalize("NFC") : tag),
-  } : {}) };
+  return {
+    ...data,
+    ...(Array.isArray(data.mandatory_tags)
+      ? {
+          mandatory_tags: data.mandatory_tags.map((tag: unknown) => (typeof tag === "string" ? tag.normalize("NFC") : tag)),
+        }
+      : {}),
+  };
 }
 
 function isRecord(value: unknown): value is Data {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function normalized(path: string) { return path.replaceAll("\\", "/"); }
-function errorMessage(error: unknown) { return error instanceof Error ? error.message : String(error); }
-function schemaError(errors: Array<{ instancePath?: string; message?: string }>) { return errors.map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`).join("; "); }
+function normalized(path: string) {
+  return path.replaceAll("\\", "/");
+}
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+function schemaError(errors: Array<{ instancePath?: string; message?: string }>) {
+  return errors.map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`).join("; ");
+}
 
 export { STANDARD_EXTENSIONS };

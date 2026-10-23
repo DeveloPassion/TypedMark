@@ -51,9 +51,16 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
     // Malformed configuration is the validator's finding, not a fabricated
     // capability requirement or a reason to skip a negative vector.
     let config: Record<string, unknown> = {};
-    try { config = parseMarkdown(await readFile(join(vectorDirectory, "collection", "typedmark.md"))).data; }
-    catch (error) { if (!(error instanceof FrontmatterError)) throw error; }
-    const selection = selectVectorCapabilities((config.extensions ?? {}) as ExtensionMap, capabilities.extensions, readVectorContext(vectorDirectory, registry));
+    try {
+      config = parseMarkdown(await readFile(join(vectorDirectory, "collection", "typedmark.md"))).data;
+    } catch (error) {
+      if (!(error instanceof FrontmatterError)) throw error;
+    }
+    const selection = selectVectorCapabilities(
+      (config.extensions ?? {}) as ExtensionMap,
+      capabilities.extensions,
+      readVectorContext(vectorDirectory, registry),
+    );
     if (selection.skip) {
       vectors.push({
         name,
@@ -74,7 +81,7 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
     });
     vectors.push({
       name,
-      status: result.differences.length === 0 && !result.collectionChanged ? "passed" as const : "failed" as const,
+      status: result.differences.length === 0 && !result.collectionChanged ? ("passed" as const) : ("failed" as const),
       collection_changed: result.collectionChanged,
       differences: result.differences,
       actual_report: result.actual,
@@ -98,9 +105,15 @@ export async function runConformanceSuite(input: RunSuiteInput): Promise<Conform
     },
     vectors,
     query_summary: {
-      executed: vectors.reduce((count, vector) => count + ("query_results" in vector ? vector.query_results?.length ?? 0 : 0), 0),
-      passed: vectors.reduce((count, vector) => count + ("query_results" in vector ? vector.query_results?.filter((query) => query.status === "passed").length ?? 0 : 0), 0),
-      failed: vectors.reduce((count, vector) => count + ("query_results" in vector ? vector.query_results?.filter((query) => query.status === "failed").length ?? 0 : 0), 0),
+      executed: vectors.reduce((count, vector) => count + ("query_results" in vector ? (vector.query_results?.length ?? 0) : 0), 0),
+      passed: vectors.reduce(
+        (count, vector) => count + ("query_results" in vector ? (vector.query_results?.filter((query) => query.status === "passed").length ?? 0) : 0),
+        0,
+      ),
+      failed: vectors.reduce(
+        (count, vector) => count + ("query_results" in vector ? (vector.query_results?.filter((query) => query.status === "failed").length ?? 0) : 0),
+        0,
+      ),
     },
   };
 }

@@ -41,15 +41,18 @@ export function selectVectorCapabilities(required: ExtensionMap, available: Exte
     ...disabled.filter((extension) => available[extension] !== required[extension]),
     ...unsupported.filter((extension) => available[extension] === required[extension]),
   ].sort();
-  if (unmet.length > 0) return {
-    supportedExtensions,
-    skip: { status: "not_run_precondition", extensions: unmet, reason: "Adapter capabilities do not satisfy the explicit negotiation preconditions" },
-  };
-  const missing = Object.keys(required).filter((extension) =>
-    available[extension] !== required[extension] && !unsupported.includes(extension)).sort();
-  if (missing.length > 0) return {
-    supportedExtensions,
-    skip: { status: "not_run_unsupported", extensions: missing, reason: "A required extension is unavailable outside an explicit negotiation case" },
-  };
+  if (unmet.length > 0)
+    return {
+      supportedExtensions,
+      skip: { status: "not_run_precondition", extensions: unmet, reason: "Adapter capabilities do not satisfy the explicit negotiation preconditions" },
+    };
+  const missing = Object.keys(required)
+    .filter((extension) => available[extension] !== required[extension] && !unsupported.includes(extension))
+    .sort();
+  if (missing.length > 0)
+    return {
+      supportedExtensions,
+      skip: { status: "not_run_unsupported", extensions: missing, reason: "A required extension is unavailable outside an explicit negotiation case" },
+    };
   return { supportedExtensions };
 }

@@ -45,12 +45,23 @@ function write(root: string, path: string, data: object, body = "") {
 function emptySystem(count: object = { min: 1, max: 1 }, scaffoldType = "home") {
   const root = mkdtempSync(join(tmpdir(), "typedmark-conformance-modes-"));
   roots.push(root);
-  write(root, "typedmark.md", {
-    specification_version: "0.1.0", name: "@example/home-system", description: "A reusable system with one required home note.",
-    version: "1.0.0", extensions, scaffold: { notes: [{ path: "Home.md", note_type: scaffoldType }] },
-  }, "\n# Home system\n");
+  write(
+    root,
+    "typedmark.md",
+    {
+      specification_version: "0.1.0",
+      name: "@example/home-system",
+      description: "A reusable system with one required home note.",
+      version: "1.0.0",
+      extensions,
+      scaffold: { notes: [{ path: "Home.md", note_type: scaffoldType }] },
+    },
+    "\n# Home system\n",
+  );
   write(root, ".typedmark/schemas/home.md", {
-    specification_version: "0.1.0", description: "The collection home.", count,
+    specification_version: "0.1.0",
+    description: "The collection home.",
+    count,
     storage: { folder_pattern: "", note_name_pattern: "Home" },
   });
   write(root, ".typedmark/templates/home.md", { note_type: "home", title: "Home" }, "\n# Home\n\nWelcome to this collection.\n");
@@ -70,17 +81,26 @@ const validate = (root: string, mode: ValidationMode) => validateCollection({ co
 // CR-1–CR-6 and CR-14 distinguish the published model from its materialized notes.
 test("system_definition accepts an empty system whose scaffold will satisfy its minimum note count", () => {
   expect(validate(emptySystem(), "system_definition")).toMatchObject({
-    mode: "system_definition", evaluation: "complete", required_extensions: extensions,
-    evaluated_extensions: extensions, valid: true, results: [],
+    mode: "system_definition",
+    evaluation: "complete",
+    required_extensions: extensions,
+    evaluated_extensions: extensions,
+    valid: true,
+    results: [],
   });
 });
 
 test.each(["instantiated_collection", "both"] as const)("%s rejects the same empty system's actual note count", (mode) => {
   const report = validate(emptySystem(), mode);
   expect(report).toMatchObject({ mode, evaluation: "complete", valid: false });
-  expect(report.results).toEqual([expect.objectContaining({
-    code: "invalid_note_count", rule_id: "NTS-71", note_type: "home", severity: "error",
-  })]);
+  expect(report.results).toEqual([
+    expect.objectContaining({
+      code: "invalid_note_count",
+      rule_id: "NTS-71",
+      note_type: "home",
+      severity: "error",
+    }),
+  ]);
 });
 
 test("instantiation creates the required note before validating the target count", async () => {
@@ -101,8 +121,9 @@ test("instantiation still rejects a scaffold that leaves the target below its mi
   const source = emptySystem({ min: 2, max: 2 });
   const target = targetDirectory();
 
-  await expect(instantiateSystem({ sourceRoot: source, targetRoot: target, collectionName: "working-home", schemaDirectory }))
-    .rejects.toThrow(/Instantiated collection is not conforming:.*NTS-71/);
+  await expect(instantiateSystem({ sourceRoot: source, targetRoot: target, collectionName: "working-home", schemaDirectory })).rejects.toThrow(
+    /Instantiated collection is not conforming:.*NTS-71/,
+  );
   expect(existsSync(target)).toBe(false);
 });
 
@@ -110,15 +131,26 @@ test("instantiation still rejects a scaffold that leaves the target below its mi
 test.each(modes)("%s still rejects an invalid count declaration", (mode) => {
   const report = validate(emptySystem({ min: 2, max: 1 }), mode);
   expect(report).toMatchObject({ mode, evaluation: "complete", valid: false });
-  expect(report.results).toEqual([expect.objectContaining({
-    code: "invalid_note_type_schema", rule_id: "NTS-69", path: ".typedmark/schemas/home.md", severity: "error",
-  })]);
+  expect(report.results).toEqual([
+    expect.objectContaining({
+      code: "invalid_note_type_schema",
+      rule_id: "NTS-69",
+      path: ".typedmark/schemas/home.md",
+      severity: "error",
+    }),
+  ]);
 });
 
 test.each(modes)("%s still rejects an unresolved scaffold declaration", (mode) => {
   const report = validate(emptySystem({ min: 0 }, "missing"), mode);
   expect(report).toMatchObject({ mode, evaluation: "complete", valid: false });
-  expect(report.results).toEqual([expect.objectContaining({
-    code: "invalid_system", rule_id: "SCE-17", path: "typedmark.md", note_type: "missing", severity: "error",
-  })]);
+  expect(report.results).toEqual([
+    expect.objectContaining({
+      code: "invalid_system",
+      rule_id: "SCE-17",
+      path: "typedmark.md",
+      note_type: "missing",
+      severity: "error",
+    }),
+  ]);
 });
