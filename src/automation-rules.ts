@@ -10,7 +10,8 @@ export interface AutomationFailure extends ValueFailure {
   note_type?: string;
 }
 
-function storageAccepts(path: string, storage: Data): boolean {
+/** Over-approximate whether a path could satisfy a storage contract (placeholders match any safe text). */
+export function storageAccepts(path: string, storage: Data): boolean {
   // A free name is approximated as one unconstrained placeholder.
   const name = `${storage.note_name_prefix?.pattern ?? ""}${storage.note_name_pattern ?? "{free_name}"}${storage.note_name_suffix?.pattern ?? ""}`;
   // Decomposition also handles normalization across a literal/placeholder boundary.

@@ -349,6 +349,10 @@ Storage placeholders `{field:name}` and `{field:folder}` place companion notes
 beside the note a single link field points to, e.g.
 `Projects/Launch/Decisions.md`. See the
 [linked-note storage decision](docs/decisions/025-linked-note-storage.md).
+`bun src/cli.ts suggest-types <collection> --schemas <dir> [--write]` suggests
+types for notes that associate with none, with reasons and a confidence; it
+never affects conformance. See the
+[type-suggestions decision](docs/decisions/026-type-suggestions.md).
 Numeric and timestamp scalar text is retained beyond native Number/Date precision.
 Highly shared source-root graphs can still exceed the reader's alias budget after
 rewriting; these imports abort without publishing a target. This operability gap

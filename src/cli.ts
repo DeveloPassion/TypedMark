@@ -6,6 +6,7 @@ import { validateCollection } from "./validator";
 import { queryCollection, QueryError } from "./query";
 import { decodeUtf8 } from "./utf8";
 import { applyRetype, planRetype } from "./retype";
+import { applySuggestions, suggestTypes } from "./suggest-types";
 import { parse } from "yaml";
 
 const [command, target, ...rest] = Bun.argv.slice(2);
@@ -72,6 +73,13 @@ if (command === "capabilities") {
   const readiness = checkMigrationReadiness({ systemRoot: resolve(target), fromVersion, schemaDirectory: resolve(schemaDirectory) });
   console.log(JSON.stringify(readiness, null, 2));
   process.exitCode = readiness.status === "ready" ? 0 : 1;
+} else if (command === "suggest-types" && target) {
+  // Advice only (#119); --write stores note_type for high-confidence suggestions that then validate.
+  const schemaDirectory = option(rest, "--schemas");
+  if (!schemaDirectory) fail("suggest-types requires <collection> --schemas <directory> [--write]");
+  const suggestions = suggestTypes(resolve(target), resolve(schemaDirectory));
+  const applied = rest.includes("--write") ? applySuggestions(resolve(target), resolve(schemaDirectory), suggestions) : [];
+  console.log(JSON.stringify({ suggestions, applied }, null, 2));
 } else if (command === "retype" && target) {
   // Dry run unless --write; prints the plan and exits non-zero with unresolved requirements (RT-10).
   const notePath = rest[0];
@@ -89,7 +97,7 @@ if (command === "capabilities") {
   process.exitCode = plan.unresolved.length ? 1 : 0;
 } else {
   fail(
-    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write]",
+    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write] | suggest-types <collection> --schemas <directory> [--write]",
   );
 }
 
