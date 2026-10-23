@@ -473,9 +473,9 @@ or completion of the five-working-day full-validator measurement. The
 
 General automation execution and writer operations remain follow-up work.
 The [latest bounded system exercise](system-exercise.json) used TypedMarkExample
-`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `7583ab1` and specification
-`8e7929b9191bf4494dd1a51482043a2784078afe`, executed at
-`2026-09-15T05:12:43.615Z`. Its
+`c55578d0ee6996cc82efeda80b7d60cae3ba591b`, with adapter `a114648` and specification
+`68736a657582e9314af4b5a2c7ad3e8180c3741e`, executed at
+`2026-10-23T06:32:56.847Z`. Its
 tracked published example files were exported into a temporary
 source; unrelated ignored workspace files were not included or altered. Source
 validation and instantiation completed without findings. The instance omitted
