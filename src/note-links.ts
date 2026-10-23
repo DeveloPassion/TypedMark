@@ -417,3 +417,20 @@ export function buildRelationshipGraph(model: CollectionModel, matchesType: (act
   }
   return graph;
 }
+
+/**
+ * Resolve a note-link field value to the current path of a managed note, for
+ * `{field:name}` and `{field:folder}` storage placeholders (NTS-184, NTS-186).
+ */
+export function linkedNotePath(model: CollectionModel, source: string) {
+  return (_field: string, value: unknown): string | undefined => {
+    const link = typeof value === "string" ? parseNoteLink(value) : undefined;
+    if (!link) return undefined;
+    try {
+      const resolution = resolveNoteLink(link, source, model);
+      return resolution.kind === "note" && model.notes.some((note) => note.path === resolution.path) ? resolution.path : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+}

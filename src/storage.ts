@@ -17,17 +17,30 @@ type Reference = { field: string; format?: string };
 type Resolution = { path: string } | { failure: ValueFailure };
 type Parts = { folder: string; prefix: string; name: string; suffix: string };
 const formats = new Set(["YYYY", "MM", "DD", "YYYY-MM", "YYYY-MM-DD", "Q", "WW", "GGGG"]);
+const linkFormats = new Set(["name", "folder"]);
+/** Resolves a note-link field value to the collection-relative path of a managed note (NTS-184). */
+export type LinkedNotePath = (field: string, value: unknown) => string | undefined;
+// Marks a folder segment left empty by `{field:folder}` for a root-level note (NTS-185).
+const EMPTY_SEGMENT = "\u0000";
 
-function reference(token: string, fields?: Fields): Reference | ValueFailure {
+/** Whether a storage contract reads linked notes, so it needs the whole collection to resolve. */
+export function usesLinkedNotes(storage: StorageDefinition | StoragePatterns | undefined): boolean {
+  const branches = storage ? [storage, ...("archive" in storage && storage.archive ? [storage.archive] : [])] : [];
+  return branches.some((branch) => patterns(branch).some((pattern) => /\{[a-z][a-z0-9_]*:(?:name|folder)\}/u.test(pattern)));
+}
+
+function reference(token: string, fields?: Fields, position = 0): Reference | ValueFailure {
   const [field = "", format] = token.split(":");
   if (field.includes(".")) return { rule: "NTS-125", message: "Storage placeholders cannot traverse nested fields" };
   if (!/^[a-z][a-z0-9_]*(?::[^:{}]+)?(?![\s\S])/u.test(token)) return { rule: "NTS-117", message: "Invalid storage placeholder" };
-  if (format !== undefined && !formats.has(format)) return { rule: "NTS-127", message: `Unknown storage format ${format}` };
+  if (format !== undefined && !formats.has(format) && !linkFormats.has(format)) return { rule: "NTS-127", message: `Unknown storage format ${format}` };
+  if (format === "folder" && position !== 0) return { rule: "NTS-185", message: "A :folder placeholder can only appear in folder_pattern" };
   if (!fields) return { field, format };
   const definition = Object.hasOwn(fields, field) ? fields[field] : undefined;
   if (!definition) return { rule: "NTS-124", message: `Unknown storage field ${field}` };
   if (["list", "tags", "object", "any"].includes(definition.type)) return { rule: "NTS-132", message: `Storage field ${field} is not an eligible scalar` };
-  if (format !== undefined && !["date", "datetime"].includes(definition.type)) {
+  const linkField = definition.type === "link" && definition.format === "note_link";
+  if (format !== undefined && (linkFormats.has(format) ? !linkField : !["date", "datetime"].includes(definition.type))) {
     return { rule: "NTS-127", message: `Invalid storage format for ${field}` };
   }
   return { field, format };
@@ -43,9 +56,9 @@ function patterns(storage: StoragePatterns): string[] {
 export function validateStorageDefinition(storage: StorageDefinition, fields?: Fields): ValueFailure[] {
   const failures: ValueFailure[] = [];
   for (const branch of [storage, ...(storage.archive ? [storage.archive] : [])]) {
-    for (const pattern of patterns(branch))
+    for (const [position, pattern] of patterns(branch).entries())
       for (const match of pattern.matchAll(/\{([^{}]*)\}/gu)) {
-        const parsed = reference(match[1]!, fields);
+        const parsed = reference(match[1]!, fields, position);
         if ("rule" in parsed) failures.push(parsed);
       }
     if (branch.note_name_regex !== undefined) {
@@ -86,12 +99,18 @@ function formatted(value: string, definition: FieldDefinition, format: string, t
   }
 }
 
-function resolveParts(storage: StoragePatterns, values: Record<string, unknown>, fields: Fields, timezone: string): Parts | { failure: ValueFailure } {
+function resolveParts(
+  storage: StoragePatterns,
+  values: Record<string, unknown>,
+  fields: Fields,
+  timezone: string,
+  linked?: LinkedNotePath,
+): Parts | { failure: ValueFailure } {
   let failure: ValueFailure | undefined;
-  const resolved = patterns(storage).map((pattern) =>
+  const resolved = patterns(storage).map((pattern, position) =>
     pattern.replace(/\{([^{}]*)\}/gu, (_match, token: string) => {
       if (failure) return "";
-      const parsed = reference(token, fields);
+      const parsed = reference(token, fields, position);
       if ("rule" in parsed) {
         failure = parsed;
         return "";
@@ -102,6 +121,17 @@ function resolveParts(storage: StoragePatterns, values: Record<string, unknown>,
         return "";
       }
       const definition = fields[parsed.field]!;
+      if (parsed.format && linkFormats.has(parsed.format)) {
+        // The linked note's current path, not its expected one, so resolution never recurses (NTS-184).
+        const path = linked?.(parsed.field, value);
+        if (!path) {
+          failure = { rule: "NTS-186", message: `Storage field ${parsed.field} does not resolve to a managed note` };
+          return "";
+        }
+        const slash = path.lastIndexOf("/");
+        if (parsed.format === "name") return path.slice(slash + 1).replace(/\.md$/u, "");
+        return slash < 0 ? EMPTY_SEGMENT : path.slice(0, slash);
+      }
       if (!["string", "number", "boolean"].includes(typeof value)) {
         failure = { rule: "NTS-129", message: `Storage field ${parsed.field} has no scalar value` };
         return "";
@@ -126,7 +156,13 @@ function resolveParts(storage: StoragePatterns, values: Record<string, unknown>,
     }),
   );
   if (failure) return { failure };
-  const [folder = "", prefix = "", name = "", suffix = ""] = resolved;
+  const [rawFolder = "", prefix = "", name = "", suffix = ""] = resolved;
+  const folder = rawFolder.includes(EMPTY_SEGMENT)
+    ? rawFolder
+        .split("/")
+        .filter((segment) => segment !== EMPTY_SEGMENT)
+        .join("/")
+    : rawFolder;
   return { folder, prefix, name, suffix };
 }
 
@@ -134,8 +170,15 @@ function resolveParts(storage: StoragePatterns, values: Record<string, unknown>,
  * Resolve the conforming path. A free-name contract (no `note_name_pattern`)
  * takes its name part from `freeName`, which the caller supplies (NTS-150).
  */
-export function resolveStoragePath(storage: StoragePatterns, values: Record<string, unknown>, fields: Fields, timezone: string, freeName?: string): Resolution {
-  const parts = resolveParts(storage, values, fields, timezone);
+export function resolveStoragePath(
+  storage: StoragePatterns,
+  values: Record<string, unknown>,
+  fields: Fields,
+  timezone: string,
+  freeName?: string,
+  linked?: LinkedNotePath,
+): Resolution {
+  const parts = resolveParts(storage, values, fields, timezone, linked);
   return "failure" in parts ? parts : assemble(storage, parts, freeName);
 }
 
@@ -144,8 +187,15 @@ export function resolveStoragePath(storage: StoragePatterns, values: Record<stri
  * path's basename between the resolved affixes (NTS-181); a path outside the
  * resolved folder or affixes is a mismatch, reported by comparing paths.
  */
-export function checkStoragePath(storage: StoragePatterns, path: string, values: Record<string, unknown>, fields: Fields, timezone: string): Resolution {
-  const parts = resolveParts(storage, values, fields, timezone);
+export function checkStoragePath(
+  storage: StoragePatterns,
+  path: string,
+  values: Record<string, unknown>,
+  fields: Fields,
+  timezone: string,
+  linked?: LinkedNotePath,
+): Resolution {
+  const parts = resolveParts(storage, values, fields, timezone, linked);
   if ("failure" in parts || storage.note_name_pattern !== undefined) return "failure" in parts ? parts : assemble(storage, parts);
   const actual = path.normalize("NFC"),
     slash = actual.lastIndexOf("/");
@@ -199,10 +249,17 @@ function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Re
  * (NTS-183): the basename between the source contract's resolved affixes, or
  * the whole basename when the source derives its name from a pattern.
  */
-export function currentNamePart(storage: StoragePatterns, path: string, values: Record<string, unknown>, fields: Fields, timezone: string): string {
+export function currentNamePart(
+  storage: StoragePatterns,
+  path: string,
+  values: Record<string, unknown>,
+  fields: Fields,
+  timezone: string,
+  linked?: LinkedNotePath,
+): string {
   const basename = (path.normalize("NFC").split("/").pop() ?? "").replace(/\.md$/u, "");
   if (storage.note_name_pattern !== undefined) return basename;
-  const parts = resolveParts(storage, values, fields, timezone);
+  const parts = resolveParts(storage, values, fields, timezone, linked);
   if ("failure" in parts) return basename;
   const prefix = parts.prefix.normalize("NFC"),
     suffix = parts.suffix.normalize("NFC");

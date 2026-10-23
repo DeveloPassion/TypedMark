@@ -29,7 +29,8 @@ import { validateExpansions, type ExpansionTemplate } from "./expansions";
 import { validateAutomations } from "./automations";
 import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
 import { validateTemplateTracking } from "./template-tracking";
-import { checkStoragePath } from "./storage";
+import { checkStoragePath, usesLinkedNotes, type LinkedNotePath } from "./storage";
+import { linkedNotePath } from "./note-links";
 import { validateHistoryOrder, validateHistoryShape } from "./history";
 import { resolveTemplate, validateTemplateFields } from "./templates";
 export { noteFieldDefinitions } from "./collection-model";
@@ -571,6 +572,13 @@ export function readCollectionModel(
     });
   }
 
+  const linkedModel = model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
+  for (const note of effectiveNotes) {
+    const schema = schemas.get(note.noteType);
+    if (!schema || schemaIssues.has(note.noteType) || !usesLinkedNotes(schema.storage)) continue;
+    validateStorage(note.path, note.values, note.fields, schema, note.noteType, config, results, linkedNotePath(linkedModel, note.path));
+  }
+
   const concreteSchemas = new Map([...schemas].filter(([name, schema]) => !schemaIssues.has(name) && !schema.abstract));
   validateUniqueness(effectiveNotes, concreteSchemas, config, results);
   // CR-14: a definition declares cardinality; its scaffold is not live notes.
@@ -902,10 +910,21 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   return { values, fields, results };
 }
 
-function validateStorage(path: string, values: Data, fields: Data, schema: Data, noteType: string, config: Data, results: ValidationResult[]) {
+function validateStorage(
+  path: string,
+  values: Data,
+  fields: Data,
+  schema: Data,
+  noteType: string,
+  config: Data,
+  results: ValidationResult[],
+  linked?: LinkedNotePath,
+) {
   const storage = values.archived === true && schema.storage?.archive ? schema.storage.archive : schema.storage;
   if (!storage) return;
-  const resolved = checkStoragePath(storage, path, values, fields, config.timezone ?? "UTC");
+  // Linked-note placeholders need every note; they are checked after the collection is read (NTS-184).
+  if (usesLinkedNotes(storage) && !linked) return;
+  const resolved = checkStoragePath(storage, path, values, fields, config.timezone ?? "UTC", linked);
   if ("failure" in resolved) add(results, config, "path", path, resolved.failure.rule, resolved.failure.message, { note_type: noteType }, schema);
   else if (path.normalize("NFC") !== resolved.path)
     add(results, config, "path", path, "NTS-146", `Expected managed-note path ${resolved.path}`, { note_type: noteType }, schema);

@@ -5,6 +5,7 @@ import { parse, stringify } from "yaml";
 import { noteFieldDefinitions, type ManagedNote } from "./collection-model";
 import { classifyConversion, validateFieldValue, type FieldDefinition } from "./field-values";
 import { locateBodyBlocks } from "./markdown-headings";
+import { linkedNotePath } from "./note-links";
 import { currentNamePart, resolveStoragePath } from "./storage";
 import { readCollectionModel, validateCollection } from "./validator";
 
@@ -201,8 +202,9 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
   const storage = effective.archived === true && target.storage?.archive ? target.storage.archive : target.storage;
   const sourceSchema = model.schemas.get(note.noteType)!;
   const sourceStorage = note.values.archived === true && sourceSchema.storage?.archive ? sourceSchema.storage.archive : sourceSchema.storage;
-  const freeName = currentNamePart(sourceStorage, path, note.values, note.fields, timezone);
-  const resolved = resolveStoragePath(storage, effective, targetFields, timezone, freeName);
+  const linked = linkedNotePath(model, path);
+  const freeName = currentNamePart(sourceStorage, path, note.values, note.fields, timezone, linked);
+  const resolved = resolveStoragePath(storage, effective, targetFields, timezone, freeName, linked);
   if ("failure" in resolved) {
     unresolved(resolved.failure.rule, `Target path: ${resolved.failure.message}`);
     return plan;

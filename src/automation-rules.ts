@@ -24,6 +24,9 @@ function storageAccepts(path: string, storage: Data): boolean {
     WW: "(?:0[1-9]|[1-4][0-9]|5[0-3])",
     "YYYY-MM": "[0-9]{4}-(?:0[1-9]|1[0-2])",
     "YYYY-MM-DD": "[0-9]{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])",
+    // Linked-note placeholders: a name segment, or zero or more folder segments (NTS-184).
+    name: "[^/\\\\\\p{Cc}]+",
+    folder: "(?:[^/\\\\\\p{Cc}]+(?:/[^/\\\\\\p{Cc}]+)*)?",
   };
   const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   let escaped = "";

@@ -1,5 +1,6 @@
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename, join, posix } from "node:path";
+import { parseNoteLink } from "./note-links";
 import { parseMarkdownWithNodes } from "./frontmatter";
 import { expandObjectDefaults, isMapping } from "./field-values";
 import { noteFieldDefinitions } from "./collection-model";
@@ -75,6 +76,18 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
       }
       const notes = materializeStarters(starters, model.schemas, model.config);
       const occupied = new Set(["typedmark.md", ...files.keys()].map((path) => path.normalize("NFC")));
+      // Scaffold notes are not a collection yet: linked-note placeholders resolve among them (NTS-184).
+      const scaffoldPaths = notes.map((note) => note.path.normalize("NFC"));
+      const scaffoldLink = (_field: string, value: unknown) => {
+        const link = typeof value === "string" ? parseNoteLink(value) : undefined;
+        if (!link) return undefined;
+        const target = link.target.normalize("NFC").replace(/^\//u, "");
+        const matches =
+          link.form === "wikilink" && !target.includes("/")
+            ? scaffoldPaths.filter((path) => posix.basename(path, ".md") === target)
+            : scaffoldPaths.filter((path) => path === (target.endsWith(".md") ? target : `${target}.md`));
+        return matches.length === 1 ? matches[0] : undefined;
+      };
       for (const note of notes) {
         const schema = model.schemas.get(note.noteType)!,
           fields = noteFieldDefinitions(schema);
@@ -98,7 +111,7 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
           note.body = `# ${effective.title}\n\n${note.body}`;
         }
         const storage = effective.archived === true ? (schema.storage.archive ?? schema.storage) : schema.storage;
-        const resolution = checkStoragePath(storage, note.path, effective, fields, model.config.timezone ?? "UTC");
+        const resolution = checkStoragePath(storage, note.path, effective, fields, model.config.timezone ?? "UTC", scaffoldLink);
         if ("failure" in resolution) throw new MaterializationError(resolution.failure.rule, resolution.failure.message);
         if (resolution.path.normalize("NFC") !== note.path.normalize("NFC"))
           throw new MaterializationError("NTS-148", `Scaffold path ${note.path} differs from effective storage path ${resolution.path}`);
