@@ -5,6 +5,8 @@ import { checkMigrationReadiness, instantiateSystem } from "./system";
 import { validateCollection } from "./validator";
 import { queryCollection, QueryError } from "./query";
 import { decodeUtf8 } from "./utf8";
+import { applyRetype, planRetype } from "./retype";
+import { parse } from "yaml";
 
 const [command, target, ...rest] = Bun.argv.slice(2);
 
@@ -70,9 +72,24 @@ if (command === "capabilities") {
   const readiness = checkMigrationReadiness({ systemRoot: resolve(target), fromVersion, schemaDirectory: resolve(schemaDirectory) });
   console.log(JSON.stringify(readiness, null, 2));
   process.exitCode = readiness.status === "ready" ? 0 : 1;
+} else if (command === "retype" && target) {
+  // Dry run unless --write; prints the plan and exits non-zero with unresolved requirements (RT-10).
+  const notePath = rest[0];
+  const schemaDirectory = option(rest, "--schemas");
+  const to = option(rest, "--to");
+  if (!notePath || !schemaDirectory || !to)
+    fail("retype requires <collection> <note-path> --to <note-type> --schemas <directory> [--map source=target]... [--set field=yaml]... [--write]");
+  const pairs = (name: string) => rest.flatMap((argument, index) => (argument === name && rest[index + 1] ? [rest[index + 1]!.split(/=(.*)/su)] : []));
+  const map = Object.fromEntries(pairs("--map").map(([source, field]) => [source, field ?? ""]));
+  const values = Object.fromEntries(pairs("--set").map(([field, value]) => [field, parse(value ?? "", { version: "1.2", schema: "core" })]));
+  const plan = planRetype(resolve(target), resolve(schemaDirectory), notePath, to, { map, values });
+  const { content, ...summary } = plan;
+  if (rest.includes("--write") && !plan.unresolved.length) applyRetype(resolve(target), plan);
+  console.log(JSON.stringify({ ...summary, written: rest.includes("--write") && !plan.unresolved.length }, null, 2));
+  process.exitCode = plan.unresolved.length ? 1 : 0;
 } else {
   fail(
-    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory>",
+    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write]",
   );
 }
 

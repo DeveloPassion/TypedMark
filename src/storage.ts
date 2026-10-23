@@ -193,3 +193,20 @@ function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Re
   }
   return { path };
 }
+
+/**
+ * The name part a writer keeps when moving a note to a free-name contract
+ * (NTS-183): the basename between the source contract's resolved affixes, or
+ * the whole basename when the source derives its name from a pattern.
+ */
+export function currentNamePart(storage: StoragePatterns, path: string, values: Record<string, unknown>, fields: Fields, timezone: string): string {
+  const basename = (path.normalize("NFC").split("/").pop() ?? "").replace(/\.md$/u, "");
+  if (storage.note_name_pattern !== undefined) return basename;
+  const parts = resolveParts(storage, values, fields, timezone);
+  if ("failure" in parts) return basename;
+  const prefix = parts.prefix.normalize("NFC"),
+    suffix = parts.suffix.normalize("NFC");
+  return basename.startsWith(prefix) && basename.endsWith(suffix) && basename.length > prefix.length + suffix.length
+    ? basename.slice(prefix.length, basename.length - suffix.length)
+    : basename;
+}
