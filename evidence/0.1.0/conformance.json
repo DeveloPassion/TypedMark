@@ -1,8 +1,8 @@
 {
-  "specification_revision": "38fa6b200b8c357c65def5c9f35fa5abe939ec81",
-  "adapter_revision": "2c4b24e09d3d30accd1f4ecda3443e8e54287ae8",
-  "started_at": "2026-10-22T18:49:43.407Z",
-  "finished_at": "2026-10-22T18:50:17.538Z",
+  "specification_revision": "c56fe41bebaac8ad1ea4ec636091a371db7879da",
+  "adapter_revision": "2c991b0688a611e23b3a3c0cdcb08345335d2dab",
+  "started_at": "2026-10-23T07:57:44.161Z",
+  "finished_at": "2026-10-23T07:58:20.086Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 87,
-    "executed": 85,
-    "passed": 85,
+    "discovered": 88,
+    "executed": 86,
+    "passed": 86,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2347,6 +2347,32 @@
           }
         }
       ]
+    },
+    {
+      "name": "retyped-note-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "reuse-composition-valid",

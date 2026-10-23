@@ -371,6 +371,11 @@ preservation evidence of decision 014 with rejection cases and adds one golden
 vector; the corpus reports 87 discovered, 85 passed and 19 queries passed, with
 the two precondition skips, and 1,882 tooling tests pass. See
 [decision 023](../../docs/decisions/023-plain-system-yaml.md).
+The note re-typing increment (specification `c56fe41`, adapter `2c991b0`) adds
+the first writer operation and one golden vector; the corpus reports 88
+discovered, 86 passed and 19 queries passed, with the two precondition skips,
+and 1,890 tooling tests pass. See
+[decision 024](../../docs/decisions/024-note-retyping.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

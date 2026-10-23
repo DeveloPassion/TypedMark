@@ -341,6 +341,10 @@ are reported on the system definition and refused on import (`SCE-160`). Plain
 root `x_*` metadata is preserved exactly. This supersedes the earlier
 [root-preservation decision](docs/decisions/014-root-yaml-preservation.md); see
 the [plain system YAML decision](docs/decisions/023-plain-system-yaml.md).
+`bun src/cli.ts retype <collection> <note> --to <type> --schemas <dir> [--write]`
+re-types a note without losing information: incompatible fields and forbidden
+sections go to a `typedmark-preserved` block, and converting back restores
+them. See the [re-typing decision](docs/decisions/024-note-retyping.md).
 Numeric and timestamp scalar text is retained beyond native Number/Date precision.
 Highly shared source-root graphs can still exceed the reader's alias budget after
 rewriting; these imports abort without publishing a target. This operability gap
