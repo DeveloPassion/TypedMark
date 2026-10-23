@@ -32,6 +32,10 @@ jobs:
         working-directory: TypedMark
         run: bun install --frozen-lockfile
 
+      - name: Check formatting
+        working-directory: TypedMark
+        run: bun run format:check
+
       - name: Type check
         working-directory: TypedMark
         run: bun run typecheck
