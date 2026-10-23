@@ -345,6 +345,10 @@ the [plain system YAML decision](docs/decisions/023-plain-system-yaml.md).
 re-types a note without losing information: incompatible fields and forbidden
 sections go to a `typedmark-preserved` block, and converting back restores
 them. See the [re-typing decision](docs/decisions/024-note-retyping.md).
+Storage placeholders `{field:name}` and `{field:folder}` place companion notes
+beside the note a single link field points to, e.g.
+`Projects/Launch/Decisions.md`. See the
+[linked-note storage decision](docs/decisions/025-linked-note-storage.md).
 Numeric and timestamp scalar text is retained beyond native Number/Date precision.
 Highly shared source-root graphs can still exceed the reader's alias budget after
 rewriting; these imports abort without publishing a target. This operability gap

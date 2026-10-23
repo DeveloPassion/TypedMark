@@ -1,8 +1,8 @@
 {
-  "specification_revision": "c56fe41bebaac8ad1ea4ec636091a371db7879da",
-  "adapter_revision": "2c991b0688a611e23b3a3c0cdcb08345335d2dab",
-  "started_at": "2026-10-23T07:57:44.161Z",
-  "finished_at": "2026-10-23T07:58:20.086Z",
+  "specification_revision": "d6ae3a57e5df46c1682eeed48dc71da3fe39c898",
+  "adapter_revision": "6a7ad7bb78887b4fbc43096bc91bda8ff232bfed",
+  "started_at": "2026-10-23T08:32:39.709Z",
+  "finished_at": "2026-10-23T08:33:11.514Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 88,
-    "executed": 86,
-    "passed": 86,
+    "discovered": 89,
+    "executed": 87,
+    "passed": 87,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2865,6 +2865,41 @@
             "rule_id": "NTS-133",
             "message": "Storage field folder contains an unsafe path value",
             "note_type": "note"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-linked-notes",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Projects/Other/Decisions.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Projects/Launch/Decisions.md",
+            "note_type": "decision"
           }
         ]
       },

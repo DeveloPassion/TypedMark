@@ -376,6 +376,10 @@ the first writer operation and one golden vector; the corpus reports 88
 discovered, 86 passed and 19 queries passed, with the two precondition skips,
 and 1,890 tooling tests pass. See
 [decision 024](../../docs/decisions/024-note-retyping.md).
+The linked-note storage increment (specification `d6ae3a5`, adapter `6a7ad7b`)
+adds one golden vector; the corpus reports 89 discovered, 87 passed and 19
+queries passed, with the two precondition skips, and 1,899 tooling tests pass.
+See [decision 025](../../docs/decisions/025-linked-note-storage.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

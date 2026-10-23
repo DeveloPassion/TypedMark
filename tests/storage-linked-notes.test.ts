@@ -21,8 +21,16 @@ function collection(decisionStorage: object, notes: Record<string, object>, deci
   const root = mkdtempSync(join(tmpdir(), "typedmark-linked-storage-"));
   roots.push(root);
   write(root, "typedmark.md", { specification_version: "0.1.0", name: "linked", description: "Linked storage." });
-  write(root, ".typedmark/schemas/project.md", { specification_version: "0.1.0", description: "Project.", storage: { folder_pattern: "Projects", note_name_pattern: "{title}" } });
-  write(root, ".typedmark/schemas/root-project.md", { specification_version: "0.1.0", description: "Root project.", storage: { folder_pattern: "", note_name_pattern: "{title}" } });
+  write(root, ".typedmark/schemas/project.md", {
+    specification_version: "0.1.0",
+    description: "Project.",
+    storage: { folder_pattern: "Projects", note_name_pattern: "{title}" },
+  });
+  write(root, ".typedmark/schemas/root-project.md", {
+    specification_version: "0.1.0",
+    description: "Root project.",
+    storage: { folder_pattern: "", note_name_pattern: "{title}" },
+  });
   write(root, ".typedmark/schemas/decision.md", {
     specification_version: "0.1.0",
     description: "Decision log beside its project.",
@@ -64,7 +72,12 @@ test("a companion outside its parent's folder is a path mismatch (NTS-146)", () 
     "Projects/Other/Decisions.md": { note_type: "decision", title: "Decisions", project: "[[Launch]]" },
   });
   expect(run(root).results).toEqual([
-    expect.objectContaining({ code: "path", path: "Projects/Other/Decisions.md", rule_id: "NTS-146", message: expect.stringContaining("Projects/Launch/Decisions.md") }),
+    expect.objectContaining({
+      code: "path",
+      path: "Projects/Other/Decisions.md",
+      rule_id: "NTS-146",
+      message: expect.stringContaining("Projects/Launch/Decisions.md"),
+    }),
   ]);
 });
 
@@ -74,7 +87,11 @@ test("a placeholder whose link resolves to no managed note leaves the path unres
 });
 
 test("free names and affixes combine with linked-note folders", () => {
-  const storage = { folder_pattern: "{project:folder}/{project:name}/Decisions", note_name_prefix: { pattern: "{project:name} - " }, note_name_regex: "^\\S.*$" };
+  const storage = {
+    folder_pattern: "{project:folder}/{project:name}/Decisions",
+    note_name_prefix: { pattern: "{project:name} - " },
+    note_name_regex: "^\\S.*$",
+  };
   const root = collection(storage, {
     "Projects/Launch.md": { note_type: "project", title: "Launch" },
     "Projects/Launch/Decisions/Launch - Use Bun.md": { note_type: "decision", project: "[[Launch]]" },
@@ -93,6 +110,10 @@ test.each([
 });
 
 test("link placeholders need a single note-link field, not a list", () => {
-  const root = collection(beside, {}, { project: { type: "list", items: { type: "link", format: "note_link", targets: ["project"] }, relationship_kind: "belongs_to", default_value: [] } });
+  const root = collection(
+    beside,
+    {},
+    { project: { type: "list", items: { type: "link", format: "note_link", targets: ["project"] }, relationship_kind: "belongs_to", default_value: [] } },
+  );
   expect(run(root).results).toContainEqual(expect.objectContaining({ code: "invalid_note_type_schema", rule_id: "NTS-132" }));
 });
