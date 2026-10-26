@@ -142,6 +142,10 @@ NL-6 failures. See the [anchor-encoding decision](docs/decisions/017-markdown-an
 Storage contracts may omit `note_name_pattern` for an author-chosen free name,
 optionally constrained by `note_name_regex`; `checkStoragePath` validates it
 between the resolved affixes. See the [free-name decision](docs/decisions/018-free-note-names.md).
+A prefix or suffix may be `optional: true`; names carry it or not, writers omit
+it unless asked, and the Core `title` falls back to the name part without the
+affixes (`namePart`, `titleFallback`). See the
+[optional-affix decision](docs/decisions/027-optional-affixes-and-name-part-title.md).
 Automation artifacts accept `add_list_item`, `remove_list_item` and
 `set_field.only_if_empty`; list-item targets must be assignable list fields. See
 the [list-item decision](docs/decisions/019-list-item-actions.md).

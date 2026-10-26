@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { basename } from "node:path";
 import { Temporal } from "@js-temporal/polyfill";
 import { noteFieldDefinitions } from "./collection-model";
 import { equalFieldValues, isMapping, isTemplatePlaceholder, validateFieldValue, type FieldDefinition } from "./field-values";
+import { titleFallback } from "./storage";
 import { mandatoryTags, type TemplateContext, type TemplateSchema } from "./templates";
 
 export interface StarterInput {
@@ -60,6 +60,13 @@ export function materializeStarters(
     if (Object.hasOwn(supplied, "note_type") && supplied.note_type !== input.noteType)
       throw new MaterializationError("MN-40", "Supplied note_type differs from the scaffold target");
     const data: Record<string, unknown> = Object.create(null);
+    // Supplied and default values the title's name-part fallback can resolve affixes from (NTS-192).
+    const known = () =>
+      Object.fromEntries(
+        Object.entries(fields).flatMap(([name, definition]) =>
+          Object.hasOwn(supplied, name) ? [[name, supplied[name]]] : Object.hasOwn(definition, "default_value") ? [[name, definition.default_value]] : [],
+        ),
+      );
     const fill = (value: unknown, definition: FieldDefinition, explicit: boolean, present: boolean, field: string, set: (value: unknown) => void): void => {
       const placeholder = !explicit && isTemplatePlaceholder(value, definition);
       if (definition.generated && (!present || placeholder || (definition.generated === "now_on_write" && value !== null))) {
@@ -71,7 +78,7 @@ export function materializeStarters(
           value = structuredClone(definition.default_value);
           // Values inside a declared default are concrete, not template holes.
           explicit = true;
-        } else if (field === "title") value = basename(input.path, ".md");
+        } else if (field === "title") value = titleFallback(schema.storage, input.path, known(), fields, timezone);
         else if (field === "id" && definition.nullable) return;
         else if (!present) value = null;
       }

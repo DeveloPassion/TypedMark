@@ -6,7 +6,7 @@ import { noteFieldDefinitions, type ManagedNote } from "./collection-model";
 import { classifyConversion, validateFieldValue, type FieldDefinition } from "./field-values";
 import { locateBodyBlocks } from "./markdown-headings";
 import { linkedNotePath } from "./note-links";
-import { currentNamePart, resolveStoragePath } from "./storage";
+import { namePart, resolveStoragePath } from "./storage";
 import { readCollectionModel, validateCollection } from "./validator";
 
 type Data = Record<string, unknown>;
@@ -198,13 +198,20 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
   for (const [name, definition] of Object.entries(targetFields)) {
     if (!Object.hasOwn(effective, name) && Object.hasOwn(definition, "default_value")) effective[name] = definition.default_value;
   }
-  if (effective.title === undefined) effective.title = (path.split("/").pop() ?? "").replace(/\.md$/u, "");
+  // An unstored title keeps the source note's effective name-part title (NTS-192).
+  if (effective.title === undefined)
+    effective.title = typeof note.values.title === "string" ? note.values.title : (path.split("/").pop() ?? "").replace(/\.md$/u, "");
   const storage = effective.archived === true && target.storage?.archive ? target.storage.archive : target.storage;
   const sourceSchema = model.schemas.get(note.noteType)!;
   const sourceStorage = note.values.archived === true && sourceSchema.storage?.archive ? sourceSchema.storage.archive : sourceSchema.storage;
   const linked = linkedNotePath(model, path);
-  const freeName = currentNamePart(sourceStorage, path, note.values, note.fields, timezone, linked);
-  const resolved = resolveStoragePath(storage, effective, targetFields, timezone, freeName, linked);
+  const source = namePart(sourceStorage, path, note.values, note.fields, timezone, linked);
+  // A decoration the note carried stays when the target also makes it optional (NTS-191).
+  const carried = {
+    prefix: source.prefix && sourceStorage?.note_name_prefix?.optional === true,
+    suffix: source.suffix && sourceStorage?.note_name_suffix?.optional === true,
+  };
+  const resolved = resolveStoragePath(storage, effective, targetFields, timezone, source.name, linked, carried);
   if ("failure" in resolved) {
     unresolved(resolved.failure.rule, `Target path: ${resolved.failure.message}`);
     return plan;

@@ -6,8 +6,13 @@ export interface StoragePatterns {
   /** Absent for a free name chosen by the note's author (NTS-181). */
   note_name_pattern?: string;
   note_name_regex?: string;
-  note_name_prefix?: { pattern: string };
-  note_name_suffix?: { pattern: string };
+  note_name_prefix?: Affix;
+  note_name_suffix?: Affix;
+}
+/** `optional: true` makes the affix a decoration a conforming name may omit (NTS-188). */
+export interface Affix {
+  pattern: string;
+  optional?: boolean;
 }
 export interface StorageDefinition extends StoragePatterns {
   archive?: StoragePatterns;
@@ -166,9 +171,26 @@ function resolveParts(
   return { folder, prefix, name, suffix };
 }
 
+/** Which optional affixes a path carries; required affixes always apply (NTS-113, NTS-188). */
+export interface AffixPresence {
+  prefix: boolean;
+  suffix: boolean;
+}
+const omitted: AffixPresence = { prefix: false, suffix: false };
+
+// An optional affix absent from the name contributes nothing to it (NTS-113).
+function applied(storage: StoragePatterns, parts: Parts, present: AffixPresence): Parts {
+  return {
+    ...parts,
+    prefix: storage.note_name_prefix?.optional === true && !present.prefix ? "" : parts.prefix,
+    suffix: storage.note_name_suffix?.optional === true && !present.suffix ? "" : parts.suffix,
+  };
+}
+
 /**
  * Resolve the conforming path. A free-name contract (no `note_name_pattern`)
  * takes its name part from `freeName`, which the caller supplies (NTS-150).
+ * Optional affixes are left out unless `present` asks for them (NTS-190).
  */
 export function resolveStoragePath(
   storage: StoragePatterns,
@@ -177,15 +199,17 @@ export function resolveStoragePath(
   timezone: string,
   freeName?: string,
   linked?: LinkedNotePath,
+  present: AffixPresence = omitted,
 ): Resolution {
   const parts = resolveParts(storage, values, fields, timezone, linked);
-  return "failure" in parts ? parts : assemble(storage, parts, freeName);
+  return "failure" in parts ? parts : assemble(storage, applied(storage, parts, present), freeName);
 }
 
 /**
- * Check an existing note path against its storage contract. A free name is the
- * path's basename between the resolved affixes (NTS-181); a path outside the
- * resolved folder or affixes is a mismatch, reported by comparing paths.
+ * Check an existing note path against its storage contract. The name part is
+ * the basename between the affixes it carries (NTS-192); an optional affix is
+ * expected exactly when the note carries it (NTS-189). A path outside the
+ * resolved folder or required affixes is a mismatch, reported by comparing paths.
  */
 export function checkStoragePath(
   storage: StoragePatterns,
@@ -195,25 +219,18 @@ export function checkStoragePath(
   timezone: string,
   linked?: LinkedNotePath,
 ): Resolution {
-  const parts = resolveParts(storage, values, fields, timezone, linked);
-  if ("failure" in parts || storage.note_name_pattern !== undefined) return "failure" in parts ? parts : assemble(storage, parts);
+  const resolved = resolveParts(storage, values, fields, timezone, linked);
+  if ("failure" in resolved) return resolved;
+  const part = namePart(storage, path, values, fields, timezone, linked);
+  const parts = applied(storage, resolved, part);
+  if (storage.note_name_pattern !== undefined) return assemble(storage, parts);
   const actual = path.normalize("NFC"),
     slash = actual.lastIndexOf("/");
-  const folder = slash < 0 ? "" : actual.slice(0, slash),
-    file = actual.slice(slash + 1);
-  const prefix = parts.prefix.normalize("NFC"),
-    suffix = parts.suffix.normalize("NFC");
-  const basename = file.endsWith(".md") ? file.slice(0, -3) : undefined;
-  if (
-    basename === undefined ||
-    folder !== parts.folder.normalize("NFC") ||
-    basename.length < prefix.length + suffix.length ||
-    !basename.startsWith(prefix) ||
-    !basename.endsWith(suffix)
-  ) {
+  const folder = slash < 0 ? "" : actual.slice(0, slash);
+  if (!actual.endsWith(".md") || folder !== parts.folder.normalize("NFC") || (parts.prefix && !part.prefix) || (parts.suffix && !part.suffix)) {
     return { path: `${parts.folder ? `${parts.folder}/` : ""}${parts.prefix}<free name>${parts.suffix}.md` };
   }
-  return assemble(storage, parts, basename.slice(prefix.length, basename.length - suffix.length));
+  return assemble(storage, parts, part.name);
 }
 
 function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Resolution {
@@ -244,26 +261,85 @@ function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Re
   return { path };
 }
 
-/**
- * The name part a writer keeps when moving a note to a free-name contract
- * (NTS-183): the basename between the source contract's resolved affixes, or
- * the whole basename when the source derives its name from a pattern.
- */
-export function currentNamePart(
+/** A note's name part and which affixes it carried (NTS-192). */
+export interface NamePart extends AffixPresence {
+  name: string;
+}
+
+// The resolved text of one affix, or undefined when it cannot be resolved (NTS-193).
+function resolvedAffix(
   storage: StoragePatterns,
+  key: "note_name_prefix" | "note_name_suffix",
+  values: Record<string, unknown>,
+  fields: Fields,
+  timezone: string,
+  linked?: LinkedNotePath,
+): string | undefined {
+  const affix = storage[key];
+  if (!affix) return "";
+  const parts = resolveParts({ folder_pattern: "", [key]: affix }, values, fields, timezone, linked);
+  if ("failure" in parts) return undefined;
+  return (key === "note_name_prefix" ? parts.prefix : parts.suffix).normalize("NFC");
+}
+
+/**
+ * The basename without `.md` and the resolved affixes it carries (NTS-192):
+ * overlapping affixes and unresolvable ones are kept (NTS-193), and an optional
+ * affix is removed only when text remains (NTS-189).
+ */
+export function namePart(
+  storage: StoragePatterns | undefined,
+  path: string,
+  values: Record<string, unknown>,
+  fields: Fields,
+  timezone: string,
+  linked?: LinkedNotePath,
+): NamePart {
+  const basename = (path.normalize("NFC").split("/").pop() ?? "").replace(/\.md$/u, "");
+  if (!storage) return { name: basename, ...omitted };
+  const prefix = resolvedAffix(storage, "note_name_prefix", values, fields, timezone, linked) ?? "",
+    suffix = resolvedAffix(storage, "note_name_suffix", values, fields, timezone, linked) ?? "";
+  let cutPrefix = prefix !== "" && basename.startsWith(prefix),
+    cutSuffix = suffix !== "" && basename.endsWith(suffix);
+  if (cutPrefix && cutSuffix && prefix.length + suffix.length > basename.length) cutPrefix = cutSuffix = false;
+  const left = () => basename.length - (cutPrefix ? prefix.length : 0) - (cutSuffix ? suffix.length : 0);
+  if (cutSuffix && storage.note_name_suffix?.optional === true && left() === 0) cutSuffix = false;
+  if (cutPrefix && storage.note_name_prefix?.optional === true && left() === 0) cutPrefix = false;
+  return {
+    name: basename.slice(cutPrefix ? prefix.length : 0, basename.length - (cutSuffix ? suffix.length : 0)),
+    prefix: cutPrefix,
+    suffix: cutSuffix,
+  };
+}
+
+/**
+ * The Core `title` absence fallback: the name part under the storage contract
+ * the note's archived state selects, resolving affixes without the title (NTS-192, NTS-193).
+ */
+export function titleFallback(
+  storage: StorageDefinition | undefined,
   path: string,
   values: Record<string, unknown>,
   fields: Fields,
   timezone: string,
   linked?: LinkedNotePath,
 ): string {
-  const basename = (path.normalize("NFC").split("/").pop() ?? "").replace(/\.md$/u, "");
-  if (storage.note_name_pattern !== undefined) return basename;
-  const parts = resolveParts(storage, values, fields, timezone, linked);
-  if ("failure" in parts) return basename;
-  const prefix = parts.prefix.normalize("NFC"),
-    suffix = parts.suffix.normalize("NFC");
-  return basename.startsWith(prefix) && basename.endsWith(suffix) && basename.length > prefix.length + suffix.length
-    ? basename.slice(prefix.length, basename.length - suffix.length)
-    : basename;
+  const { title: _title, ...others } = values;
+  const branch = values.archived === true && storage?.archive ? storage.archive : storage;
+  return namePart(branch, path, others, fields, timezone, linked).name;
+}
+
+/**
+ * The name part a writer keeps when moving a note to a free-name contract
+ * (NTS-183): the basename between the source contract's affixes it carries.
+ */
+export function currentNamePart(
+  storage: StoragePatterns | undefined,
+  path: string,
+  values: Record<string, unknown>,
+  fields: Fields,
+  timezone: string,
+  linked?: LinkedNotePath,
+): string {
+  return namePart(storage, path, values, fields, timezone, linked).name;
 }

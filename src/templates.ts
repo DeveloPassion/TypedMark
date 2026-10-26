@@ -4,6 +4,7 @@ import { frontmatterFailureRule, parseMarkdownWithNodes, type MarkdownDocument }
 import type { Document } from "yaml";
 import { isTemplatePlaceholder, validateTemplateValue, type FieldDefinition, type ValueFailure, type Vocabularies } from "./field-values";
 import { aliasValueFailure, noteFieldDefinitions } from "./collection-model";
+import type { StorageDefinition } from "./storage";
 
 export interface TemplateSchema {
   abstract?: boolean;
@@ -11,6 +12,7 @@ export interface TemplateSchema {
   template?: { file: string };
   headings?: { required_h2?: string[] };
   mandatory_tags?: string[];
+  storage?: StorageDefinition;
 }
 export interface TemplateContext {
   mandatory_tags?: string[];

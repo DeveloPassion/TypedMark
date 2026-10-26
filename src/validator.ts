@@ -29,7 +29,7 @@ import { validateExpansions, type ExpansionTemplate } from "./expansions";
 import { validateAutomations } from "./automations";
 import { authoringKeys, hasAuthoring, validateAuthoringFields } from "./authoring";
 import { validateTemplateTracking } from "./template-tracking";
-import { checkStoragePath, usesLinkedNotes, type LinkedNotePath } from "./storage";
+import { checkStoragePath, titleFallback, usesLinkedNotes, type LinkedNotePath } from "./storage";
 import { linkedNotePath } from "./note-links";
 import { validateHistoryOrder, validateHistoryShape } from "./history";
 import { resolveTemplate, validateTemplateFields } from "./templates";
@@ -824,13 +824,15 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
     );
   }
 
-  for (const [name, definition] of Object.entries(fields)) {
+  // A title falling back to the name part needs the other effective values first (NTS-192).
+  const titleLast = ([name]: [string, FieldDefinition]) => (name === "title" ? 1 : 0);
+  for (const [name, definition] of Object.entries(fields).sort((a, b) => titleLast(a) - titleLast(b))) {
     const present = Object.hasOwn(stored, name);
     let value: unknown;
     if (present) value = stored[name];
     else if (Object.hasOwn(definition, "default_value")) value = definition.default_value;
     else if (name === "note_type") value = noteType;
-    else if (name === "title") value = basename(path, ".md");
+    else if (name === "title") value = titleFallback(schema.storage, path, values, fields, config.timezone ?? "UTC");
     else if (definition.nullable === true) value = null;
     else {
       add(results, config, "missing_declared_field", path, "MN-98", `${name} has no conforming effective value`, { note_type: noteType, field: name }, schema);

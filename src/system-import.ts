@@ -1,12 +1,12 @@
 import { lstatSync, readFileSync, readdirSync } from "node:fs";
-import { basename, join, posix } from "node:path";
+import { join, posix } from "node:path";
 import { parseNoteLink } from "./note-links";
 import { parseMarkdownWithNodes } from "./frontmatter";
 import { expandObjectDefaults, isMapping } from "./field-values";
 import { noteFieldDefinitions } from "./collection-model";
 import { materializeStarters, MaterializationError, type StarterInput } from "./materialization";
 import { readStableCollection } from "./snapshot";
-import { checkStoragePath } from "./storage";
+import { checkStoragePath, titleFallback } from "./storage";
 import { deriveStarter, resolveTemplate } from "./templates";
 import { readCollectionModel } from "./validator";
 import { plainDataViolation } from "./plain-yaml";
@@ -99,13 +99,14 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
               ? definition.default_value
               : field === "note_type"
                 ? note.noteType
-                : field === "title"
-                  ? basename(note.path, ".md")
-                  : definition.nullable
-                    ? null
-                    : undefined;
+                : definition.nullable
+                  ? null
+                  : undefined;
           if (value !== undefined) effective[field] = expandObjectDefaults(value, definition);
         }
+        // The title falls back to the name part once the other values are known (NTS-192).
+        if (Object.hasOwn(fields, "title") && !Object.hasOwn(note.data, "title") && !Object.hasOwn(fields.title!, "default_value"))
+          effective.title = titleFallback(schema.storage, note.path, effective, fields, model.config.timezone ?? "UTC", scaffoldLink);
         if (schema.headings.require_h1_title && derivedBodies.has(note.path)) {
           if (typeof effective.title !== "string") throw new MaterializationError("RHT-52", "A required H1 needs a concrete title");
           note.body = `# ${effective.title}\n\n${note.body}`;

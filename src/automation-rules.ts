@@ -12,10 +12,18 @@ export interface AutomationFailure extends ValueFailure {
 
 /** Over-approximate whether a path could satisfy a storage contract (placeholders match any safe text). */
 export function storageAccepts(path: string, storage: Data): boolean {
+  // An optional affix may be present or absent (NTS-188).
+  const options = (affix: Data | undefined): string[] => (affix ? (affix.optional === true ? [affix.pattern, ""] : [affix.pattern]) : [""]);
+  return options(storage.note_name_prefix).some((prefix) =>
+    options(storage.note_name_suffix).some((suffix) => patternAccepts(path, storage.folder_pattern, prefix, storage.note_name_pattern, suffix)),
+  );
+}
+
+function patternAccepts(path: string, folder: string, prefix: string, namePattern: string | undefined, suffix: string): boolean {
   // A free name is approximated as one unconstrained placeholder.
-  const name = `${storage.note_name_prefix?.pattern ?? ""}${storage.note_name_pattern ?? "{free_name}"}${storage.note_name_suffix?.pattern ?? ""}`;
+  const name = `${prefix}${namePattern ?? "{free_name}"}${suffix}`;
   // Decomposition also handles normalization across a literal/placeholder boundary.
-  const pattern = `${storage.folder_pattern ? `${storage.folder_pattern}/` : ""}${name}.md`.normalize("NFD");
+  const pattern = `${folder ? `${folder}/` : ""}${name}.md`.normalize("NFD");
   const formats: Record<string, string> = {
     YYYY: "[0-9]{4}",
     GGGG: "[0-9]{4}",
