@@ -1,8 +1,8 @@
 {
-  "specification_revision": "d6ae3a57e5df46c1682eeed48dc71da3fe39c898",
-  "adapter_revision": "6a7ad7bb78887b4fbc43096bc91bda8ff232bfed",
-  "started_at": "2026-10-23T08:32:39.709Z",
-  "finished_at": "2026-10-23T08:33:11.514Z",
+  "specification_revision": "4a21995676cdb4c18c6b4ac142de8fb5c9db999a",
+  "adapter_revision": "b0b614a24c626fd6f93ee55f64bb9fc960056067",
+  "started_at": "2026-10-26T13:42:32.245Z",
+  "finished_at": "2026-10-26T13:43:22.459Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 89,
-    "executed": 87,
-    "passed": 87,
+    "discovered": 91,
+    "executed": 89,
+    "passed": 89,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2902,6 +2902,83 @@
             "note_type": "decision"
           }
         ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-optional-affix-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Projects/Launch.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Projects/<free name> (Project).md",
+            "note_type": "project"
+          },
+          {
+            "code": "invalid_heading",
+            "severity": "error",
+            "path": "Projects/Rollout (Project).md",
+            "rule_id": "RHT-53",
+            "message": "The body must have one H1 before other headings, equal to the effective title",
+            "note_type": "project"
+          },
+          {
+            "code": "invalid_heading",
+            "severity": "error",
+            "path": "notes/Second brain (Permanent).md",
+            "rule_id": "RHT-53",
+            "message": "The body must have one H1 before other headings, equal to the effective title",
+            "note_type": "concept"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-optional-affix-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",

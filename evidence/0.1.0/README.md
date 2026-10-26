@@ -380,6 +380,10 @@ The linked-note storage increment (specification `d6ae3a5`, adapter `6a7ad7b`)
 adds one golden vector; the corpus reports 89 discovered, 87 passed and 19
 queries passed, with the two precondition skips, and 1,899 tooling tests pass.
 See [decision 025](../../docs/decisions/025-linked-note-storage.md).
+The optional-affix increment (specification `4a21995`, adapter `b0b614a`) adds
+two golden vectors; the corpus reports 91 discovered, 89 passed and 19 queries
+passed, with the two precondition skips, and 1,912 tooling tests pass. See
+[decision 027](../../docs/decisions/027-optional-affixes-and-name-part-title.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
