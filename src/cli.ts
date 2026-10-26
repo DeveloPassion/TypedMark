@@ -7,6 +7,7 @@ import { queryCollection, QueryError } from "./query";
 import { decodeUtf8 } from "./utf8";
 import { applyRetype, planRetype } from "./retype";
 import { applySuggestions, suggestTypes } from "./suggest-types";
+import { EffectiveSchemaError, exportCollectionEffectiveSchema } from "./effective-schema";
 import { parse } from "yaml";
 
 const [command, target, ...rest] = Bun.argv.slice(2);
@@ -73,6 +74,17 @@ if (command === "capabilities") {
   const readiness = checkMigrationReadiness({ systemRoot: resolve(target), fromVersion, schemaDirectory: resolve(schemaDirectory) });
   console.log(JSON.stringify(readiness, null, 2));
   process.exitCode = readiness.status === "ready" ? 0 : 1;
+} else if (command === "effective-schema" && target) {
+  // A read-only typedmark:effective-schema export; never stored in the collection (ES-9).
+  const type = rest[0];
+  const schemaDirectory = option(rest, "--schemas");
+  if (!type || !schemaDirectory) fail("effective-schema requires <collection> <note-type> --schemas <directory>");
+  try {
+    console.log(JSON.stringify(exportCollectionEffectiveSchema({ collectionRoot: resolve(target), schemaDirectory: resolve(schemaDirectory) }, type), null, 2));
+  } catch (error) {
+    if (!(error instanceof EffectiveSchemaError)) throw error;
+    fail(error.message);
+  }
 } else if (command === "suggest-types" && target) {
   // Advice only (#119); --write stores note_type for high-confidence suggestions that then validate.
   const schemaDirectory = option(rest, "--schemas");

@@ -18,6 +18,12 @@ export interface ResolvedSchemas {
   issues: Map<string, SchemaIssue>;
   sources: Map<string, SchemaSource[]>;
   results: ValidationResult[];
+  /** The last layer that declared each effective field (ES-6). */
+  origins: Map<string, Record<string, FieldOrigin>>;
+}
+export interface FieldOrigin {
+  kind: "local" | "ancestor" | "property_set";
+  source?: string;
 }
 interface ResolveInput {
   schemas: Map<string, Data>;
@@ -44,7 +50,13 @@ export function matchesNoteType(schemas: Map<string, Data>, actual: string, requ
 }
 
 export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
-  const result: ResolvedSchemas = { schemas: new Map(), issues: structuredClone(input.schemaIssues ?? new Map()), sources: new Map(), results: [] };
+  const result: ResolvedSchemas = {
+    schemas: new Map(),
+    issues: structuredClone(input.schemaIssues ?? new Map()),
+    sources: new Map(),
+    results: [],
+    origins: new Map(),
+  };
   const contributions = new Map<string, Data>();
   const pathOf = (name: string) => `${input.metadataDirectory}/schemas/${name}.md`;
   const defaults: string[] = Array.isArray(input.config.default_property_sets) ? input.config.default_property_sets : [];
@@ -101,7 +113,9 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
     // is not a provenance inventory. Full ancestry lists would be quadratic.
     const sources = [...(result.sources.get(local.extends) ?? [])];
     if (!sources.length && local.specification_version !== "0.1.0") sources.push({ path: pathOf(name), version: String(local.specification_version) });
-    const apply = (layer: Data) => {
+    const origins: Record<string, FieldOrigin> = {};
+    const apply = (layer: Data, origin: (field: string) => FieldOrigin) => {
+      for (const field of Object.keys(layer.frontmatter ?? {})) origins[field] = origin(field);
       Object.assign(effective.frontmatter, structuredClone(layer.frontmatter ?? {}));
       for (const kind of RELATIONSHIP_KINDS)
         Object.assign(effective.relationships[kind].allowed_note_types, structuredClone(layer.relationships?.[kind]?.allowed_note_types ?? {}));
@@ -124,7 +138,7 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
         unavailable(name, source);
         return;
       }
-      apply(set);
+      apply(set, () => ({ kind: "property_set", source: id }));
     };
     const excluded: string[] = local.exclude_property_sets ?? [];
     const selected: string[] = local.property_sets ?? [];
@@ -137,15 +151,23 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
       for (const id of selected) if (appliedDefaults.includes(id)) problem(name, "CM-167", `Property set ${id} is both default and opt-in`, true);
       for (const id of appliedDefaults) applySet(id, true);
     }
-    if (parent) apply(parent);
+    // An ancestor's own fields come from that ancestor; its property-set fields keep their set.
+    if (parent)
+      apply(parent, (field) => {
+        const inherited = result.origins.get(local.extends)?.[field];
+        return !inherited || inherited.kind === "local" ? { kind: "ancestor", source: local.extends } : inherited;
+      });
     if (!effective.abstract && input.enabled) {
       for (const field of local.frontmatter_remove ?? []) {
         if (!Object.hasOwn(effective.frontmatter, field)) problem(name, "CM-171", `Removed field ${field} has no inherited contribution`, true);
-        else delete effective.frontmatter[field];
+        else {
+          delete effective.frontmatter[field];
+          delete origins[field];
+        }
       }
       for (const id of selected) applySet(id, false);
     }
-    apply(local);
+    apply(local, () => ({ kind: "local" }));
     for (const layer of [parent, local])
       if (layer) for (const key of inheritedKeys) if (Object.hasOwn(layer, key)) effective[key] = structuredClone(layer[key]);
     // Cache the composed contribution before omission defaults. An absent
@@ -178,6 +200,7 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
       }
     }
     result.schemas.set(name, effective);
+    result.origins.set(name, origins);
     result.sources.set(name, sources);
   };
 

@@ -20,7 +20,7 @@ import { aliasValueFailure, noteFieldDefinitions, type CollectionModel, type Col
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
-import { resolveSchemas, type SchemaIssue } from "./reuse";
+import { resolveSchemas, type FieldOrigin, type SchemaIssue } from "./reuse";
 import { conditionFailures, matchesFrontmatterPredicates, validateConditions } from "./conditions";
 import { validateReusableBlocks } from "./schema-semantics";
 import { validateRelationships } from "./relationships";
@@ -42,7 +42,7 @@ type Data = Record<string, any>;
 
 const IMPLEMENTED_CORE = "0.1.0";
 
-const DEFAULT_SEVERITIES: Record<string, "error" | "warn"> = {
+export const DEFAULT_SEVERITIES: Record<string, "error" | "warn"> = {
   unknown_field: "warn",
   template_drift: "warn",
   inverse_mismatch: "warn",
@@ -97,6 +97,7 @@ export function readCollectionModel(
   let schemas = new Map<string, Data>();
   let schemaIssues = new Map<string, SchemaIssue>();
   let schemaSources = new Map<string, Array<{ path: string; version: string }>>();
+  let fieldOrigins = new Map<string, Record<string, FieldOrigin>>();
   const documents: CollectionNote[] = [];
   const effectiveNotes: ManagedNote[] = [];
   const templates: ExpansionTemplate[] = [];
@@ -110,6 +111,7 @@ export function readCollectionModel(
     schemas,
     schemaIssues,
     schemaSources,
+    fieldOrigins,
     documents,
     notes: effectiveNotes,
     assets,
@@ -431,6 +433,7 @@ export function readCollectionModel(
   schemas = resolved.schemas;
   schemaIssues = resolved.issues;
   schemaSources = resolved.sources;
+  fieldOrigins = resolved.origins;
   for (const finding of resolved.results)
     add(results, config, finding.code, finding.path, finding.rule_id, finding.message, { ...(finding.note_type ? { note_type: finding.note_type } : {}) });
   if ([...schemaIssues.values()].some((issue) => issue.kind === "unavailable" && issue.specificationVersion)) evaluation = "incomplete";

@@ -1,6 +1,6 @@
 import type { FieldDefinition, ValueFailure } from "./field-values";
 import type { ValidationReport, ValidationResult } from "./types";
-import type { SchemaIssue, SchemaSource } from "./reuse";
+import type { FieldOrigin, SchemaIssue, SchemaSource } from "./reuse";
 type Data = Record<string, any>;
 
 export interface CollectionNote {
@@ -31,6 +31,7 @@ export interface CollectionModel {
   unsupportedConfigurationVersion?: string;
   schemaIssues?: Map<string, SchemaIssue>;
   schemaSources?: Map<string, SchemaSource[]>;
+  fieldOrigins?: Map<string, Record<string, FieldOrigin>>;
 }
 
 export const CORE_FIELDS: Record<string, Data> = {
