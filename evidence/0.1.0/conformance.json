@@ -1,8 +1,8 @@
 {
-  "specification_revision": "874a66a4b3d76cbf21caaaa7537dbf0ebe8dd106",
-  "adapter_revision": "ea56fd4e88f21e163158a4b9fb2b2b3b24e5e883",
-  "started_at": "2026-10-26T15:23:05.238Z",
-  "finished_at": "2026-10-26T15:24:05.784Z",
+  "specification_revision": "8686e128aee76c0c38bbcfd6ea514a962f6dc945",
+  "adapter_revision": "977be561f6ad425873f31413485b86bf947a6f8f",
+  "started_at": "2026-10-26T15:52:11.963Z",
+  "finished_at": "2026-10-26T15:53:49.488Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -19,13 +19,14 @@
       "typedmark:systems": "0.1.0"
     },
     "operations": {
-      "typedmark:queries": "0.1.0"
+      "typedmark:queries": "0.1.0",
+      "typedmark:effective-schema": "0.1.0"
     }
   },
   "summary": {
-    "discovered": 99,
-    "executed": 97,
-    "passed": 97,
+    "discovered": 103,
+    "executed": 101,
+    "passed": 101,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -993,6 +994,85 @@
         "evaluation": "complete",
         "required_extensions": {},
         "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "date-parts-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expressions": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:expressions": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Weekly/2026/2026-W01.md",
+            "rule_id": "FDR-298",
+            "message": "Stored week differs from its WW part of week_start",
+            "note_type": "weekly",
+            "field": "week"
+          },
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Weekly/2026/2026-W01.md",
+            "rule_id": "FDR-298",
+            "message": "Stored year differs from its GGGG part of week_start",
+            "note_type": "weekly",
+            "field": "year"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "date-parts-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expressions": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:expressions": "0.1.0"
+        },
         "valid": true,
         "results": []
       },
@@ -4072,6 +4152,87 @@
     },
     {
       "name": "views-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "writable-board-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/constant-column.md",
+            "rule_id": "CM-576",
+            "message": "CM-576: A writable board column must project an assignable stored field",
+            "view": "constant-column"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/text-rank.md",
+            "rule_id": "CM-578",
+            "message": "CM-578: The rank column must project a number field",
+            "view": "text-rank"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "writable-board-valid",
       "status": "passed",
       "collection_changed": false,
       "differences": [],

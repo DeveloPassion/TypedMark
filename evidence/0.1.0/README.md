@@ -393,6 +393,11 @@ board swimlanes, creation inputs, fix advice and context-note queries with six
 golden vectors; the corpus reports 99 discovered, 97 passed and 19 queries
 passed, with the two precondition skips, and 1,918 tooling tests pass. See
 decisions 029 to 032.
+The third gap-analysis batch (specification `8686e12`, adapter `977be56`) adds
+date-part fields, writable boards and the effective-schema export with four
+golden vectors; the corpus reports 103 discovered, 101 passed and 19 queries
+passed, with the two precondition skips, and 1,922 tooling tests pass. See
+decisions 033 to 035.
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
