@@ -388,6 +388,11 @@ The field-removal increment (specification `37d6dce`, adapter `6aa6f92`) adds
 two golden vectors; the corpus reports 93 discovered, 91 passed and 19 queries
 passed, with the two precondition skips, and 1,915 tooling tests pass. See
 [decision 028](../../docs/decisions/028-unset-field-and-when-predicates.md).
+The second gap-analysis batch (specification `874a66a`, adapter `ea56fd4`) adds
+board swimlanes, creation inputs, fix advice and context-note queries with six
+golden vectors; the corpus reports 99 discovered, 97 passed and 19 queries
+passed, with the two precondition skips, and 1,918 tooling tests pass. See
+decisions 029 to 032.
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

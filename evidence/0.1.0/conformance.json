@@ -1,8 +1,8 @@
 {
-  "specification_revision": "37d6dce43e46449e69f925a3d197338fad8c6cb8",
-  "adapter_revision": "6aa6f92a51509ecb7127265fa88b83b9e39196dd",
-  "started_at": "2026-10-26T13:56:17.254Z",
-  "finished_at": "2026-10-26T13:56:56.529Z",
+  "specification_revision": "874a66a4b3d76cbf21caaaa7537dbf0ebe8dd106",
+  "adapter_revision": "ea56fd4e88f21e163158a4b9fb2b2b3b24e5e883",
+  "started_at": "2026-10-26T15:23:05.238Z",
+  "finished_at": "2026-10-26T15:24:05.784Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 93,
-    "executed": 91,
-    "passed": 91,
+    "discovered": 99,
+    "executed": 97,
+    "passed": 97,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -206,6 +206,87 @@
       }
     },
     {
+      "name": "board-lanes-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/by-labels.md",
+            "rule_id": "CM-569",
+            "message": "CM-569: Lane column is not an orderable scalar column",
+            "view": "by-labels"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/same-axis.md",
+            "rule_id": "CM-569",
+            "message": "CM-569: Lane column repeats the board column",
+            "view": "same-axis"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "board-lanes-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
       "name": "body-links-escaped-labels-valid",
       "status": "passed",
       "collection_changed": false,
@@ -320,6 +401,83 @@
         "typedmark:views"
       ],
       "skip_reason": "Adapter capabilities do not satisfy the explicit negotiation preconditions"
+    },
+    {
+      "name": "context-note-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0",
+          "typedmark:queries": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0",
+          "typedmark:queries": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "expansion_drift",
+            "severity": "error",
+            "path": "projects/Launch.md",
+            "rule_id": "RHT-164",
+            "message": "Stored expansion differs from current rendered source",
+            "expansion": "tasks"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "context-note-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0",
+          "typedmark:queries": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0",
+          "typedmark:queries": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
     },
     {
       "name": "core-association-invalid",
@@ -597,7 +755,11 @@
             "rule_id": "MN-128",
             "message": "tags is missing the effective mandatory tag managed",
             "note_type": "note",
-            "field": "tags"
+            "field": "tags",
+            "fix": {
+              "kind": "add_tag",
+              "tag": "managed"
+            }
           },
           {
             "code": "invalid_field_value",
@@ -753,6 +915,75 @@
     },
     {
       "name": "core-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "creation-inputs-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/task.md",
+            "rule_id": "NTS-194",
+            "message": "Input owner is not an effective or Core field",
+            "note_type": "task"
+          },
+          {
+            "code": "invalid_note_type_schema",
+            "severity": "error",
+            "path": ".typedmark/schemas/task.md",
+            "rule_id": "NTS-195",
+            "message": "Input created is computed, generated or constant",
+            "note_type": "task"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "creation-inputs-valid",
       "status": "passed",
       "collection_changed": false,
       "differences": [],
@@ -1355,7 +1586,11 @@
             "rule_id": "MN-128",
             "message": "tags is missing the effective mandatory tag project",
             "note_type": "project",
-            "field": "tags"
+            "field": "tags",
+            "fix": {
+              "kind": "add_tag",
+              "tag": "project"
+            }
           }
         ]
       },
@@ -2982,7 +3217,11 @@
             "path": "Projects/Other/Decisions.md",
             "rule_id": "NTS-146",
             "message": "Expected managed-note path Projects/Launch/Decisions.md",
-            "note_type": "decision"
+            "note_type": "decision",
+            "fix": {
+              "kind": "move_note",
+              "path": "Projects/Launch/Decisions.md"
+            }
           }
         ]
       },
