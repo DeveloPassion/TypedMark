@@ -152,6 +152,13 @@ the [list-item decision](docs/decisions/019-list-item-actions.md).
 Automation rules may also remove a stored value with `unset_field` and target
 notes with `empty` and ordering `when` predicates (`less_than`, `greater_than`,
 …). See the [field-removal decision](docs/decisions/028-unset-field-and-when-predicates.md).
+Board views may declare swimlanes (`presentation.board.lanes`), note types list
+creation `inputs`, results may carry `fix` advice, and relationship predicates
+can bind to the note containing an expansion (`context_note: true`). See
+decisions [029](docs/decisions/029-board-swimlanes.md),
+[030](docs/decisions/030-creation-inputs.md),
+[031](docs/decisions/031-validation-fixes.md) and
+[032](docs/decisions/032-context-note-queries.md).
 Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
 `depends_on`), one field per kind and target type, optional `inverse` fields
 whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
