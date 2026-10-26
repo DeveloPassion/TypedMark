@@ -10,6 +10,7 @@ import { decodeUtf8 } from "./utf8";
 import { readVectorContext, selectVectorCapabilities } from "./vector-context";
 import { runQueryCases, type QueryCaseResult } from "./query-vectors";
 import { QUERY_VERSION } from "./query";
+import { EFFECTIVE_SCHEMA_VERSION } from "./effective-schema";
 import type { AdapterCapabilities, ExtensionMap, ValidationReport } from "./types";
 
 export interface RunVectorInput {
@@ -31,7 +32,7 @@ export function getCapabilities(): AdapterCapabilities {
   return {
     core: { "0.1": "0.1.0" },
     extensions: { ...STANDARD_EXTENSIONS },
-    operations: { "typedmark:queries": QUERY_VERSION },
+    operations: { "typedmark:queries": QUERY_VERSION, "typedmark:effective-schema": EFFECTIVE_SCHEMA_VERSION },
   };
 }
 

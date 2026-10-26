@@ -159,6 +159,13 @@ decisions [029](docs/decisions/029-board-swimlanes.md),
 [030](docs/decisions/030-creation-inputs.md),
 [031](docs/decisions/031-validation-fixes.md) and
 [032](docs/decisions/032-context-note-queries.md).
+Date-part fields (`from_date`) derive a periodic note's year, quarter, month or
+week from its date; boards may be `writable` with a numeric `rank`; and
+`effective-schema <collection> <note-type> --schemas <dir>` exports one type's
+resolved contract with field origins. See decisions
+[033](docs/decisions/033-date-part-fields.md),
+[034](docs/decisions/034-writable-boards.md) and
+[035](docs/decisions/035-effective-schema-export.md).
 Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
 `depends_on`), one field per kind and target type, optional `inverse` fields
 whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.

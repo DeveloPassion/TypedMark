@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: DeveloPassion/TypedMarkSpecification
-          ref: 874a66a4b3d76cbf21caaaa7537dbf0ebe8dd106
+          ref: 8686e128aee76c0c38bbcfd6ea514a962f6dc945
           path: TypedMarkSpecification
 
       - uses: oven-sh/setup-bun@v2
