@@ -1,3 +1,4 @@
+import { noteFieldDefinitions } from "./collection-model";
 import { RELATIONSHIP_KINDS, type ValidationResult } from "./types";
 
 type Data = Record<string, any>;
@@ -27,7 +28,7 @@ interface ResolveInput {
   schemaIssues?: Map<string, SchemaIssue>;
   propertySetIssues?: Map<string, SchemaIssue>;
 }
-const inheritedKeys = ["storage", "template", "mandatory_tags", "guidance", "unknown_field", "conditions", "count"];
+const inheritedKeys = ["storage", "template", "inputs", "mandatory_tags", "guidance", "unknown_field", "conditions", "count"];
 
 export function matchesNoteType(schemas: Map<string, Data>, actual: string, requested: string): boolean {
   if (actual === requested) return true;
@@ -162,6 +163,20 @@ export function resolveSchemas(input: ResolveInput): ResolvedSchemas {
     if (!result.issues.has(name) && !effective.abstract && !effective.storage) problem(name, "NTS-23", "Concrete type has no effective storage block");
     if (effective.count?.min !== undefined && effective.count?.max !== undefined && effective.count.min > effective.count.max)
       problem(name, "NTS-69", "Note count minimum exceeds maximum");
+    // Creation inputs name fields a person or agent can answer (NTS-194, NTS-195).
+    if (!effective.abstract && Array.isArray(effective.inputs)) {
+      const fields = noteFieldDefinitions(effective);
+      for (const input of effective.inputs) {
+        const definition = input !== "note_type" && Object.hasOwn(fields, input) ? fields[input] : undefined;
+        if (!definition) problem(name, "NTS-194", `Input ${input} is not an effective or Core field`);
+        else if (
+          Object.hasOwn(definition, "computed") ||
+          (definition.generated !== undefined && definition.generated !== false) ||
+          Object.hasOwn(definition, "const_value")
+        )
+          problem(name, "NTS-195", `Input ${input} is computed, generated or constant`);
+      }
+    }
     result.schemas.set(name, effective);
     result.sources.set(name, sources);
   };
