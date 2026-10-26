@@ -80,7 +80,7 @@ export function validateStorageDefinition(storage: StorageDefinition, fields?: F
 // Date components are ISO-calendar values, localized before extraction.
 // https://tc39.es/proposal-temporal/docs/instant.html#toZonedDateTimeISO
 // https://tc39.es/proposal-temporal/docs/plaindate.html#weekOfYear
-function formatted(value: string, definition: FieldDefinition, format: string, timezone: string): string {
+export function formatted(value: string, definition: FieldDefinition, format: string, timezone: string): string {
   const date = definition.type === "datetime" ? datetimeInstant(value, timezone).toZonedDateTimeISO(timezone).toPlainDate() : Temporal.PlainDate.from(value);
   switch (format) {
     case "YYYY":

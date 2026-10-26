@@ -1,4 +1,5 @@
 import { equalFieldValues, validateFieldValue, type ValueFailure, type Vocabularies } from "./field-values";
+import { formatted } from "./storage";
 
 type Data = Record<string, any>;
 type Transform = "uppercase" | "lowercase" | "capitalize";
@@ -73,7 +74,7 @@ export function hasComputed(fields: Data): boolean {
   while (pending.length) {
     const field = pending.pop();
     if (!field || typeof field !== "object" || Array.isArray(field)) continue;
-    if (Object.hasOwn(field, "computed")) return true;
+    if (Object.hasOwn(field, "computed") || Object.hasOwn(field, "from_date")) return true;
     const definition = field as Data;
     if (definition.items) pending.push(definition.items);
     if (definition.fields && typeof definition.fields === "object") pending.push(...Object.values(definition.fields));
@@ -81,8 +82,19 @@ export function hasComputed(fields: Data): boolean {
   return false;
 }
 
+const DATE_PARTS = new Set(["YYYY", "MM", "DD", "Q", "WW", "GGGG"]);
+
 export function validateComputedFields(fields: Data, checkReferences = true): ComputedFailure[] {
   const failures: ComputedFailure[] = [];
+  for (const [field, definition] of Object.entries(fields))
+    if (Object.hasOwn(definition, "from_date")) {
+      // One sibling date or datetime, and a part the field type can hold (FDR-293, FDR-294).
+      const { field: name, part } = definition.from_date;
+      const source = Object.hasOwn(fields, name) ? fields[name] : undefined;
+      if (checkReferences && (!source || name === field || !["date", "datetime"].includes(source.type)))
+        failures.push({ field, rule: "FDR-293", message: `from_date source ${name} is not a sibling date or datetime field` });
+      if (definition.type === "integer" && !DATE_PARTS.has(part)) failures.push({ field, rule: "FDR-294", message: `${part} needs a text field` });
+    }
   for (const [field, definition] of Object.entries(fields))
     if (Object.hasOwn(definition, "computed")) {
       try {
@@ -103,6 +115,23 @@ export function validateComputedFields(fields: Data, checkReferences = true): Co
 
 export function computedFailures(fields: Data, stored: Data, values: Data, timezone: string, vocabularies?: Vocabularies): ComputedFailure[] {
   const failures: ComputedFailure[] = [];
+  for (const [field, definition] of Object.entries(fields))
+    if (Object.hasOwn(definition, "from_date") && Object.hasOwn(stored, field)) {
+      // The source date formatted like a storage placeholder; null without a source (FDR-295, FDR-297).
+      const { field: name, part } = definition.from_date;
+      const source = values[name];
+      let expected: unknown = null;
+      if (source !== null && source !== undefined) {
+        try {
+          const text = formatted(String(source), fields[name]!, part, timezone);
+          expected = definition.type === "integer" ? Number(text) : text;
+        } catch (error) {
+          if (!(error instanceof RangeError)) throw error;
+        }
+      }
+      if (!equalFieldValues(stored[field], expected, { type: "any" }, timezone))
+        failures.push({ field, rule: "FDR-298", message: `Stored ${field} differs from its ${part} part of ${name}` });
+    }
   for (const [field, definition] of Object.entries(fields))
     if (Object.hasOwn(definition, "computed")) {
       let expected: string;
