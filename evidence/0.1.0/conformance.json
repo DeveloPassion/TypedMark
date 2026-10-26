@@ -1,8 +1,8 @@
 {
-  "specification_revision": "4a21995676cdb4c18c6b4ac142de8fb5c9db999a",
-  "adapter_revision": "b0b614a24c626fd6f93ee55f64bb9fc960056067",
-  "started_at": "2026-10-26T13:42:32.245Z",
-  "finished_at": "2026-10-26T13:43:22.459Z",
+  "specification_revision": "37d6dce43e46449e69f925a3d197338fad8c6cb8",
+  "adapter_revision": "6aa6f92a51509ecb7127265fa88b83b9e39196dd",
+  "started_at": "2026-10-26T13:56:17.254Z",
+  "finished_at": "2026-10-26T13:56:56.529Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -23,9 +23,9 @@
     }
   },
   "summary": {
-    "discovered": 91,
-    "executed": 89,
-    "passed": 89,
+    "discovered": 93,
+    "executed": 91,
+    "passed": 91,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -106,6 +106,89 @@
         "evaluated_extensions": {
           "typedmark:authoring": "0.1.0",
           "typedmark:template-tracking": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "automation-predicates-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:automation": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:automation": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_automation",
+            "severity": "error",
+            "path": ".typedmark/automations/order-a-list.md",
+            "rule_id": "CM-566",
+            "message": "greater_than needs an orderable field, but item.ownership is list",
+            "field": "ownership",
+            "note_type": "item"
+          },
+          {
+            "code": "invalid_automation",
+            "severity": "error",
+            "path": ".typedmark/automations/unset-immutable.md",
+            "rule_id": "CM-278",
+            "message": "Field acquired_on is undeclared or not assignable",
+            "field": "acquired_on",
+            "note_type": "item"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "automation-predicates-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:automation": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:authoring": "0.1.0",
+          "typedmark:automation": "0.1.0"
         },
         "valid": true,
         "results": []

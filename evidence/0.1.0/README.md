@@ -384,6 +384,10 @@ The optional-affix increment (specification `4a21995`, adapter `b0b614a`) adds
 two golden vectors; the corpus reports 91 discovered, 89 passed and 19 queries
 passed, with the two precondition skips, and 1,912 tooling tests pass. See
 [decision 027](../../docs/decisions/027-optional-affixes-and-name-part-title.md).
+The field-removal increment (specification `37d6dce`, adapter `6aa6f92`) adds
+two golden vectors; the corpus reports 93 discovered, 91 passed and 19 queries
+passed, with the two precondition skips, and 1,915 tooling tests pass. See
+[decision 028](../../docs/decisions/028-unset-field-and-when-predicates.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
