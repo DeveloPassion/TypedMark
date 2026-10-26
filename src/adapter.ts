@@ -125,7 +125,8 @@ function stableReport(report: ValidationReport): unknown {
     required_extensions: orderedObject(report.required_extensions),
     evaluated_extensions: orderedObject(report.evaluated_extensions),
     valid: report.valid,
-    results: report.results.map(({ message: _message, ...result }) => orderedObject(result)),
+    // Messages and fix advice are not machine-stable comparison fields (CR-36, CR-114).
+    results: report.results.map(({ message: _message, fix: _fix, ...result }) => orderedObject(result)),
   };
 }
 

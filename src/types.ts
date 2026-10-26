@@ -24,7 +24,15 @@ export interface ValidationResult {
   template_region?: string;
   drift_kind?: string;
   extension?: string;
+  fix?: FixAction;
 }
+
+/** One automation action that repairs a finding; validation never applies it (CR-110, CR-113). */
+export type FixAction =
+  | { kind: "set_field"; field: string; value: unknown }
+  | { kind: "unset_field"; field: string }
+  | { kind: "add_tag"; tag: string }
+  | { kind: "move_note"; path: string };
 
 export interface ValidationReport {
   specification_version: string;

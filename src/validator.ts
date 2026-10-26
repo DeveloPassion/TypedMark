@@ -841,6 +841,8 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
     value = expandObjectDefaults(value, definition);
     values[name] = value;
     if (value === null) {
+      // Removing a stored null restores a concrete default (CR-112).
+      const restorable = present && name !== "id" && Object.hasOwn(definition, "default_value") && definition.default_value !== null;
       if (definition.nullable !== true || (name === "id" && present))
         add(
           results,
@@ -849,7 +851,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
           path,
           "MN-99",
           `${name} is explicitly null but is not nullable`,
-          { note_type: noteType, field: name },
+          { note_type: noteType, field: name, ...(restorable ? { fix: { kind: "unset_field" as const, field: name } } : {}) },
           schema,
         );
       continue;
@@ -898,7 +900,7 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
         path,
         "MN-128",
         `tags is missing the effective mandatory tag ${tag}`,
-        { note_type: noteType, field: "tags" },
+        { note_type: noteType, field: "tags", ...(Array.isArray(values.tags) ? { fix: { kind: "add_tag" as const, tag } } : {}) },
         schema,
       );
   }
@@ -929,7 +931,17 @@ function validateStorage(
   const resolved = checkStoragePath(storage, path, values, fields, config.timezone ?? "UTC", linked);
   if ("failure" in resolved) add(results, config, "path", path, resolved.failure.rule, resolved.failure.message, { note_type: noteType }, schema);
   else if (path.normalize("NFC") !== resolved.path)
-    add(results, config, "path", path, "NTS-146", `Expected managed-note path ${resolved.path}`, { note_type: noteType }, schema);
+    add(
+      results,
+      config,
+      "path",
+      path,
+      "NTS-146",
+      `Expected managed-note path ${resolved.path}`,
+      // A free-name placeholder needs the author's name, so no move is offered (CR-112).
+      { note_type: noteType, ...(resolved.path.includes("<free name>") ? {} : { fix: { kind: "move_note" as const, path: resolved.path } }) },
+      schema,
+    );
 }
 
 function validateHeadings(path: string, body: string, title: unknown, headings: Data | undefined, noteType: string, config: Data, results: ValidationResult[]) {
