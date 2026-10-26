@@ -5,6 +5,11 @@ import { isExcluded } from "./paths";
 import { posix } from "node:path";
 
 type Data = Record<string, any>;
+/** `when` ordering operators, with portable query semantics on effective values (CM-566). */
+export const ORDERING_OPERATORS = ["less_than", "less_than_or_equal", "greater_than", "greater_than_or_equal"] as const;
+const ORDERED_TYPES = new Set(["text", "link", "integer", "number", "checkbox", "date", "time", "datetime"]);
+// Core fields whose absence falls back to a concrete value (Core-defined fields table).
+const CORE_FALLBACKS = new Set(["note_type", "title", "tags", "aliases", "deleted", "archived"]);
 export interface AutomationFailure extends ValueFailure {
   field?: string;
   note_type?: string;
@@ -88,6 +93,18 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
       ) {
         fail(automation.when?.[field]?.state !== undefined ? "CM-560" : "CM-562", `${type}.${field} declares no states`, { field, note_type: type });
       }
+      // Ordering needs an orderable type and operands valid for the field (CM-566, CM-334, CM-401).
+      else {
+        const definition = fields[field]!;
+        for (const operator of ORDERING_OPERATORS) {
+          const operand = automation.when?.[field]?.[operator];
+          if (operand === undefined) continue;
+          if (!ORDERED_TYPES.has(definition.type))
+            fail("CM-566", `${operator} needs an orderable field, but ${type}.${field} is ${definition.type}`, { field, note_type: type });
+          else if (validateFieldValue(operand, { type: definition.type, ...(definition.format ? { format: definition.format } : {}) }, timezone))
+            fail("CM-566", `${operator} operand is invalid for ${type}.${field}`, { field, note_type: type });
+        }
+      }
     }
   for (const action of automation.actions) {
     if (action.kind === "create_note") {
@@ -109,7 +126,7 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
     for (const [type, fields] of fieldsByType) {
       const schema = model.schemas.get(type)!;
       const context = { note_type: type };
-      if (["set_field", "add_list_item", "remove_list_item"].includes(action.kind)) {
+      if (["set_field", "add_list_item", "remove_list_item", "unset_field"].includes(action.kind)) {
         const definition = Object.hasOwn(fields, action.field) ? fields[action.field] : undefined;
         if (
           !definition ||
@@ -119,6 +136,12 @@ export function validateAutomationRule(automation: Data, model: CollectionModel)
           Object.hasOwn(definition, "const_value")
         ) {
           fail("CM-278", `Field ${action.field} is undeclared or not assignable`, { ...context, field: action.field });
+          continue;
+        }
+        if (action.kind === "unset_field") {
+          // Removal leaves the absence fallback, which must conform (MN-319, MN-320).
+          if (definition.nullable !== true && !Object.hasOwn(definition, "default_value") && !CORE_FALLBACKS.has(action.field))
+            fail("CM-278", `Field ${action.field} has no conforming absence fallback`, { ...context, field: action.field });
           continue;
         }
         if (action.kind !== "set_field") {

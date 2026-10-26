@@ -1,7 +1,7 @@
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { FrontmatterError, frontmatterFailureRule, parseMarkdown } from "./frontmatter";
-import { validateAutomationRule } from "./automation-rules";
+import { ORDERING_OPERATORS, validateAutomationRule } from "./automation-rules";
 import { QueryError } from "./query-engine";
 import type { CollectionModel } from "./collection-model";
 import type { SchemaRegistry } from "./schema-registry";
@@ -34,13 +34,14 @@ function projectKnownStructure(data: Data, unknown: (path: string) => void) {
   keep(data.scope?.path, ["equals", "under", "regex"], "/scope/path");
   if (object(data.when))
     for (const [field, predicate] of Object.entries(data.when))
-      keep(predicate, ["exists", "equals", "regex", "contains_any", "contains_all", "older_than", "state"], `/when/${field}`);
+      keep(predicate, ["exists", "equals", "regex", "contains_any", "contains_all", "older_than", "state", "empty", ...ORDERING_OPERATORS], `/when/${field}`);
   const actionKeys: Record<string, string[]> = {
     set_field: ["field", "value", "value_from", "only_if_empty"],
     add_tag: ["tag"],
     remove_tag: ["tag"],
     add_list_item: ["field", "value"],
     remove_list_item: ["field", "value"],
+    unset_field: ["field"],
     move_note: ["path"],
     archive_note: [],
     create_note: ["note_type", "values"],

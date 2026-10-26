@@ -149,6 +149,9 @@ affixes (`namePart`, `titleFallback`). See the
 Automation artifacts accept `add_list_item`, `remove_list_item` and
 `set_field.only_if_empty`; list-item targets must be assignable list fields. See
 the [list-item decision](docs/decisions/019-list-item-actions.md).
+Automation rules may also remove a stored value with `unset_field` and target
+notes with `empty` and ordering `when` predicates (`less_than`, `greater_than`,
+…). See the [field-removal decision](docs/decisions/028-unset-field-and-when-predicates.md).
 Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
 `depends_on`), one field per kind and target type, optional `inverse` fields
 whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
