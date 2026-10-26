@@ -260,6 +260,23 @@ export function validateViews(root: string, metadata: string, model: CollectionM
           if (!lanes?.length || lanes.some((definition) => !ORDERED_TYPES.has(definition.type)))
             fail("CM-569", "Lane column is not an orderable scalar column");
         }
+        // Moves write stored top-level fields that set_field could target (CM-576, CM-579, MN-163, MN-164).
+        const projected = (alias: string) => query?.select.find((column) => column.as === alias);
+        const assignable = (alias: string) => {
+          const column = projected(alias);
+          if (column?.kind !== "field" || column.field.includes(".") || ["id", "note_type"].includes(column.field)) return false;
+          return contract.admittedTypes.every((type) => {
+            const definition = noteFieldDefinitions(model.schemas.get(type)!)[column.field];
+            return !!definition && definition.immutable !== true && !Object.hasOwn(definition, "computed") && !Object.hasOwn(definition, "const_value");
+          });
+        };
+        if (board.writable === true && !assignable(board.column)) fail("CM-576", "A writable board column must project an assignable stored field");
+        if (board.rank !== undefined) {
+          const ranks = contract.columns.get(board.rank);
+          if (projected(board.rank)?.kind !== "field" || !ranks?.length || ranks.some((definition) => definition.type !== "number"))
+            fail("CM-578", "The rank column must project a number field");
+          if (board.writable === true && !assignable(board.rank)) fail("CM-579", "A writable board rank must project an assignable stored field");
+        }
       }
       const source = outcome.sources.get(`view:${artifact.id}`)!;
       Object.assign(source, { contract, presented, query, contractError: undefined, error: undefined });
