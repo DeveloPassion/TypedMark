@@ -7,7 +7,7 @@ import { posix } from "node:path";
 type Data = Record<string, any>;
 /** `when` ordering operators, with portable query semantics on effective values (CM-566). */
 export const ORDERING_OPERATORS = ["less_than", "less_than_or_equal", "greater_than", "greater_than_or_equal"] as const;
-const ORDERED_TYPES = new Set(["text", "link", "integer", "number", "checkbox", "date", "time", "datetime"]);
+export const ORDERED_TYPES = new Set(["text", "link", "integer", "number", "checkbox", "date", "time", "datetime"]);
 // Core fields whose absence falls back to a concrete value (Core-defined fields table).
 const CORE_FALLBACKS = new Set(["note_type", "title", "tags", "aliases", "deleted", "archived"]);
 export interface AutomationFailure extends ValueFailure {

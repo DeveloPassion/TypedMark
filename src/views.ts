@@ -15,6 +15,7 @@ import {
 import { equalFieldValues, validateFieldValue, type FieldDefinition } from "./field-values";
 import type { SchemaRegistry } from "./schema-registry";
 import type { ValidationResult } from "./types";
+import { ORDERED_TYPES } from "./automation-rules";
 
 type Data = Record<string, any>;
 interface Artifact {
@@ -249,6 +250,13 @@ export function validateViews(root: string, metadata: string, model: CollectionM
             fail("CM-438", "Declared board values are not unique");
           seen.push(column.value);
         }
+        // Lanes partition by a second orderable scalar column (CM-569).
+        if (board.lanes) {
+          const lanes = contract.columns.get(board.lanes.column);
+          if (board.lanes.column === board.column) fail("CM-569", "Lane column repeats the board column");
+          if (!lanes?.length || lanes.some((definition) => !ORDERED_TYPES.has(definition.type)))
+            fail("CM-569", "Lane column is not an orderable scalar column");
+        }
       }
       const source = outcome.sources.get(`view:${artifact.id}`)!;
       Object.assign(source, { contract, presented, contractError: undefined, error: undefined });
@@ -264,9 +272,10 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         evaluation = dataset.evaluation;
       } else evaluation = evaluate(query!);
       if (artifact.data.presentation.layout === "board") {
-        const column = artifact.data.presentation.board.column;
-        if (evaluation.result.rows.some((row) => row[column] !== null && !["string", "number", "boolean"].includes(typeof row[column])))
-          fail("CM-435", "Board values must be scalar or null");
+        const { column, lanes } = artifact.data.presentation.board;
+        const scalar = (value: unknown) => value === null || ["string", "number", "boolean"].includes(typeof value);
+        if (evaluation.result.rows.some((row) => !scalar(row[column]))) fail("CM-435", "Board values must be scalar or null");
+        if (lanes && evaluation.result.rows.some((row) => !scalar(row[lanes.column]))) fail("CM-569", "Lane values must be scalar or null");
       }
       source.evaluation = evaluation;
     } catch (error) {
