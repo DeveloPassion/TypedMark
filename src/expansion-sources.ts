@@ -1,7 +1,7 @@
 import { posix } from "node:path";
 import type { CollectionModel, CollectionNote, ManagedNote } from "./collection-model";
 import { parseNoteLink, resolveNoteLink, buildRelationshipGraph, type RelationshipGraph } from "./note-links";
-import { analyzeQuery, evaluateQueryWithColumns, parseQuery, QueryError, requireSchemaModel } from "./query-engine";
+import { analyzeQuery, evaluateQueryWithColumns, parseQuery, QueryError, requireSchemaModel, usesContextNote } from "./query-engine";
 import { matchesNoteType } from "./reuse";
 import { compareUnicodeCodePoints } from "./order";
 import type { FieldDefinition } from "./field-values";
@@ -152,9 +152,11 @@ export function expansionSources(model: CollectionModel, registry: SchemaRegistr
       requireContract("typedmark:queries");
       let evaluation;
       let presented: Set<string> | undefined;
+      // Only a managed containing note is a context note (CM-574).
+      const context = notes.has(document.path) ? document.path : undefined;
       if (source.kind === "query") {
         if (source.query.specification_version !== version) throw new ExpansionError("RHT-247", "Query version differs from inherited expansion version");
-        evaluation = evaluateQueryWithColumns(model, parseQuery(source.query, registry));
+        evaluation = evaluateQueryWithColumns(model, parseQuery(source.query, registry), context);
       } else {
         requireContract("typedmark:views");
         const table = tables.get(`${source.kind}:${source[source.kind]}`);
@@ -163,7 +165,7 @@ export function expansionSources(model: CollectionModel, registry: SchemaRegistr
         if (table.version !== version)
           throw new ExpansionError(source.kind === "view" ? "RHT-260" : "RHT-275", "Source and expansion specification versions differ");
         presented = table.presented;
-        evaluation = table.evaluation!;
+        evaluation = table.query && usesContextNote(table.query) ? evaluateQueryWithColumns(model, table.query, context) : table.evaluation!;
       }
       if (!evaluation.columns.has(source.column))
         throw new ExpansionError(source.kind === "query" ? "RHT-249" : source.kind === "dataset" ? "RHT-277" : "RHT-262", "Unknown projected expansion column");

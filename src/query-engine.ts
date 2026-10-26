@@ -32,6 +32,7 @@ type Predicate =
       note_types?: string[];
       where?: Predicate;
       count?: { min?: number; max?: number };
+      context_note?: boolean;
     };
 type Source = { note_types: string[]; field: string; conversion?: "lossless" | "conditional" };
 type Projection =
@@ -320,7 +321,20 @@ function queryCompleteness(model: CollectionModel, query: Descriptor, usedTypes:
     : "incomplete";
 }
 
-export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor): QueryEvaluation {
+/** Whether a descriptor binds to the note containing its expansion (CM-573). */
+export function usesContextNote(query: Descriptor): boolean {
+  const uses = (predicate: Predicate | undefined): boolean =>
+    !!predicate &&
+    (predicate.kind === "all" || predicate.kind === "any"
+      ? predicate.predicates.some(uses)
+      : predicate.kind === "not"
+        ? uses(predicate.predicate)
+        : predicate.kind === "relationship" && (predicate.context_note === true || uses(predicate.where)));
+  return uses(query.where);
+}
+
+/** `contextNote` is the managed note containing the evaluating expansion; elsewhere there is none (CM-574, CM-575). */
+export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor, contextNote?: string): QueryEvaluation {
   const analysis = analyzeQuery(model, query);
   if (model.associationIssue) fail("CM-308", model.associationIssue);
   const timezone = model.config.timezone ?? "UTC";
@@ -380,6 +394,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
           );
         related = model.notes.filter((source) => graph.targets.get(source.path)?.[predicate.relationship].has(note.path));
       } else related = [...(graph.targets.get(note.path)?.[predicate.relationship] ?? [])].map((path) => byPath.get(path)!);
+      if (predicate.context_note === true) related = related.filter((target) => target.path === contextNote);
       related = related.filter((target) => admitted(target.noteType, predicate.note_types));
       related = related.filter((target) => {
         ensureModel(target);

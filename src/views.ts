@@ -31,6 +31,8 @@ export interface TabularSource {
   contractError?: QueryError;
   presented?: Set<string>;
   error?: QueryError;
+  /** The evaluated descriptor, re-evaluated per containing note when it uses `context_note` (CM-574). */
+  query?: Descriptor;
 }
 export interface ViewValidation {
   results: ValidationResult[];
@@ -185,7 +187,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
       const cached: { artifact: Artifact; query: Descriptor; contract: QueryAnalysis; evaluation?: QueryEvaluation } = { artifact, query, contract };
       cache.set(artifact.id, cached);
       const source = outcome.sources.get(`dataset:${artifact.id}`)!;
-      Object.assign(source, { contract, contractError: undefined, error: undefined });
+      Object.assign(source, { contract, query, contractError: undefined, error: undefined });
       if (!validateRows) continue;
       const evaluation = evaluate(query);
       for (const column of query.select) {
@@ -227,6 +229,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
           fail("CM-421", "Referenced dataset could not be evaluated");
         }
         contract = dataset.contract;
+        query = dataset.query;
         referencedDataset = source.id;
       } else ({ query, contract } = analyze(artifact, artifact.data.query, "CM-420"));
       for (const [alias, definitions] of contract.columns) {
@@ -259,7 +262,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         }
       }
       const source = outcome.sources.get(`view:${artifact.id}`)!;
-      Object.assign(source, { contract, presented, contractError: undefined, error: undefined });
+      Object.assign(source, { contract, presented, query, contractError: undefined, error: undefined });
       if (!validateRows) continue;
       let evaluation: QueryEvaluation;
       if (referencedDataset !== undefined) {
