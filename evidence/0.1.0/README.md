@@ -414,6 +414,11 @@ The tree-rollups increment (specification `7e6cf91`, adapter `6f7b082`) adds two
 golden vectors; the corpus reports 111 discovered, 109 passed and 19 queries
 passed, with the two precondition skips, and 1,932 tooling tests pass. See
 [decision 039](../../docs/decisions/039-tree-rollups.md).
+The edits-and-renames increment (specification `7ebde3c`, adapter `3e43b2e`)
+adds a writer contract and no golden vectors; the corpus still reports 111
+discovered, 109 passed and 19 queries passed, with the two precondition skips,
+and 1,936 tooling tests pass. See
+[decision 040](../../docs/decisions/040-edits-and-renames.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
