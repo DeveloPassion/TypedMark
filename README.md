@@ -166,6 +166,9 @@ resolved contract with field origins. See decisions
 [033](docs/decisions/033-date-part-fields.md),
 [034](docs/decisions/034-writable-boards.md) and
 [035](docs/decisions/035-effective-schema-export.md).
+Periodic notes link to their enclosing period notes with a `from_date` or
+`computed` name rendered by a `self_field` expansion, with no new rule. See
+the [period-links decision](docs/decisions/036-period-note-links.md).
 Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
 `depends_on`), one field per kind and target type, optional `inverse` fields
 whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
