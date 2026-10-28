@@ -398,6 +398,10 @@ date-part fields, writable boards and the effective-schema export with four
 golden vectors; the corpus reports 103 discovered, 101 passed and 19 queries
 passed, with the two precondition skips, and 1,922 tooling tests pass. See
 decisions 033 to 035.
+The period-links increment (specification `21ad6a5`, adapter `395baae`) adds
+two golden vectors; the corpus reports 105 discovered, 103 passed and 19 queries
+passed, with the two precondition skips, and 1,922 tooling tests pass. See
+[decision 036](../../docs/decisions/036-period-note-links.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

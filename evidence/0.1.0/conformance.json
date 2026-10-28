@@ -1,8 +1,8 @@
 {
-  "specification_revision": "8686e128aee76c0c38bbcfd6ea514a962f6dc945",
-  "adapter_revision": "977be561f6ad425873f31413485b86bf947a6f8f",
-  "started_at": "2026-10-26T15:52:11.963Z",
-  "finished_at": "2026-10-26T15:53:49.488Z",
+  "specification_revision": "21ad6a54a90d6b7ec527caea3257bed27530be24",
+  "adapter_revision": "395baae4d8b08e5c0f9bc72bdb7e23d7d5bbeac6",
+  "started_at": "2026-10-28T09:32:44.351Z",
+  "finished_at": "2026-10-28T09:33:40.269Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -24,9 +24,9 @@
     }
   },
   "summary": {
-    "discovered": 103,
-    "executed": 101,
-    "passed": 101,
+    "discovered": 105,
+    "executed": 103,
+    "passed": 103,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2336,6 +2336,88 @@
             "expansion": "missing-column"
           }
         ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "period-links-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expressions": "0.1.0",
+          "typedmark:expansion": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Daily/2026/2025-12-29.md",
+            "rule_id": "FDR-234",
+            "message": "Stored computed value differs from its expression",
+            "note_type": "daily",
+            "field": "week_note"
+          },
+          {
+            "code": "expansion_drift",
+            "severity": "error",
+            "path": "Weekly/2026/2026-W01.md",
+            "rule_id": "RHT-164",
+            "message": "Stored expansion differs from current rendered source",
+            "expansion": "month"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "period-links-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:expressions": "0.1.0",
+          "typedmark:expansion": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:expansion": "0.1.0",
+          "typedmark:expressions": "0.1.0"
+        },
+        "valid": true,
+        "results": []
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
