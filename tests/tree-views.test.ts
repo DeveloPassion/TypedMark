@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { readCollectionModel } from "../src/validator";
 import { SchemaRegistry } from "../src/schema-registry";
 import { validateViews } from "../src/views";
-import { arrangeTree, treeMove, viewTree, type TreeNode } from "../src/tree-views";
+import { arrangeTree, rollUp, treeMove, viewRollups, viewTree, type RolledNode, type TreeNode } from "../src/tree-views";
 
 const specification = resolve(import.meta.dir, "../../TypedMarkSpecification");
 const schemaDirectory = join(specification, "schema/json-schema");
@@ -72,4 +72,71 @@ test("moves write or remove the parent link and refuse cycles and context rows (
   expect(() => treeMove(forest, "parent", "Tasks/Design.md", "Tasks/Sketch.md")).toThrow("CM-595");
   expect(() => treeMove(forest, "parent", "Tasks/Design.md", "Tasks/Design.md")).toThrow("CM-595");
   expect(() => treeMove(forest, "parent", "Projects/Launch.md", null)).toThrow("CM-595");
+});
+
+// Rolled-up values per occurrence, with derived values marked.
+function rolled(forest: RolledNode[], depth = 0): string[] {
+  return forest.flatMap((node) => [
+    `${"  ".repeat(depth)}${node.path} ${Object.entries(node.values)
+      .map(([column, { value, derived }]) => `${column}=${value}${derived ? "*" : ""}`)
+      .join(" ")}`,
+    ...rolled(node.children, depth + 1),
+  ]);
+}
+
+test("the golden breakdown counts a shared task once, weights progress and finishes done rows (CM-612 to CM-615)", () => {
+  const collectionRoot = join(specification, "schema/fixtures/golden/tree-rollups-valid/collection");
+  const model = readCollectionModel({ collectionRoot, schemaDirectory });
+  const views = validateViews(collectionRoot, ".typedmark", model, new SchemaRegistry(schemaDirectory));
+  expect(views.results).toEqual([]);
+  const source = views.sources.get("view:breakdown")!;
+  const forest = viewTree(model, source.query!, source.evaluation!, { parent: "parent" });
+  const rollups = [
+    { column: "path", aggregate: "count" as const },
+    { column: "estimate", aggregate: "sum" as const },
+    { column: "progress", aggregate: "weighted_mean" as const, weight: "estimate", state: "status", done_value: 100 },
+  ];
+  expect(rolled(viewRollups(model, source.query!, source.evaluation!, forest, rollups))).toEqual([
+    // Shared sits under Ops and Review but counts once for Launch: 6, not 8.
+    "Tasks/Launch.md path=6* estimate=6* progress=50*",
+    "  Tasks/Build.md path=1 estimate=3 progress=50",
+    "  Tasks/Docs.md path=1 estimate=1 progress=100",
+    "  Tasks/Ops.md path=2* estimate=2* progress=25*",
+    "    Tasks/Shared.md path=1 estimate=2 progress=25",
+    "  Tasks/Review.md path=2* estimate=2* progress=25*",
+    "    Tasks/Shared.md path=1 estimate=2 progress=25",
+  ]);
+});
+
+test("own values win, context rows are not counted, and zero weights fall back to the plain mean (CM-612 to CM-614)", () => {
+  const forest = arrangeTree(
+    [
+      { path: "a", parents: ["ctx"] },
+      { path: "b", parents: ["ctx"] },
+      { path: "c", parents: ["owned"] },
+      { path: "owned", parents: [] },
+    ],
+    { context: "ancestors", contextParents: () => [] },
+  );
+  const values: Record<string, Record<string, unknown>> = {
+    a: { score: 2, size: 0 },
+    b: { score: 6, size: null },
+    c: { score: 9, size: 1 },
+    owned: { score: 1, size: 5 },
+    ctx: { score: null, size: null },
+  };
+  const own = (path: string, column: string) => values[path]![column] ?? null;
+  const rollups = (aggregate: "min" | "max" | "count" | "weighted_mean") => [
+    { column: "score", aggregate, ...(aggregate === "weighted_mean" ? { weight: "size" } : {}) },
+  ];
+  expect(rolled(rollUp(forest, rollups("weighted_mean"), own, () => false))).toEqual([
+    "ctx score=4*",
+    "  a score=2",
+    "  b score=6",
+    "owned score=1",
+    "  c score=9",
+  ]);
+  expect(rolled(rollUp(forest, rollups("min"), own, () => false))[0]).toBe("ctx score=2*");
+  expect(rolled(rollUp(forest, rollups("max"), own, () => false))[0]).toBe("ctx score=6*");
+  expect(rolled(rollUp(forest, rollups("count"), own, () => false))).toEqual(["ctx score=2*", "  a score=1", "  b score=1", "owned score=2*", "  c score=1"]);
 });

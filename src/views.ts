@@ -307,6 +307,26 @@ export function validateViews(root: string, metadata: string, model: CollectionM
           fail("CM-583", "The tree parent column must project a link field");
         if (tree.writable === true && (!assignable(tree.parent) || definitions.some((definition) => definition.type !== "link")))
           fail("CM-593", "A writable tree parent must project an assignable single link field");
+        // Rollups derive presented number columns from children (CM-609 to CM-611, CM-615).
+        if (tree.rollups) {
+          const presented = new Set(artifact.data.presentation.fields.map((field: Data) => field.column));
+          const numeric = (alias: string) => {
+            const columns = contract.columns.get(alias);
+            return !!columns?.length && columns.every((definition) => ["integer", "number"].includes(definition.type));
+          };
+          const columns: string[] = tree.rollups.map((rollup: Data) => rollup.column);
+          if (new Set(columns).size !== columns.length || columns.some((column) => !presented.has(column)))
+            fail("CM-609", "Rollup columns must be unique presented columns");
+          for (const rollup of tree.rollups) {
+            if (rollup.aggregate !== "count" && !numeric(rollup.column)) fail("CM-610", `A ${rollup.aggregate} rollup needs a number column`);
+            const weight = tree.rollups.find((other: Data) => other.column === rollup.weight);
+            if (rollup.aggregate === "weighted_mean" && (rollup.weight === rollup.column || !numeric(rollup.weight) || weight?.aggregate === "weighted_mean"))
+              fail("CM-611", "A weighted mean needs another number column that is not itself a weighted mean");
+            const states = rollup.state === undefined ? undefined : contract.columns.get(rollup.state);
+            if (states && (!states.length || !states.every((definition) => definition.states))) fail("CM-615", "The state column must declare states");
+            if (rollup.state !== undefined && !states) fail("CM-615", "The state column must be projected");
+          }
+        }
       }
       const source = outcome.sources.get(`view:${artifact.id}`)!;
       Object.assign(source, { contract, presented, query, contractError: undefined, error: undefined });

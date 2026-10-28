@@ -144,3 +144,109 @@ export function treeMove(
   if (occurrences.some(below)) throw new TreeMoveError("CM-595", "A row cannot move under itself or its descendants");
   return { kind: "set_field", field, value: link(parent) };
 }
+
+export interface TreeRollup {
+  column: string;
+  aggregate: "sum" | "min" | "max" | "count" | "weighted_mean";
+  weight?: string;
+  state?: string;
+  done_value?: number;
+}
+export interface RolledNode extends TreeNode {
+  /** Rolled-up value per rollup column, and whether it came from children (CM-616). */
+  values: Record<string, { value: number | null; derived: boolean }>;
+  children: RolledNode[];
+}
+
+/** Roll values up each occurrence's subtree; own values win, and nothing is written (CM-612 to CM-616). */
+export function rollUp(
+  forest: TreeNode[],
+  rollups: TreeRollup[],
+  own: (path: string, column: string) => unknown,
+  done: (path: string, state: string) => boolean,
+): RolledNode[] {
+  const number = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : null);
+  const ownValue = (path: string, rollup: TreeRollup) =>
+    rollup.done_value !== undefined && rollup.state !== undefined && done(path, rollup.state) ? rollup.done_value : number(own(path, rollup.column));
+  // Weights are rolled up before the weighted means that read them (CM-611, CM-613).
+  const ordered = [...rollups].sort((left, right) => Number(left.aggregate === "weighted_mean") - Number(right.aggregate === "weighted_mean"));
+  // Each row contributes once per subtree, from its first occurrence in tree order (CM-612, CM-614).
+  type Contributors = Map<string, { value: number; weight: number }>;
+  interface Rolled {
+    node: RolledNode;
+    contributors: Record<string, Contributors>;
+    counted: Record<string, Set<string>>;
+  }
+  const roll = (node: TreeNode): Rolled => {
+    const children = node.children.map(roll);
+    const values: RolledNode["values"] = {};
+    const contributors: Record<string, Contributors> = {};
+    const counted: Record<string, Set<string>> = {};
+    for (const rollup of ordered) {
+      const column = rollup.column;
+      if (rollup.aggregate === "count") {
+        const rows = new Set<string>();
+        const here = own(node.path, column);
+        if (!node.context && here !== null && here !== undefined) rows.add(node.path);
+        for (const child of children) for (const path of child.counted[column]!) rows.add(path);
+        counted[column] = rows;
+        values[column] = { value: rows.size, derived: children.length > 0 };
+        continue;
+      }
+      const weighted = rollups.some((other) => other.column === rollup.weight);
+      const weight = rollup.weight === undefined ? 1 : ((weighted ? values[rollup.weight]!.value : number(own(node.path, rollup.weight))) ?? 0);
+      const mine = ownValue(node.path, rollup);
+      const mineOrChildren: Contributors = new Map();
+      if (mine !== null) mineOrChildren.set(node.path, { value: mine, weight });
+      else
+        for (const child of children) for (const [path, entry] of child.contributors[column]!) if (!mineOrChildren.has(path)) mineOrChildren.set(path, entry);
+      contributors[column] = mineOrChildren;
+      const entries = [...mineOrChildren.values()];
+      const numbers = entries.map((entry) => entry.value);
+      let value: number | null = null;
+      if (numbers.length) {
+        if (rollup.aggregate === "sum") value = numbers.reduce((total, next) => total + next, 0);
+        if (rollup.aggregate === "min") value = Math.min(...numbers);
+        if (rollup.aggregate === "max") value = Math.max(...numbers);
+        if (rollup.aggregate === "weighted_mean") {
+          const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+          value =
+            total === 0
+              ? numbers.reduce((sum, next) => sum + next, 0) / numbers.length
+              : entries.reduce((sum, entry) => sum + entry.value * entry.weight, 0) / total;
+        }
+      }
+      values[column] = { value, derived: mine === null && value !== null };
+    }
+    return { node: { ...node, values, children: children.map((child) => child.node) }, contributors, counted };
+  };
+  return forest.map((node) => roll(node).node);
+}
+
+/** Roll up a view tree, reading result rows from the evaluation and context rows from their notes. */
+export function viewRollups(model: CollectionModel, query: Descriptor, evaluation: QueryEvaluation, forest: TreeNode[], rollups: TreeRollup[]): RolledNode[] {
+  const notes = new Map(model.notes.map((note) => [note.path, note]));
+  const rows = new Map(evaluation.paths.map((path, index) => [path, evaluation.result.rows[index]!]));
+  const fieldOf = (column: string) => {
+    const projection = query.select.find((candidate) => candidate.as === column);
+    return projection?.kind === "field" ? projection.field : undefined;
+  };
+  const own = (path: string, column: string): unknown => {
+    if (rows.has(path)) return rows.get(path)![column];
+    const field = fieldOf(column);
+    return field === undefined
+      ? null
+      : (field
+          .split(".")
+          .reduce<unknown>(
+            (value, name) => (value && typeof value === "object" ? (value as Record<string, unknown>)[name] : undefined),
+            notes.get(path)?.values,
+          ) ?? null);
+  };
+  const done = (path: string, state: string) => {
+    const field = fieldOf(state);
+    const value = own(path, state);
+    return field !== undefined && typeof value === "string" && notes.get(path)?.fields[field]?.states?.[value]?.done === true;
+  };
+  return rollUp(forest, rollups, own, done);
+}
