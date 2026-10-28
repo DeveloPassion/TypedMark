@@ -241,7 +241,7 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         if (presented.has(field.column)) fail("CM-426", `Presented column ${field.column} is duplicated`);
         presented.add(field.column);
       }
-      // Moves write stored top-level fields that set_field could target (CM-576, CM-579, CM-593, MN-163, MN-164).
+      // Moves write stored top-level fields that set_field could target (CM-576, CM-579, CM-593, CM-605, MN-163, MN-164).
       const projected = (alias: string) => query?.select.find((column) => column.as === alias);
       const assignable = (alias: string) => {
         const column = projected(alias);
@@ -277,6 +277,26 @@ export function validateViews(root: string, metadata: string, model: CollectionM
             fail("CM-578", "The rank column must project a number field");
           if (board.writable === true && !assignable(board.rank)) fail("CM-579", "A writable board rank must project an assignable stored field");
         }
+      }
+      // Calendar dimensions and timeline endpoints are projected date fields; writable ones are assignable (CM-597, CM-601, CM-605).
+      const dated = (alias: string) => {
+        const definitions = contract.columns.get(alias);
+        return projected(alias)?.kind === "field" && !!definitions?.length && definitions.every((definition) => ["date", "datetime"].includes(definition.type));
+      };
+      if (artifact.data.presentation.layout === "calendar") {
+        const calendar = artifact.data.presentation.calendar;
+        const columns: string[] = calendar.dates.map((date: Data) => date.column);
+        if (columns.some((column) => !dated(column))) fail("CM-597", "A calendar dimension must project a date or datetime field");
+        if (new Set(columns).size !== columns.length) fail("CM-597", "Calendar dimensions are not unique");
+        if (calendar.writable === true && !columns.every(assignable)) fail("CM-605", "A writable calendar dimension must project an assignable stored field");
+      }
+      if (artifact.data.presentation.layout === "timeline") {
+        const timeline = artifact.data.presentation.timeline;
+        const columns: string[] = [timeline.start, ...(timeline.end === undefined ? [] : [timeline.end])];
+        if (!dated(timeline.start)) fail("CM-601", "The timeline start must project a date or datetime field");
+        if (timeline.end !== undefined && (timeline.end === timeline.start || !dated(timeline.end)))
+          fail("CM-601", "The timeline end must project another date or datetime field");
+        if (timeline.writable === true && !columns.every(assignable)) fail("CM-605", "A writable timeline endpoint must project an assignable stored field");
       }
       // Tree parents are projected link fields; writable trees move one assignable link (CM-583, CM-593).
       if (artifact.data.presentation.layout === "tree") {
