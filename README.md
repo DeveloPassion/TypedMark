@@ -169,6 +169,10 @@ resolved contract with field origins. See decisions
 Periodic notes link to their enclosing period notes with a `from_date` or
 `computed` name rendered by a `self_field` expansion, with no new rule. See
 the [period-links decision](docs/decisions/036-period-note-links.md).
+Saved views may use `layout: tree` over a projected parent link, with
+`context: ancestors` and writable parent moves; `arrangeTree`, `viewTree` and
+`treeMove` implement the arrangement and moves. See the
+[tree-views decision](docs/decisions/037-tree-views.md).
 Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
 `depends_on`), one field per kind and target type, optional `inverse` fields
 whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
