@@ -6,6 +6,7 @@ import { validateCollection } from "./validator";
 import { queryCollection, QueryError } from "./query";
 import { decodeUtf8 } from "./utf8";
 import { applyRetype, planRetype } from "./retype";
+import { applyEdit, planEdit } from "./edits";
 import { applySuggestions, suggestTypes } from "./suggest-types";
 import { EffectiveSchemaError, exportCollectionEffectiveSchema } from "./effective-schema";
 import { parse } from "yaml";
@@ -107,9 +108,33 @@ if (command === "capabilities") {
   if (rest.includes("--write") && !plan.unresolved.length) applyRetype(resolve(target), plan);
   console.log(JSON.stringify({ ...summary, written: rest.includes("--write") && !plan.unresolved.length }, null, 2));
   process.exitCode = plan.unresolved.length ? 1 : 0;
+} else if ((command === "edit" || command === "rename") && target) {
+  // Dry run unless --write: the plan lists moves and link rewrites first (ER-15), and nothing is written when unresolved (ER-14).
+  const notePath = rest[0];
+  const schemaDirectory = option(rest, "--schemas");
+  const renameTo = command === "rename" ? rest[1] : undefined;
+  if (!notePath || !schemaDirectory || (command === "rename" && !renameTo))
+    fail(
+      `${command} requires <collection> <note-path>${command === "rename" ? " <new-path>" : " [--set field=yaml]... [--unset field]..."} --schemas <directory> [--write]`,
+    );
+  const set: Record<string, unknown> = {};
+  rest.forEach((argument, index) => {
+    const value = rest[index + 1];
+    if (argument === "--set" && value) {
+      const [field, yaml] = value.split(/=(.*)/su);
+      set[field!] = parse(yaml ?? "", { version: "1.2", schema: "core" });
+    }
+    if (argument === "--unset" && value) set[value] = undefined;
+  });
+  const plan = planEdit(resolve(target), resolve(schemaDirectory), { path: notePath, set, renameTo });
+  const write = rest.includes("--write") && !plan.unresolved.length;
+  if (write) applyEdit(resolve(target), plan);
+  const { files, ...summary } = plan;
+  console.log(JSON.stringify({ ...summary, written: write }, null, 2));
+  process.exitCode = plan.unresolved.length ? 1 : 0;
 } else {
   fail(
-    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write] | suggest-types <collection> --schemas <directory> [--write]",
+    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write] | edit <collection> <note-path> [--set field=yaml]... [--unset field]... --schemas <directory> [--write] | rename <collection> <note-path> <new-path> --schemas <directory> [--write] | suggest-types <collection> --schemas <directory> [--write]",
   );
 }
 
