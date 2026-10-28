@@ -1,8 +1,8 @@
 {
-  "specification_revision": "21ad6a54a90d6b7ec527caea3257bed27530be24",
-  "adapter_revision": "395baae4d8b08e5c0f9bc72bdb7e23d7d5bbeac6",
-  "started_at": "2026-10-28T09:32:44.351Z",
-  "finished_at": "2026-10-28T09:33:40.269Z",
+  "specification_revision": "91746d5f8fab97ebe944c81b69dd251ca40fefbc",
+  "adapter_revision": "efe9cf436879f8b528fc2869fd87853526e5f04e",
+  "started_at": "2026-10-28T09:56:40.746Z",
+  "finished_at": "2026-10-28T09:57:44.971Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -24,9 +24,9 @@
     }
   },
   "summary": {
-    "discovered": 105,
-    "executed": 103,
-    "passed": 103,
+    "discovered": 107,
+    "executed": 105,
+    "passed": 105,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -3788,6 +3788,87 @@
             "field": "amount"
           }
         ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "tree-view-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/text-parent.md",
+            "rule_id": "CM-583",
+            "message": "CM-583: The tree parent column must project a link field",
+            "view": "text-parent"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/writable-list.md",
+            "rule_id": "CM-593",
+            "message": "CM-593: A writable tree parent must project an assignable single link field",
+            "view": "writable-list"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "tree-view-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",

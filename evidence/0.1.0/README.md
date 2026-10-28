@@ -402,6 +402,10 @@ The period-links increment (specification `21ad6a5`, adapter `395baae`) adds
 two golden vectors; the corpus reports 105 discovered, 103 passed and 19 queries
 passed, with the two precondition skips, and 1,922 tooling tests pass. See
 [decision 036](../../docs/decisions/036-period-note-links.md).
+The tree-views increment (specification `91746d5`, adapter `efe9cf4`) adds two
+golden vectors; the corpus reports 107 discovered, 105 passed and 19 queries
+passed, with the two precondition skips, and 1,926 tooling tests pass. See
+[decision 037](../../docs/decisions/037-tree-views.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,
