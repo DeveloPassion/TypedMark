@@ -71,6 +71,8 @@ export interface QueryEvaluation {
   columns: Map<string, FieldDefinition[]>;
   admittedTypes: string[];
   rowDefinitions: Array<Record<string, FieldDefinition | undefined>>;
+  /** The note behind each result row, in row order. */
+  paths: string[];
 }
 /** A descriptor's published contract, without reading notes or evaluating rows. */
 export interface QueryAnalysis {
@@ -524,5 +526,5 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     result.groups = groups.map(({ key, rows }) => ({ key, rows }));
   }
   const rowDefinitions = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.definition])));
-  return { result, columns: analysis.columns, admittedTypes: analysis.admittedTypes, rowDefinitions };
+  return { result, columns: analysis.columns, admittedTypes: analysis.admittedTypes, rowDefinitions, paths: retained.map((entry) => entry.path) };
 }

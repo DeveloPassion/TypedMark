@@ -241,6 +241,16 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         if (presented.has(field.column)) fail("CM-426", `Presented column ${field.column} is duplicated`);
         presented.add(field.column);
       }
+      // Moves write stored top-level fields that set_field could target (CM-576, CM-579, CM-593, MN-163, MN-164).
+      const projected = (alias: string) => query?.select.find((column) => column.as === alias);
+      const assignable = (alias: string) => {
+        const column = projected(alias);
+        if (column?.kind !== "field" || column.field.includes(".") || ["id", "note_type"].includes(column.field)) return false;
+        return contract.admittedTypes.every((type) => {
+          const definition = noteFieldDefinitions(model.schemas.get(type)!)[column.field];
+          return !!definition && definition.immutable !== true && !Object.hasOwn(definition, "computed") && !Object.hasOwn(definition, "const_value");
+        });
+      };
       if (artifact.data.presentation.layout === "board") {
         const board = artifact.data.presentation.board;
         const definitions = contract.columns.get(board.column);
@@ -260,16 +270,6 @@ export function validateViews(root: string, metadata: string, model: CollectionM
           if (!lanes?.length || lanes.some((definition) => !ORDERED_TYPES.has(definition.type)))
             fail("CM-569", "Lane column is not an orderable scalar column");
         }
-        // Moves write stored top-level fields that set_field could target (CM-576, CM-579, MN-163, MN-164).
-        const projected = (alias: string) => query?.select.find((column) => column.as === alias);
-        const assignable = (alias: string) => {
-          const column = projected(alias);
-          if (column?.kind !== "field" || column.field.includes(".") || ["id", "note_type"].includes(column.field)) return false;
-          return contract.admittedTypes.every((type) => {
-            const definition = noteFieldDefinitions(model.schemas.get(type)!)[column.field];
-            return !!definition && definition.immutable !== true && !Object.hasOwn(definition, "computed") && !Object.hasOwn(definition, "const_value");
-          });
-        };
         if (board.writable === true && !assignable(board.column)) fail("CM-576", "A writable board column must project an assignable stored field");
         if (board.rank !== undefined) {
           const ranks = contract.columns.get(board.rank);
@@ -277,6 +277,16 @@ export function validateViews(root: string, metadata: string, model: CollectionM
             fail("CM-578", "The rank column must project a number field");
           if (board.writable === true && !assignable(board.rank)) fail("CM-579", "A writable board rank must project an assignable stored field");
         }
+      }
+      // Tree parents are projected link fields; writable trees move one assignable link (CM-583, CM-593).
+      if (artifact.data.presentation.layout === "tree") {
+        const tree = artifact.data.presentation.tree;
+        const definitions = contract.columns.get(tree.parent);
+        const linked = (definition: FieldDefinition) => definition.type === "link" || (definition.type === "list" && definition.items?.type === "link");
+        if (projected(tree.parent)?.kind !== "field" || !definitions?.length || !definitions.every(linked))
+          fail("CM-583", "The tree parent column must project a link field");
+        if (tree.writable === true && (!assignable(tree.parent) || definitions.some((definition) => definition.type !== "link")))
+          fail("CM-593", "A writable tree parent must project an assignable single link field");
       }
       const source = outcome.sources.get(`view:${artifact.id}`)!;
       Object.assign(source, { contract, presented, query, contractError: undefined, error: undefined });
