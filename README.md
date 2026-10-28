@@ -181,6 +181,10 @@ Tree views may roll estimates and progress up from children
 (`tree.rollups`: sum, min, max, count, weighted mean, `done_value`), display
 only (`rollUp`, `viewRollups`). See the
 [rollups decision](docs/decisions/039-tree-rollups.md).
+Writes follow the optional Edits and Renames contract: `edit` and `rename` keep
+untouched frontmatter text, rewrite every link that reached a moved note, and
+re-file notes whose storage reads an edited value. See the
+[edits decision](docs/decisions/040-edits-and-renames.md).
 Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
 `depends_on`), one field per kind and target type, optional `inverse` fields
 whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
