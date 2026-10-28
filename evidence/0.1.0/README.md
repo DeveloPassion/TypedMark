@@ -410,6 +410,10 @@ The calendar-views increment (specification `f99ea90`, adapter `f1d09c1`) adds
 two golden vectors; the corpus reports 109 discovered, 107 passed and 19 queries
 passed, with the two precondition skips, and 1,930 tooling tests pass. See
 [decision 038](../../docs/decisions/038-calendar-and-timeline-views.md).
+The tree-rollups increment (specification `7e6cf91`, adapter `6f7b082`) adds two
+golden vectors; the corpus reports 111 discovered, 109 passed and 19 queries
+passed, with the two precondition skips, and 1,932 tooling tests pass. See
+[decision 039](../../docs/decisions/039-tree-rollups.md).
 
 A separate valid-source scaffold probe confirms the next fidelity defect: Set,
 ordered Map, Date and binary values in declared `any` fields become arrays,

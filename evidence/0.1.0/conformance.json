@@ -1,8 +1,8 @@
 {
-  "specification_revision": "f99ea90c0011d2725c4deed4ee8e4b45ebb3f565",
-  "adapter_revision": "f1d09c1bbba37c1c695f73e9322f2b42f78accee",
-  "started_at": "2026-10-28T10:18:02.371Z",
-  "finished_at": "2026-10-28T10:18:58.846Z",
+  "specification_revision": "7e6cf91ad3843d3adf103eb2254c4b64b277b18c",
+  "adapter_revision": "6f7b082c0fcedb2496ace14213ebc5f2fa2206df",
+  "started_at": "2026-10-28T10:45:27.102Z",
+  "finished_at": "2026-10-28T10:46:18.782Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -24,9 +24,9 @@
     }
   },
   "summary": {
-    "discovered": 109,
-    "executed": 107,
-    "passed": 107,
+    "discovered": 111,
+    "executed": 109,
+    "passed": 109,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -3877,6 +3877,103 @@
             "field": "amount"
           }
         ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "tree-rollups-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/hidden-rollup.md",
+            "rule_id": "CM-609",
+            "message": "CM-609: Rollup columns must be unique presented columns",
+            "view": "hidden-rollup"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/self-weight.md",
+            "rule_id": "CM-611",
+            "message": "CM-611: A weighted mean needs another number column that is not itself a weighted mean",
+            "view": "self-weight"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/stateless-done.md",
+            "rule_id": "CM-615",
+            "message": "CM-615: The state column must declare states",
+            "view": "stateless-done"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/text-sum.md",
+            "rule_id": "CM-610",
+            "message": "CM-610: A sum rollup needs a number column",
+            "view": "text-sum"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "tree-rollups-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
