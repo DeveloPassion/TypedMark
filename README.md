@@ -177,6 +177,10 @@ Calendar views plot one or more date dimensions and timeline views draw spans
 from a start to an optional end, both with opt-in backlogs and writable date
 moves (`arrangeCalendar`, `arrangeTimeline`, `calendarMove`, `timelineMove`).
 See the [calendar decision](docs/decisions/038-calendar-and-timeline-views.md).
+Tree views may roll estimates and progress up from children
+(`tree.rollups`: sum, min, max, count, weighted mean, `done_value`), display
+only (`rollUp`, `viewRollups`). See the
+[rollups decision](docs/decisions/039-tree-rollups.md).
 Relationships now have four kinds (`belongs_to`, `related_to`, `contains`,
 `depends_on`), one field per kind and target type, optional `inverse` fields
 whose one-sided links are `inverse_mismatch` warnings, and acyclic dependencies.
