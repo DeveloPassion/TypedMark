@@ -1,8 +1,8 @@
 {
-  "specification_revision": "91746d5f8fab97ebe944c81b69dd251ca40fefbc",
-  "adapter_revision": "efe9cf436879f8b528fc2869fd87853526e5f04e",
-  "started_at": "2026-10-28T09:56:40.746Z",
-  "finished_at": "2026-10-28T09:57:44.971Z",
+  "specification_revision": "f99ea90c0011d2725c4deed4ee8e4b45ebb3f565",
+  "adapter_revision": "f1d09c1bbba37c1c695f73e9322f2b42f78accee",
+  "started_at": "2026-10-28T10:18:02.371Z",
+  "finished_at": "2026-10-28T10:18:58.846Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -24,9 +24,9 @@
     }
   },
   "summary": {
-    "discovered": 107,
-    "executed": 105,
-    "passed": 105,
+    "discovered": 109,
+    "executed": 107,
+    "passed": 107,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -335,6 +335,95 @@
             "note_type": "note"
           }
         ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "calendar-views-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/fixed-date.md",
+            "rule_id": "CM-605",
+            "message": "CM-605: A writable calendar dimension must project an assignable stored field",
+            "view": "fixed-date"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/path-calendar.md",
+            "rule_id": "CM-597",
+            "message": "CM-597: A calendar dimension must project a date or datetime field",
+            "view": "path-calendar"
+          },
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/same-end.md",
+            "rule_id": "CM-601",
+            "message": "CM-601: The timeline end must project another date or datetime field",
+            "view": "same-end"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "calendar-views-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
