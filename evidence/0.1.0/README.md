@@ -555,3 +555,8 @@ to an immutable parent, adding no golden vectors; the corpus still reports 111
 discovered, 109 passed and 19 queries passed, with the two precondition skips,
 and 1,937 tooling tests pass. See
 [decision 041](../../docs/decisions/041-list-parent-tree-moves.md).
+The re-typing renames increment (specification `1dacb4c`, adapter `616e14a`)
+lets re-typing rename and move notes through the edit planner, adding no golden
+vectors; the corpus still reports 111 discovered, 109 passed and 19 queries
+passed, with the two precondition skips, and 1,938 tooling tests pass. See
+[decision 042](../../docs/decisions/042-retype-renames.md).
