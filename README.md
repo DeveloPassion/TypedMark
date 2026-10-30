@@ -188,6 +188,10 @@ Queries may return one read-only row per checklist item with `rows: items`
 (`typedmark:items`): `item` predicates and projections read each item's text,
 status, line, nesting and heading. See the
 [task-items decision](docs/decisions/043-task-items.md).
+`bun src/cli.ts view <collection> <view-id> --schemas <dir> [--format text|json]`
+prints a saved view read-only: tables, lists, cards, boards with lanes and rank,
+trees with context rows and rollups, calendars, timelines and item rows. See the
+[view-command decision](docs/decisions/044-view-command.md).
 Writes follow the optional Edits and Renames contract: `edit` and `rename` keep
 untouched frontmatter text, rewrite every link that reached a moved note, and
 re-file notes whose storage reads an edited value. See the

@@ -9,6 +9,7 @@ import { applyRetype, planRetype } from "./retype";
 import { applyEdit, planEdit } from "./edits";
 import { applySuggestions, suggestTypes } from "./suggest-types";
 import { EffectiveSchemaError, exportCollectionEffectiveSchema } from "./effective-schema";
+import { presentView, renderPresentation, ViewPresentationError } from "./present";
 import { parse } from "yaml";
 
 const [command, target, ...rest] = Bun.argv.slice(2);
@@ -93,6 +94,26 @@ if (command === "capabilities") {
   const suggestions = suggestTypes(resolve(target), resolve(schemaDirectory));
   const applied = rest.includes("--write") ? applySuggestions(resolve(target), resolve(schemaDirectory), suggestions) : [];
   console.log(JSON.stringify({ suggestions, applied }, null, 2));
+} else if (command === "view" && target) {
+  // Read-only: evaluates and arranges one saved view, as text or as the JSON presentation.
+  const viewId = rest[0];
+  const schemaDirectory = option(rest, "--schemas");
+  const format = option(rest, "--format") ?? "text";
+  if (!viewId || !schemaDirectory || !["text", "json"].includes(format))
+    fail("view requires <collection> <view-id> --schemas <directory> [--format text|json]");
+  try {
+    const presentation = presentView(resolve(target), resolve(schemaDirectory), viewId);
+    process.stdout.write(
+      format === "json"
+        ? `${JSON.stringify(presentation, null, 2)}
+`
+        : renderPresentation(presentation),
+    );
+  } catch (error) {
+    if (!(error instanceof ViewPresentationError)) throw error;
+    console.error(JSON.stringify({ rule_id: error.rule_id, message: error.message }));
+    process.exitCode = 1;
+  }
 } else if (command === "retype" && target) {
   // Dry run unless --write; prints the plan and exits non-zero with unresolved requirements (RT-10).
   const notePath = rest[0];
@@ -134,7 +155,7 @@ if (command === "capabilities") {
   process.exitCode = plan.unresolved.length ? 1 : 0;
 } else {
   fail(
-    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write] | edit <collection> <note-path> [--set field=yaml]... [--unset field]... --schemas <directory> [--write] | rename <collection> <note-path> <new-path> --schemas <directory> [--write] | suggest-types <collection> --schemas <directory> [--write]",
+    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write] | edit <collection> <note-path> [--set field=yaml]... [--unset field]... --schemas <directory> [--write] | rename <collection> <note-path> <new-path> --schemas <directory> [--write] | view <collection> <view-id> --schemas <directory> [--format text|json] | suggest-types <collection> --schemas <directory> [--write]",
   );
 }
 
