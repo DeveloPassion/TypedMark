@@ -519,8 +519,13 @@ export function readCollectionModel(
   for (const path of files) if (!path.endsWith(".md")) assets.add(path.normalize("NFC"));
   for (const notePath of associationIssue ? [] : notes) {
     let document;
+    let bodyLine = 1;
     try {
-      document = parseMarkdown(readFileSync(join(root, notePath)), { preserveBodyLineEndings: true });
+      const bytes = readFileSync(join(root, notePath));
+      document = parseMarkdown(bytes, { preserveBodyLineEndings: true });
+      // The body is the file's tail, so its first line follows every line before it (ITM-10).
+      const lines = (text: string) => text.split(/\r\n|\r|\n/u).length;
+      bodyLine = lines(new TextDecoder().decode(bytes)) - lines(document.body) + 1;
     } catch (error) {
       add(results, config, "invalid_note_frontmatter", notePath, frontmatterFailureRule(error, "MN-118"), errorMessage(error));
       documents.push({
@@ -538,6 +543,7 @@ export function readCollectionModel(
       path: notePath.normalize("NFC"),
       stored: document.data,
       body: document.body,
+      bodyLine,
       hasFrontmatter: document.hasFrontmatter,
       frontmatterValid: true,
       candidates,
@@ -571,6 +577,7 @@ export function readCollectionModel(
       fields: validation.fields,
       stored: document.data,
       body: document.body,
+      bodyLine,
       problems: validation.results,
     });
   }
@@ -637,6 +644,7 @@ export function readCollectionModel(
       "typedmark:expressions",
       "typedmark:queries",
       "typedmark:views",
+      "typedmark:items",
       "typedmark:expansion",
       "typedmark:template-tracking",
     ]) {
@@ -656,6 +664,7 @@ const STANDARD_EXTENSIONS: ExtensionMap = {
   "typedmark:reuse": "0.1.0",
   "typedmark:queries": "0.1.0",
   "typedmark:views": "0.1.0",
+  "typedmark:items": "0.1.0",
   "typedmark:systems": "0.1.0",
 };
 
@@ -664,6 +673,7 @@ const STANDARD_EXTENSIONS: ExtensionMap = {
 function validateExtensionDependencies(required: ExtensionMap, config: Data, results: ValidationResult[]) {
   const dependencies: Record<string, ExtensionMap> = {
     "typedmark:views": { "typedmark:queries": "0.1.0" },
+    "typedmark:items": { "typedmark:queries": "0.1.0" },
     "typedmark:expansion": { "typedmark:expressions": "0.1.0" },
   };
   for (const [extension, needed] of Object.entries(dependencies)) {

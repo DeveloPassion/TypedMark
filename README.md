@@ -184,6 +184,10 @@ only (`rollUp`, `viewRollups`). See the
 Trees over a list of parent links are writable too: `treeListMove` moves one
 occurrence by putting the new parent's link in the old parent's slot. See the
 [list-parent moves decision](docs/decisions/041-list-parent-tree-moves.md).
+Queries may return one read-only row per checklist item with `rows: items`
+(`typedmark:items`): `item` predicates and projections read each item's text,
+status, line, nesting and heading. See the
+[task-items decision](docs/decisions/043-task-items.md).
 Writes follow the optional Edits and Renames contract: `edit` and `rename` keep
 untouched frontmatter text, rewrite every link that reached a moved note, and
 re-file notes whose storage reads an edited value. See the

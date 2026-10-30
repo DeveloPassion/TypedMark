@@ -7,6 +7,8 @@ export interface CollectionNote {
   path: string;
   stored: Data;
   body: string;
+  /** The 1-based file line the body starts on. */
+  bodyLine?: number;
   candidates?: string[];
   hasFrontmatter?: boolean;
   frontmatterValid?: boolean;

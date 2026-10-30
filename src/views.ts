@@ -77,6 +77,8 @@ export function validateViews(root: string, metadata: string, model: CollectionM
         if (validVersion && version.startsWith("0.1.") && version !== "0.1.0") outcome.incomplete = true;
         if (Object.hasOwn(data, "query") && !required["typedmark:queries"])
           finding("invalid_extension_declaration", path, "EXT-16", "An embedded query requires typedmark:queries", { extension: "typedmark:queries" });
+        if ((data.query as Data | undefined)?.rows === "items" && !required["typedmark:items"])
+          finding("invalid_extension_declaration", path, "EXT-16", "An item-row query requires typedmark:items", { extension: "typedmark:items" });
         if (!evaluated["typedmark:views"]) {
           source.contractError = source.error = new QueryError("CM-421", "Views evaluation is unavailable", { extension: "typedmark:views" });
           continue;
@@ -251,6 +253,9 @@ export function validateViews(root: string, metadata: string, model: CollectionM
           return !!definition && definition.immutable !== true && !Object.hasOwn(definition, "computed") && !Object.hasOwn(definition, "const_value");
         });
       };
+      // Item rows are read-only, so no presentation over them moves rows (ITM-18).
+      if (query?.rows === "items" && ["board", "tree", "calendar", "timeline"].some((layout) => artifact.data.presentation[layout]?.writable === true))
+        fail("ITM-18", "A presentation over item rows cannot be writable");
       if (artifact.data.presentation.layout === "board") {
         const board = artifact.data.presentation.board;
         const definitions = contract.columns.get(board.column);

@@ -15,6 +15,7 @@ import {
   validateFieldValue,
   type FieldDefinition,
 } from "./field-values";
+import { ITEM_PROPERTIES, taskItems, type ItemProperty, type TaskItem } from "./task-items";
 import type { RelationshipKind } from "./types";
 
 type Row = Record<string, unknown>;
@@ -25,6 +26,7 @@ type Predicate =
   | { kind: "not"; predicate: Predicate }
   | { kind: "path"; operator: "equals" | "under" | "regex"; value: string }
   | { kind: "field"; field: string; operator: string; value: unknown }
+  | { kind: "item"; property: ItemProperty; operator: string; value: unknown }
   | {
       kind: "relationship";
       relationship: Kind;
@@ -39,10 +41,12 @@ type Projection =
   | { kind: "path"; as: string }
   | { kind: "note_type"; as: string }
   | { kind: "field"; as: string; field: string }
-  | { kind: "mapped_field"; as: string; definition: FieldDefinition; sources: Source[] };
+  | { kind: "mapped_field"; as: string; definition: FieldDefinition; sources: Source[] }
+  | { kind: "item"; as: string; property: ItemProperty };
 export interface Descriptor {
   specification_version: string;
   note_types?: string[];
+  rows?: "notes" | "items";
   include_deleted?: boolean;
   where?: Predicate;
   select: Projection[];
@@ -73,6 +77,8 @@ export interface QueryEvaluation {
   rowDefinitions: Array<Record<string, FieldDefinition | undefined>>;
   /** The note behind each result row, in row order. */
   paths: string[];
+  /** With `rows: items`, the item line behind each result row (ITM-10). */
+  lines?: number[];
 }
 /** A descriptor's published contract, without reading notes or evaluating rows. */
 export interface QueryAnalysis {
@@ -238,13 +244,28 @@ export function analyzeQuery(model: CollectionModel, query: Descriptor): QueryAn
   const matchesType = (type: string, requested: string) => matchesNoteType(model.schemas, type, requested);
   const admitted = (type: string, types?: string[]) => !types || types.some((requested) => matchesType(type, requested));
   const admittedSchemas = (types?: string[]) => [...model.schemas].filter(([type, schema]) => !schema.abstract && admitted(type, types)).map(([type]) => type);
-  const checkPredicate = (predicate: Predicate, scope: string[]): void => {
-    if (predicate.kind === "all" || predicate.kind === "any") predicate.predicates.forEach((child) => checkPredicate(child, scope));
-    else if (predicate.kind === "not") checkPredicate(predicate.predicate, scope);
+  const items = query.rows === "items";
+  // Item predicates read the row's item, so they need item rows and cannot apply to related notes (ITM-14).
+  const checkPredicate = (predicate: Predicate, scope: string[], itemScope = items): void => {
+    if (predicate.kind === "all" || predicate.kind === "any") predicate.predicates.forEach((child) => checkPredicate(child, scope, itemScope));
+    else if (predicate.kind === "not") checkPredicate(predicate.predicate, scope, itemScope);
     else if (predicate.kind === "relationship") {
       checkTypes(predicate.note_types);
       if ((predicate.count?.min ?? 0) > (predicate.count?.max ?? Infinity)) fail("CM-356", "Relationship minimum exceeds maximum");
-      if (predicate.where) checkPredicate(predicate.where, admittedSchemas(predicate.note_types));
+      if (predicate.where) checkPredicate(predicate.where, admittedSchemas(predicate.note_types), false);
+    } else if (predicate.kind === "item") {
+      if (!itemScope) fail("ITM-14", "An item predicate needs a query with rows: items");
+      const definition = ITEM_PROPERTIES[predicate.property];
+      // Item properties compare as fields of their fixed types (ITM-15, ITM-16).
+      if (predicate.operator === "regex") {
+        if (definition.type !== "text") fail("ITM-16", `regex does not apply to the ${predicate.property} property`);
+        try {
+          fullPattern(String(predicate.value));
+        } catch {
+          fail("CM-339", "Invalid Unicode regular expression");
+        }
+      } else if (validateFieldValue(predicate.value, definition, "UTC", {}) || (predicate.operator !== "equals" && predicate.value === null))
+        fail("ITM-16", `${predicate.operator} or its operand is incompatible with the ${predicate.property} property`);
     } else {
       if (predicate.kind === "field")
         for (const type of scope) {
@@ -272,6 +293,11 @@ export function analyzeQuery(model: CollectionModel, query: Descriptor): QueryAn
   for (const column of query.select) {
     if (aliases.has(column.as)) fail("CM-361", `Duplicate projection alias ${column.as}`);
     aliases.add(column.as);
+    if (column.kind === "item") {
+      if (!items) fail("ITM-14", "An item projection needs a query with rows: items");
+      columnDefinitions.set(column.as, [ITEM_PROPERTIES[column.property]]);
+      continue;
+    }
     columnDefinitions.set(
       column.as,
       column.kind === "mapped_field"
@@ -375,12 +401,24 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
       fail("CM-308", `${note.path} has no conforming effective field model`);
     }
   };
-  const match = (note: ManagedNote, predicate: Predicate): boolean => {
+  const match = (note: ManagedNote, predicate: Predicate, item?: TaskItem): boolean => {
     if (predicate.kind === "all" || predicate.kind === "any") {
-      const matches = predicate.predicates.map((child) => match(note, child));
+      const matches = predicate.predicates.map((child) => match(note, child, item));
       return predicate.kind === "all" ? matches.every(Boolean) : matches.some(Boolean);
     }
-    if (predicate.kind === "not") return !match(note, predicate.predicate);
+    if (predicate.kind === "not") return !match(note, predicate.predicate, item);
+    if (predicate.kind === "item") {
+      const value = item![predicate.property];
+      const definition = ITEM_PROPERTIES[predicate.property];
+      if (predicate.operator === "regex") return typeof value === "string" && fullPattern(String(predicate.value)).test(value.normalize("NFC"));
+      if (predicate.operator === "equals")
+        return predicate.value === null ? value === null : value !== null && equalFieldValues(value, predicate.value, definition, timezone);
+      if (value === null) return false;
+      const compared = compareFieldValues(value, predicate.value, definition, timezone);
+      if (predicate.operator === "less_than") return compared < 0;
+      if (predicate.operator === "less_than_or_equal") return compared <= 0;
+      return predicate.operator === "greater_than" ? compared > 0 : compared >= 0;
+    }
     if (predicate.kind === "path") {
       const value = predicate.value.normalize("NFC");
       if (predicate.operator === "equals") return note.path === value;
@@ -448,7 +486,8 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     }
   };
 
-  const project = (note: ManagedNote, column: Projection): Cell => {
+  const project = (note: ManagedNote, column: Projection, item?: TaskItem): Cell => {
+    if (column.kind === "item") return { value: item![column.property], definition: ITEM_PROPERTIES[column.property], source: null };
     if (column.kind === "path" || column.kind === "note_type")
       return {
         value: column.kind === "path" ? note.path : note.noteType,
@@ -478,13 +517,19 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
       !validateFieldValue(value, source, timezone, model.config.vocabularies);
     return { value, definition: target, source: field?.definition && field.present && path ? { path: note.path, field: path, source_backed: backed } : null };
   };
+  // With rows: items, each admitted note contributes one row per task item before filtering (ITM-2, ITM-3).
   const entries = model.notes
     .filter((note) => (query.include_deleted || note.values.deleted !== true) && admitted(note.noteType, query.note_types))
-    .filter((note) => {
+    .flatMap((note): Array<{ note: ManagedNote; item?: TaskItem }> => {
       ensureModel(note);
-      return !query.where || match(note, query.where);
+      return query.rows === "items" ? taskItems(note.body, note.bodyLine).map((item) => ({ note, item })) : [{ note, item: undefined }];
     })
-    .map((note) => ({ path: note.path, cells: Object.fromEntries(query.select.map((column) => [column.as, project(note, column)])) }));
+    .filter(({ note, item }) => !query.where || match(note, query.where, item))
+    .map(({ note, item }) => ({
+      path: note.path,
+      line: item?.line ?? 0,
+      cells: Object.fromEntries(query.select.map((column) => [column.as, project(note, column, item)])),
+    }));
   for (const order of query.order_by ?? []) {
     const domains = new Set(
       entries
@@ -505,7 +550,8 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
       const compared = compareFieldValues(a.value, b.value, scalarDefinition(a), timezone);
       if (compared) return compared * (order.direction === "desc" ? -1 : 1);
     }
-    return compareUnicodeCodePoints(left.path, right.path);
+    // Item rows of one note keep line order after the path tie-breaker (ITM-17).
+    return compareUnicodeCodePoints(left.path, right.path) || left.line - right.line;
   });
   const retained = entries.slice(0, query.limit ?? entries.length);
   const rows = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, structuredClone(entry.cells[column.as]!.value)])));
@@ -526,5 +572,12 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     result.groups = groups.map(({ key, rows }) => ({ key, rows }));
   }
   const rowDefinitions = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.definition])));
-  return { result, columns: analysis.columns, admittedTypes: analysis.admittedTypes, rowDefinitions, paths: retained.map((entry) => entry.path) };
+  return {
+    result,
+    columns: analysis.columns,
+    admittedTypes: analysis.admittedTypes,
+    rowDefinitions,
+    paths: retained.map((entry) => entry.path),
+    ...(query.rows === "items" ? { lines: retained.map((entry) => entry.line) } : {}),
+  };
 }

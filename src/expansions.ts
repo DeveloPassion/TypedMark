@@ -42,6 +42,7 @@ export function validateExpansions(model: CollectionModel, registry: SchemaRegis
       const kind = (marker.descriptor as Data).source?.kind;
       if (["query", "dataset", "view"].includes(kind)) requireDeclaration("typedmark:queries");
       if (["dataset", "view"].includes(kind)) requireDeclaration("typedmark:views");
+      if (kind === "query" && (marker.descriptor as Data).source?.query?.rows === "items") requireDeclaration("typedmark:items");
     }
     if (!model.report.evaluated_extensions["typedmark:expansion"]) {
       if (model.report.evaluated_extensions["typedmark:queries"]) blocked.add("typedmark:queries");

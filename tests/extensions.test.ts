@@ -43,6 +43,7 @@ afterEach(() => {
 
 test.each([
   ["typedmark:views", "typedmark:queries"],
+  ["typedmark:items", "typedmark:queries"],
   ["typedmark:expansion", "typedmark:expressions"],
 ])("reports the missing dependency of %s regardless of implementation support", (extension, dependency) => {
   const report = run(collection({ extensions: { [extension]: "0.1.0" } }));
