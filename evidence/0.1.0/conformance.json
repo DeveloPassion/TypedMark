@@ -1,8 +1,8 @@
 {
-  "specification_revision": "a386e1de0d5730845a5f6836f75402bb6f9883df",
-  "adapter_revision": "5f3d3837a9223b324356d7766c4ba66a20e3fa36",
-  "started_at": "2026-10-30T16:30:38.211Z",
-  "finished_at": "2026-10-30T16:31:24.506Z",
+  "specification_revision": "ba5bf5ce31e02d64ab9edc3b62dfafdeb1b40c8f",
+  "adapter_revision": "06d05a5f232a877bc70375260f98bd0fc2650290",
+  "started_at": "2026-10-30T17:53:03.854Z",
+  "finished_at": "2026-10-30T17:53:39.338Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -4212,15 +4212,15 @@
               },
               {
                 "heading": null,
+                "text": "Brief [[2026-10-30]] about [[Launch]], [[Missing]] and [[2026-10-30|today]]",
+                "path": "Projects/Launch.md",
+                "line": 5
+              },
+              {
+                "heading": null,
                 "text": "Pay the rent",
                 "path": "Daily/2026-10-29.md",
                 "line": 6
-              },
-              {
-                "heading": "Today",
-                "text": "Call the printer",
-                "path": "Daily/2026-10-30.md",
-                "line": 9
               }
             ],
             "provenance": [
@@ -4269,24 +4269,42 @@
                   },
                   {
                     "heading": null,
+                    "text": "Brief [[2026-10-30]] about [[Launch]], [[Missing]] and [[2026-10-30|today]]",
+                    "path": "Projects/Launch.md",
+                    "line": 5
+                  },
+                  {
+                    "heading": null,
                     "text": "Pay the rent",
                     "path": "Daily/2026-10-29.md",
                     "line": 6
                   }
                 ]
-              },
+              }
+            ]
+          }
+        },
+        {
+          "name": "items-linking-a-note",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
               {
-                "key": [
-                  "Today"
-                ],
-                "rows": [
-                  {
-                    "heading": "Today",
-                    "text": "Call the printer",
-                    "path": "Daily/2026-10-30.md",
-                    "line": 9
-                  }
+                "path": "Projects/Launch.md",
+                "line": 5,
+                "links": [
+                  "Daily/2026-10-30.md",
+                  "Projects/Launch.md"
                 ]
+              }
+            ],
+            "provenance": [
+              {
+                "path": null,
+                "line": null,
+                "links": null
               }
             ]
           }
@@ -4299,6 +4317,12 @@
         },
         {
           "name": "item-regex-on-integer-property",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "ITM-16"
+        },
+        {
+          "name": "item-links-need-containment",
           "status": "passed",
           "differences": [],
           "error_rule": "ITM-16"
@@ -5237,8 +5261,8 @@
     }
   ],
   "query_summary": {
-    "executed": 24,
-    "passed": 24,
+    "executed": 26,
+    "passed": 26,
     "failed": 0
   }
 }

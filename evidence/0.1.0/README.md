@@ -570,3 +570,8 @@ read-only presenter and no golden vectors; the corpus still reports 113
 discovered, 111 passed and 24 queries passed, with the two precondition skips,
 and 1,947 tooling tests pass. See
 [decision 044](../../docs/decisions/044-view-command.md).
+The item-links increment (specification `ba5bf5c`, adapter `06d05a5`) adds two
+query cases to the task-items vector; the corpus reports 113 discovered, 111
+passed and 26 queries passed, with the two precondition skips, and 1,948
+tooling tests pass. See
+[decision 045](../../docs/decisions/045-item-links.md).
