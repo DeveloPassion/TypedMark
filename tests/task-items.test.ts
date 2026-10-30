@@ -36,8 +36,8 @@ test("item rows carry their line, and item predicates stay out of related notes 
     select: [{ kind: "item", property: "text", as: "text" }],
   };
   const evaluation = evaluateQueryWithColumns(model, query);
-  expect(evaluation.result.rows).toEqual([{ text: "Book the venue" }]);
-  expect(evaluation).toMatchObject({ paths: ["Projects/Launch.md"], lines: [4] });
+  expect(evaluation.result.rows).toEqual([{ text: "Book the venue" }, { text: "Brief [[2026-10-30]] about [[Launch]], [[Missing]] and [[2026-10-30|today]]" }]);
+  expect(evaluation).toMatchObject({ paths: ["Projects/Launch.md", "Projects/Launch.md"], lines: [4, 5] });
   const related = {
     ...query,
     where: { kind: "relationship", relationship: "related_to", where: { kind: "item", property: "checked", operator: "equals", value: true } },
@@ -70,4 +70,24 @@ test("a saved view over item rows needs the items declaration (EXT-16)", () => {
   });
   const report = validateCollection({ collectionRoot: root, schemaDirectory });
   expect(report.results).toContainEqual(expect.objectContaining({ rule_id: "EXT-16", extension: "typedmark:items", path: ".typedmark/views/items.md" }));
+});
+
+test("item links hold each resolved managed note once and match by containment (ITM-16, ITM-19)", () => {
+  const collectionRoot = join(specification, "schema/fixtures/golden/task-items-valid/collection");
+  const model = readCollectionModel({ collectionRoot, schemaDirectory });
+  const query = (where: unknown): Descriptor =>
+    ({
+      specification_version: "0.1.0",
+      rows: "items",
+      where,
+      select: [{ kind: "item", property: "links", as: "links" }],
+    }) as Descriptor;
+  const both = { kind: "item", property: "links", operator: "contains_all", value: ["Daily/2026-10-30.md", "Projects/Launch.md"] };
+  expect(evaluateQueryWithColumns(model, query(both)).result.rows).toEqual([{ links: ["Daily/2026-10-30.md", "Projects/Launch.md"] }]);
+  const missing = { kind: "item", property: "links", operator: "contains_all", value: ["Daily/2026-10-30.md", "Missing.md"] };
+  expect(evaluateQueryWithColumns(model, query(missing)).result.rows).toEqual([]);
+  expect(() => evaluateQueryWithColumns(model, query({ kind: "item", property: "text", operator: "contains_any", value: ["x"] }))).toThrow("ITM-16");
+  expect(() => evaluateQueryWithColumns(model, query({ kind: "item", property: "links", operator: "contains_any", value: ["Launch"] }))).toThrow("ITM-16");
+  const ordered = { ...query(undefined), order_by: [{ column: "links" }] } as Descriptor;
+  expect(() => evaluateQueryWithColumns(model, ordered)).toThrow("CM-374");
 });

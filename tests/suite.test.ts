@@ -18,7 +18,7 @@ test("records reproducible evidence for every golden vector", async () => {
   });
 
   expect(evidence.summary).toEqual({ discovered: 113, executed: 111, passed: 111, failed: 0, skipped: 2, changed: 0 });
-  expect(evidence.query_summary).toEqual({ executed: 24, passed: 24, failed: 0 });
+  expect(evidence.query_summary).toEqual({ executed: 26, passed: 26, failed: 0 });
   expect(evidence.specification_revision).toBe("spec-test-revision");
   expect(evidence.adapter_revision).toBe("adapter-test-revision");
   expect(evidence.vectors.map((vector) => vector.name)).toContain("unsupported-required-extension");
@@ -36,7 +36,7 @@ test("records reproducible evidence for every golden vector", async () => {
 test("checked-in evidence contains schema-valid reports and a passing summary", () => {
   const evidence = JSON.parse(readFileSync(resolve(import.meta.dir, "../evidence/0.1.0/conformance.json"), "utf8"));
   expect(evidence.summary).toEqual({ discovered: 113, executed: 111, passed: 111, failed: 0, skipped: 2, changed: 0 });
-  expect(evidence.query_summary).toEqual({ executed: 24, passed: 24, failed: 0 });
+  expect(evidence.query_summary).toEqual({ executed: 26, passed: 26, failed: 0 });
   const registry = new SchemaRegistry(schemaDirectory);
   for (const vector of evidence.vectors) {
     if (vector.actual_report) expect(registry.validate("validation-report.schema.json", vector.actual_report), vector.name).toEqual([]);

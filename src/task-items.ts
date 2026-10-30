@@ -4,7 +4,7 @@ import type { FieldDefinition } from "./field-values";
 type BlockParser = Parser & { processInlines(block: Node): void };
 type SourceNode = Node & { _string_content?: unknown };
 
-export type ItemProperty = "text" | "status" | "checked" | "line" | "depth" | "parent_line" | "heading";
+export type ItemProperty = "text" | "status" | "checked" | "line" | "depth" | "parent_line" | "heading" | "links";
 export interface TaskItem {
   text: string;
   status: string;
@@ -13,6 +13,8 @@ export interface TaskItem {
   depth: number;
   parent_line: number | null;
   heading: string | null;
+  /** Managed notes the item's text links to; resolved by the query engine (ITM-19). */
+  links?: string[];
 }
 
 /** Item properties behave as fields of these types (ITM-15). */
@@ -24,6 +26,7 @@ export const ITEM_PROPERTIES: Record<ItemProperty, FieldDefinition> = {
   depth: { type: "integer", nullable: false },
   parent_line: { type: "integer", nullable: true },
   heading: { type: "text", nullable: true },
+  links: { type: "list", items: { type: "text" }, nullable: false },
 };
 
 // One status character in brackets, then a space, a tab, or the end of the line (ITM-6).

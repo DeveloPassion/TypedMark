@@ -1,7 +1,7 @@
 import { noteFieldDefinitions, type CollectionModel, type ManagedNote } from "./collection-model";
 import type { SchemaRegistry } from "./schema-registry";
 import { compareUnicodeCodePoints } from "./order";
-import { buildRelationshipGraph, type NoteLinkError } from "./note-links";
+import { buildRelationshipGraph, inspectBodyLinks, parseNoteLink, resolveNoteLink, type NoteLinkError } from "./note-links";
 import { matchesNoteType } from "./reuse";
 import { validateFieldDefinition } from "./field-definitions";
 import { hasComputed } from "./expressions";
@@ -257,7 +257,13 @@ export function analyzeQuery(model: CollectionModel, query: Descriptor): QueryAn
       if (!itemScope) fail("ITM-14", "An item predicate needs a query with rows: items");
       const definition = ITEM_PROPERTIES[predicate.property];
       // Item properties compare as fields of their fixed types (ITM-15, ITM-16).
-      if (predicate.operator === "regex") {
+      // links take containment of note paths, and every other property the scalar operators (ITM-16).
+      const containment = predicate.operator === "contains_any" || predicate.operator === "contains_all";
+      if (containment !== (predicate.property === "links")) fail("ITM-16", `${predicate.operator} does not apply to the ${predicate.property} property`);
+      if (containment) {
+        if (!Array.isArray(predicate.value) || !predicate.value.length || predicate.value.some((path) => typeof path !== "string" || !path.endsWith(".md")))
+          fail("ITM-16", `${predicate.operator} on links needs a non-empty list of note paths`);
+      } else if (predicate.operator === "regex") {
         if (definition.type !== "text") fail("ITM-16", `regex does not apply to the ${predicate.property} property`);
         try {
           fullPattern(String(predicate.value));
@@ -410,6 +416,11 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     if (predicate.kind === "item") {
       const value = item![predicate.property];
       const definition = ITEM_PROPERTIES[predicate.property];
+      if (predicate.operator === "contains_any" || predicate.operator === "contains_all") {
+        const links = value as string[];
+        const found = (predicate.value as string[]).map((path) => links.includes(path.normalize("NFC")));
+        return predicate.operator === "contains_any" ? found.some(Boolean) : found.every(Boolean);
+      }
       if (predicate.operator === "regex") return typeof value === "string" && fullPattern(String(predicate.value)).test(value.normalize("NFC"));
       if (predicate.operator === "equals")
         return predicate.value === null ? value === null : value !== null && equalFieldValues(value, predicate.value, definition, timezone);
@@ -517,12 +528,30 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
       !validateFieldValue(value, source, timezone, model.config.vocabularies);
     return { value, definition: target, source: field?.definition && field.present && path ? { path: note.path, field: path, source_backed: backed } : null };
   };
+  // An item's links: managed notes its text resolves to, once each in first-appearance order (ITM-19).
+  const managedPaths = new Set(model.notes.map((note) => note.path));
+  const itemLinks = (source: string, text: string): string[] => {
+    const paths: string[] = [];
+    for (const found of inspectBodyLinks(text).links) {
+      const link = parseNoteLink(found.source.raw);
+      if (!link) continue;
+      try {
+        const resolution = resolveNoteLink(link, source, model);
+        if (resolution.kind === "note" && managedPaths.has(resolution.path) && !paths.includes(resolution.path)) paths.push(resolution.path);
+      } catch {
+        // Ambiguous or escaping links resolve to nothing here.
+      }
+    }
+    return paths;
+  };
   // With rows: items, each admitted note contributes one row per task item before filtering (ITM-2, ITM-3).
   const entries = model.notes
     .filter((note) => (query.include_deleted || note.values.deleted !== true) && admitted(note.noteType, query.note_types))
     .flatMap((note): Array<{ note: ManagedNote; item?: TaskItem }> => {
       ensureModel(note);
-      return query.rows === "items" ? taskItems(note.body, note.bodyLine).map((item) => ({ note, item })) : [{ note, item: undefined }];
+      return query.rows === "items"
+        ? taskItems(note.body, note.bodyLine).map((item) => ({ note, item: { ...item, links: itemLinks(note.path, item.text) } }))
+        : [{ note, item: undefined }];
     })
     .filter(({ note, item }) => !query.where || match(note, query.where, item))
     .map(({ note, item }) => ({

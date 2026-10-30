@@ -188,6 +188,9 @@ Queries may return one read-only row per checklist item with `rows: items`
 (`typedmark:items`): `item` predicates and projections read each item's text,
 status, line, nesting and heading. See the
 [task-items decision](docs/decisions/043-task-items.md).
+Item rows also expose `links`, the notes an item links to, so a query can list
+the items that mention a project. See the
+[item-links decision](docs/decisions/045-item-links.md).
 `bun src/cli.ts view <collection> <view-id> --schemas <dir> [--format text|json]`
 prints a saved view read-only: tables, lists, cards, boards with lanes and rank,
 trees with context rows and rollups, calendars, timelines and item rows. See the
