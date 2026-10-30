@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 import { readCollectionModel } from "../src/validator";
 import { SchemaRegistry } from "../src/schema-registry";
 import { validateViews } from "../src/views";
-import { arrangeTree, rollUp, treeMove, viewRollups, viewTree, type RolledNode, type TreeNode } from "../src/tree-views";
+import { arrangeTree, rollUp, treeListMove, treeMove, viewRollups, viewTree, type RolledNode, type TreeNode } from "../src/tree-views";
 
 const specification = resolve(import.meta.dir, "../../TypedMarkSpecification");
 const schemaDirectory = join(specification, "schema/json-schema");
@@ -72,6 +72,35 @@ test("moves write or remove the parent link and refuse cycles and context rows (
   expect(() => treeMove(forest, "parent", "Tasks/Design.md", "Tasks/Sketch.md")).toThrow("CM-595");
   expect(() => treeMove(forest, "parent", "Tasks/Design.md", "Tasks/Design.md")).toThrow("CM-595");
   expect(() => treeMove(forest, "parent", "Projects/Launch.md", null)).toThrow("CM-595");
+});
+
+test("a list move changes one occurrence in its slot and keeps the other parents (CM-617, CM-618)", () => {
+  const forest = arrangeTree(
+    [
+      { path: "goal", parents: [] },
+      { path: "alpha", parents: [] },
+      { path: "beta", parents: [] },
+      { path: "task", parents: ["alpha", "outside", "beta"] },
+      { path: "loose", parents: [] },
+    ],
+    { context: "ancestors", contextParents: () => [] },
+  );
+  const items = ["[[alpha]]", "[[outside]]", "[[beta]]"];
+  const resolve = (item: unknown) => String(item).slice(2, -2);
+  const move = (from: string | null, to: string | null, list = items) => treeListMove(forest, "parents", "task", from, to, list, resolve);
+  expect(move("alpha", "goal")).toEqual({ kind: "set_field", field: "parents", value: ["[[goal]]", "[[outside]]", "[[beta]]"] });
+  expect(move("beta", "goal")).toEqual({ kind: "set_field", field: "parents", value: ["[[alpha]]", "[[outside]]", "[[goal]]"] });
+  // The target is already a parent: only the old parent's items go, duplicates included.
+  expect(move("alpha", "beta", ["[[alpha]]", "[[beta]]", "[[alpha]]"])).toEqual({ kind: "set_field", field: "parents", value: ["[[beta]]"] });
+  // Duplicates of the old parent collapse into the one slot.
+  expect(move("alpha", "goal", ["[[alpha]]", "[[beta]]", "[[alpha]]"])).toEqual({ kind: "set_field", field: "parents", value: ["[[goal]]", "[[beta]]"] });
+  expect(move("alpha", null)).toEqual({ kind: "set_field", field: "parents", value: ["[[outside]]", "[[beta]]"] });
+  expect(move("alpha", null, ["[[alpha]]"])).toEqual({ kind: "unset_field", field: "parents" });
+  expect(move("alpha", "alpha")).toEqual({ kind: "set_field", field: "parents", value: items });
+  expect(treeListMove(forest, "parents", "loose", null, "goal", [], resolve)).toEqual({ kind: "set_field", field: "parents", value: ["[[goal]]"] });
+  expect(() => move("goal", "beta")).toThrow("CM-617");
+  expect(() => move(null, "goal")).toThrow("CM-617");
+  expect(() => treeListMove(forest, "parents", "alpha", null, "task", ["[[x]]"], resolve)).toThrow("CM-595");
 });
 
 // Rolled-up values per occurrence, with derived values marked.

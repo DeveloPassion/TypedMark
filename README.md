@@ -181,6 +181,9 @@ Tree views may roll estimates and progress up from children
 (`tree.rollups`: sum, min, max, count, weighted mean, `done_value`), display
 only (`rollUp`, `viewRollups`). See the
 [rollups decision](docs/decisions/039-tree-rollups.md).
+Trees over a list of parent links are writable too: `treeListMove` moves one
+occurrence by putting the new parent's link in the old parent's slot. See the
+[list-parent moves decision](docs/decisions/041-list-parent-tree-moves.md).
 Writes follow the optional Edits and Renames contract: `edit` and `rename` keep
 untouched frontmatter text, rewrite every link that reached a moved note, and
 re-file notes whose storage reads an edited value. See the

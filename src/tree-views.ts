@@ -18,7 +18,7 @@ export interface TreeOptions {
   /** Resolved parents of a note outside the result, or undefined when it is not a non-deleted managed note (CM-591). */
   contextParents?: (path: string) => string[] | undefined;
 }
-export type TreeMove = { kind: "set_field"; field: string; value: string } | { kind: "unset_field"; field: string };
+export type TreeMove = { kind: "set_field"; field: string; value: string | unknown[] } | { kind: "unset_field"; field: string };
 
 export class TreeMoveError extends Error {
   constructor(
@@ -123,26 +123,54 @@ export function viewTree(
   });
 }
 
+const noteLink = (path: string) => `[[${path.replace(/\.md$/, "")}]]`;
+
+// Every occurrence of the moved row, with the row it sits under (null at the root), after the CM-595 checks.
+function movable(forest: TreeNode[], moved: string, parent: string | null): { node: TreeNode; under: string | null }[] {
+  const occurrences: { node: TreeNode; under: string | null }[] = [];
+  const visit = (node: TreeNode, under: string | null) => {
+    if (node.path === moved) occurrences.push({ node, under });
+    for (const child of node.children) visit(child, node.path);
+  };
+  for (const root of forest) visit(root, null);
+  if (!occurrences.length) throw new TreeMoveError("CM-595", `${moved} is not in the tree`);
+  if (occurrences.some(({ node }) => node.context)) throw new TreeMoveError("CM-595", "A context row cannot be moved");
+  const below = (node: TreeNode): boolean => node.path === parent || node.children.some(below);
+  if (parent !== null && occurrences.some(({ node }) => below(node))) throw new TreeMoveError("CM-595", "A row cannot move under itself or its descendants");
+  return occurrences;
+}
+
 /** The write that moves a row under another row, or to the root when parent is null (CM-594, CM-595). */
-export function treeMove(
+export function treeMove(forest: TreeNode[], field: string, moved: string, parent: string | null, link: (path: string) => string = noteLink): TreeMove {
+  movable(forest, moved, parent);
+  return parent === null ? { kind: "unset_field", field } : { kind: "set_field", field, value: link(parent) };
+}
+
+/**
+ * The write that moves the occurrence of a row under `from` (null for a root occurrence) to `to` (null for the root)
+ * when the parent field is a list of links. `items` is the row's current list and `resolve` gives an item's
+ * target path. The other items keep their order (CM-595, CM-617, CM-618).
+ */
+export function treeListMove(
   forest: TreeNode[],
   field: string,
   moved: string,
-  parent: string | null,
-  link: (path: string) => string = (path) => `[[${path.replace(/\.md$/, "")}]]`,
+  from: string | null,
+  to: string | null,
+  items: unknown[],
+  resolve: (item: unknown) => string | undefined,
+  link: (path: string) => string = noteLink,
 ): TreeMove {
-  const occurrences: TreeNode[] = [];
-  const visit = (node: TreeNode) => {
-    if (node.path === moved) occurrences.push(node);
-    node.children.forEach(visit);
-  };
-  forest.forEach(visit);
-  if (!occurrences.length) throw new TreeMoveError("CM-595", `${moved} is not in the tree`);
-  if (occurrences.some((node) => node.context)) throw new TreeMoveError("CM-595", "A context row cannot be moved");
-  if (parent === null) return { kind: "unset_field", field };
-  const below = (node: TreeNode): boolean => node.path === parent || node.children.some(below);
-  if (occurrences.some(below)) throw new TreeMoveError("CM-595", "A row cannot move under itself or its descendants");
-  return { kind: "set_field", field, value: link(parent) };
+  if (!movable(forest, moved, to).some(({ under }) => under === from))
+    throw new TreeMoveError("CM-617", `${moved} has no occurrence ${from === null ? "at the root" : `under ${from}`}`);
+  if (from === to) return { kind: "set_field", field, value: items };
+  const without = from === null ? items : items.filter((item) => resolve(item) !== from);
+  if (to === null) return without.length ? { kind: "set_field", field, value: without } : { kind: "unset_field", field };
+  // A row already under the target only leaves its old parent; otherwise the target takes the old parent's slot.
+  if (items.some((item) => resolve(item) === to)) return { kind: "set_field", field, value: without };
+  if (from === null) return { kind: "set_field", field, value: [...items, link(to)] };
+  const slot = items.findIndex((item) => resolve(item) === from);
+  return { kind: "set_field", field, value: items.flatMap((item, index) => (index === slot ? [link(to)] : resolve(item) === from ? [] : [item])) };
 }
 
 export interface TreeRollup {
