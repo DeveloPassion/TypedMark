@@ -1,8 +1,9 @@
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { parse, stringify } from "yaml";
 import { noteFieldDefinitions, type ManagedNote } from "./collection-model";
+import { applyEdit, planEdit, type EditPlan } from "./edits";
 import { classifyConversion, validateFieldValue, type FieldDefinition } from "./field-values";
 import { locateBodyBlocks } from "./markdown-headings";
 import { linkedNotePath } from "./note-links";
@@ -44,8 +45,14 @@ export interface RetypePlan {
   addedTags: string[];
   addedHeadings: string[];
   unresolved: RetypeIssue[];
+  /** Notes that move with a path change, the re-typed note first (RT-9, ER-13). */
+  moves: Array<{ from: string; to: string }>;
+  /** Links rewritten per written note when the path changes (RT-9, ER-7 to ER-10). */
+  rewrites: Array<{ path: string; links: number }>;
   /** The note as it would be written; absent when the plan cannot be applied. */
   content?: string;
+  /** The atomic write of a path change: every move and link rewrite (RT-12, ER-14). */
+  edit?: EditPlan;
 }
 
 /**
@@ -70,6 +77,8 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
     addedTags: [],
     addedHeadings: [],
     unresolved: [],
+    moves: [],
+    rewrites: [],
   };
   const unresolved = (rule: string, message: string) => plan.unresolved.push({ rule, message });
   const target = model.schemas.get(to);
@@ -192,7 +201,7 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
   if (entry.fields || entry.sections) remaining.push(entry);
   if (remaining.length) body = `${body.replace(/\n+$/u, "")}\n\n${preservationBlock(remaining)}`;
 
-  // Target path (RT-9): the reference tool moves only when inbound links stay valid.
+  // Target path (RT-9): a change moves the note and rewrites links through the edit planner.
   const frontmatter: Data = { note_type: to, ...stored };
   const effective: Data = { ...frontmatter };
   for (const [name, definition] of Object.entries(targetFields)) {
@@ -217,7 +226,6 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
     return plan;
   }
   plan.targetPath = resolved.path;
-  if (plan.targetPath !== path) checkMove(model.notes, collectionRoot, path, plan.targetPath, unresolved);
 
   plan.content = `---\n${stringify(frontmatter, { version: "1.2" })}---\n${body ? `\n${body.replace(/\n*$/u, "\n")}` : ""}`;
   if (!plan.unresolved.length) stageAndValidate(collectionRoot, schemaDirectory, plan, unresolved);
@@ -228,6 +236,7 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
 /** Apply a plan with no unresolved requirements; the old file is replaced in one rename (RT-12). */
 export function applyRetype(collectionRoot: string, plan: RetypePlan): void {
   if (plan.unresolved.length || plan.content === undefined) throw new Error("The re-typing plan has unresolved requirements");
+  if (plan.edit) return applyEdit(collectionRoot, plan.edit);
   const target = join(collectionRoot, plan.targetPath);
   mkdirSync(dirname(target), { recursive: true });
   const temporary = `${target}.typedmark-retype`;
@@ -243,37 +252,20 @@ function preservationBlock(entries: PreservedEntry[]): string {
   return `${fence}${BLOCK_INFO}\n${yaml}${fence}\n`;
 }
 
-// Name-based links keep resolving when only the folder changes; path-formed
-// references would need rewriting, which this reference tool does not do.
-function checkMove(notes: ManagedNote[], root: string, from: string, to: string, unresolved: (rule: string, message: string) => void) {
-  const name = (value: string) => (value.split("/").pop() ?? "").replace(/\.md$/u, "");
-  if (name(from) !== name(to)) {
-    unresolved("RT-9", `Renaming ${from} to ${to} would require rewriting links, which this tool does not do`);
-    return;
-  }
-  if (notes.some((other) => other.path.normalize("NFC") === to.normalize("NFC"))) unresolved("NTS-152", `${to} is occupied`);
-  const stem = from.replace(/\.md$/u, "");
-  for (const other of readdirSync(root, { recursive: true, withFileTypes: true })) {
-    if (!other.isFile() || !other.name.endsWith(".md")) continue;
-    const relative = join(other.parentPath, other.name)
-      .slice(root.length + 1)
-      .replaceAll("\\", "/");
-    if (relative === from) continue;
-    const text = readFileSync(join(other.parentPath, other.name), "utf8");
-    if (text.includes(`${stem}]]`) || text.includes(`${stem}|`) || text.includes(`${stem}#`) || text.includes(`(${stem}.md`) || text.includes(`(${from}`)) {
-      unresolved("RT-9", `${relative} links to ${from} by path; moving to ${to} would require rewriting it`);
-    }
-  }
-}
-
 function stageAndValidate(root: string, schemaDirectory: string, plan: RetypePlan, unresolved: (rule: string, message: string) => void) {
   const stage = mkdtempSync(join(tmpdir(), "typedmark-retype-"));
   try {
     cpSync(root, stage, { recursive: true, filter: (source) => !source.split(/[\\/]/u).includes(".git") });
-    if (plan.targetPath !== plan.path) rmSync(join(stage, plan.path));
-    const target = join(stage, plan.targetPath);
-    mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, plan.content!);
+    writeFileSync(join(stage, plan.path), plan.content!);
+    // A path change is an edit-planner rename of the re-typed note: dependents move and links are rewritten (RT-9, ER-7 to ER-14).
+    if (plan.targetPath !== plan.path) {
+      const edit = planEdit(stage, schemaDirectory, { path: plan.path, renameTo: plan.targetPath });
+      for (const issue of edit.unresolved) unresolved(issue.rule, issue.message);
+      if (edit.unresolved.length) return;
+      applyEdit(stage, edit);
+      Object.assign(plan, { edit, moves: edit.moves, rewrites: edit.rewrites });
+      plan.content = edit.files.find((file) => file.path === plan.targetPath)?.content ?? plan.content;
+    }
     const report = validateCollection({ collectionRoot: stage, schemaDirectory, mode: "instantiated_collection" });
     for (const result of report.results) {
       if (result.severity === "error" && result.path === plan.targetPath) unresolved(result.rule_id, `${result.code}: ${result.message}`);

@@ -104,7 +104,7 @@ if (command === "capabilities") {
   const map = Object.fromEntries(pairs("--map").map(([source, field]) => [source, field ?? ""]));
   const values = Object.fromEntries(pairs("--set").map(([field, value]) => [field, parse(value ?? "", { version: "1.2", schema: "core" })]));
   const plan = planRetype(resolve(target), resolve(schemaDirectory), notePath, to, { map, values });
-  const { content, ...summary } = plan;
+  const { content, edit, ...summary } = plan;
   if (rest.includes("--write") && !plan.unresolved.length) applyRetype(resolve(target), plan);
   console.log(JSON.stringify({ ...summary, written: rest.includes("--write") && !plan.unresolved.length }, null, 2));
   process.exitCode = plan.unresolved.length ? 1 : 0;

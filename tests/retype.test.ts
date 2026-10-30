@@ -151,18 +151,48 @@ test("unsatisfied requirements are reported and nothing is written (RT-10, RT-11
   expect(planRetype(root, schemaDirectory, "Work/Launch.md", "contact", { values: { owner: "Ana" } }).unresolved).toEqual([]);
 });
 
-test("a folder move keeps the basename and is refused when another note links by path (RT-9)", () => {
+test("a folder move rewrites links that reach the note by path (RT-9, RT-12)", () => {
   const root = collection({ "Work/Launch.md": task, "Work/Other.md": other });
   const plan = planRetype(root, schemaDirectory, "Work/Launch.md", "project", { values: { owner: "Ana" } });
-  expect(plan).toMatchObject({ targetPath: "Projects/Launch.md", unresolved: [] });
+  expect(plan).toMatchObject({ targetPath: "Projects/Launch.md", unresolved: [], moves: [{ from: "Work/Launch.md", to: "Projects/Launch.md" }], rewrites: [] });
   applyRetype(root, plan);
   expect(existsSync(join(root, "Work/Launch.md"))).toBe(false);
   expect(read(root, "Projects/Launch.md").data).toMatchObject({ note_type: "project", owner: "Ana" });
 
-  const linked = collection({ "Work/Launch.md": task, "Work/Other.md": other.replace("## Summary\n", "## Summary\n\nSee [[Work/Launch]].\n") });
-  const refused = planRetype(linked, schemaDirectory, "Work/Launch.md", "project", { values: { owner: "Ana" } });
-  expect(refused.unresolved).toContainEqual(expect.objectContaining({ rule: "RT-9" }));
-  expect(refused.content).toBeUndefined();
+  const linked = collection({
+    "Work/Launch.md": task,
+    "Work/Other.md": other.replace("## Summary\n", "## Summary\n\nSee [[Work/Launch]] and [[Launch|it]].\n"),
+  });
+  const moved = planRetype(linked, schemaDirectory, "Work/Launch.md", "project", { values: { owner: "Ana" } });
+  expect(moved).toMatchObject({ unresolved: [], rewrites: [{ path: "Work/Other.md", links: 1 }] });
+  applyRetype(linked, moved);
+  expect(readFileSync(join(linked, "Work/Other.md"), "utf8")).toContain("See [[Projects/Launch]] and [[Launch|it]].");
+  expect(read(linked, "Projects/Launch.md").data).toMatchObject({ note_type: "project" });
+});
+
+test("a rename rewrites name links, and a taken target refuses the whole re-typing (RT-9, ER-9, ER-14)", () => {
+  schemas.meeting = `storage: {folder_pattern: Meetings, note_name_pattern: "{title} (Meeting)"}
+frontmatter:
+  estimate: {type: text, nullable: true, default_value: null}`;
+  try {
+    const root = collection({ "Work/Launch.md": task, "Work/Other.md": other.replace("## Summary\n", "## Summary\n\nSee [[Launch#Checklist|the launch]].\n") });
+    const plan = planRetype(root, schemaDirectory, "Work/Launch.md", "meeting");
+    expect(plan).toMatchObject({ targetPath: "Meetings/Launch (Meeting).md", unresolved: [], rewrites: [{ path: "Work/Other.md", links: 1 }] });
+    applyRetype(root, plan);
+    expect(readFileSync(join(root, "Work/Other.md"), "utf8")).toContain("See [[Launch (Meeting)#Checklist|the launch]].");
+    expect(read(root, "Meetings/Launch (Meeting).md").data).toMatchObject({ note_type: "meeting" });
+    expect(
+      validateCollection({ collectionRoot: root, schemaDirectory, mode: "instantiated_collection" }).results.filter((result) => result.severity === "error"),
+    ).toEqual([]);
+
+    const taken = collection({ "Work/Launch.md": task, "Meetings/Launch (Meeting).md": "# Taken\n" });
+    const refused = planRetype(taken, schemaDirectory, "Work/Launch.md", "meeting");
+    expect(refused.unresolved).toContainEqual(expect.objectContaining({ rule: "ER-14" }));
+    expect(refused.content).toBeUndefined();
+    expect(() => applyRetype(taken, refused)).toThrow();
+  } finally {
+    delete schemas.meeting;
+  }
 });
 
 test("explicit field maps rename carried fields (RT-2)", () => {

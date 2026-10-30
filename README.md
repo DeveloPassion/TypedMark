@@ -388,6 +388,9 @@ the [plain system YAML decision](docs/decisions/023-plain-system-yaml.md).
 re-types a note without losing information: incompatible fields and forbidden
 sections go to a `typedmark-preserved` block, and converting back restores
 them. See the [re-typing decision](docs/decisions/024-note-retyping.md).
+A re-typing that changes the note's path renames it through the edit planner,
+rewriting every link to it. See the
+[re-typing renames decision](docs/decisions/042-retype-renames.md).
 Storage placeholders `{field:name}` and `{field:folder}` place companion notes
 beside the note a single link field points to, e.g.
 `Projects/Launch/Decisions.md`. See the
