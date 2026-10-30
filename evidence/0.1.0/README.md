@@ -549,3 +549,9 @@ links, not developer effort or a new normative contract.
 
 Lossless note re-typing is separately tracked for future design in specification
 [#130](https://github.com/DeveloPassion/TypedMarkSpecification/issues/130).
+The list-parent tree-moves increment (specification `1dacb4c`, adapter
+`6a56f69`) makes a writable list-parent tree valid and moves the CM-593 failure
+to an immutable parent, adding no golden vectors; the corpus still reports 111
+discovered, 109 passed and 19 queries passed, with the two precondition skips,
+and 1,937 tooling tests pass. See
+[decision 041](../../docs/decisions/041-list-parent-tree-moves.md).

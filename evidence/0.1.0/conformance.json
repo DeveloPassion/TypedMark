@@ -1,8 +1,8 @@
 {
-  "specification_revision": "7ebde3c73ec31bd218f844ecdf169ebc1fcc761d",
-  "adapter_revision": "3e43b2e2eaa8bfb150bf2418717fc4f407ea49bd",
-  "started_at": "2026-10-28T11:06:50.721Z",
-  "finished_at": "2026-10-28T11:07:44.455Z",
+  "specification_revision": "1dacb4ccd3371b3a6e42e62354b2b68bfe8f21d2",
+  "adapter_revision": "6a56f69fc5308719c701eb3469302e58248aa9ec",
+  "started_at": "2026-10-30T08:46:37.374Z",
+  "finished_at": "2026-10-30T08:47:14.681Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -3997,10 +3997,12 @@
         "mode": "instantiated_collection",
         "evaluation": "complete",
         "required_extensions": {
+          "typedmark:authoring": "0.1.0",
           "typedmark:queries": "0.1.0",
           "typedmark:views": "0.1.0"
         },
         "evaluated_extensions": {
+          "typedmark:authoring": "0.1.0",
           "typedmark:queries": "0.1.0",
           "typedmark:views": "0.1.0"
         },
@@ -4017,10 +4019,10 @@
           {
             "code": "invalid_view",
             "severity": "error",
-            "path": ".typedmark/views/writable-list.md",
+            "path": ".typedmark/views/writable-immutable.md",
             "rule_id": "CM-593",
-            "message": "CM-593: A writable tree parent must project an assignable single link field",
-            "view": "writable-list"
+            "message": "CM-593: A writable tree parent must project an assignable link or list-of-links field",
+            "view": "writable-immutable"
           }
         ]
       },
