@@ -1,8 +1,8 @@
 {
-  "specification_revision": "1dacb4ccd3371b3a6e42e62354b2b68bfe8f21d2",
-  "adapter_revision": "616e14a7667afff06ef021c62bfde5e6f39e0c0b",
-  "started_at": "2026-10-30T09:33:16.192Z",
-  "finished_at": "2026-10-30T09:33:50.987Z",
+  "specification_revision": "a386e1de0d5730845a5f6836f75402bb6f9883df",
+  "adapter_revision": "b3e97e45c131a29604ebd1878543d6b0098a3f4b",
+  "started_at": "2026-10-30T13:44:31.896Z",
+  "finished_at": "2026-10-30T13:45:33.165Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -16,6 +16,7 @@
       "typedmark:reuse": "0.1.0",
       "typedmark:queries": "0.1.0",
       "typedmark:views": "0.1.0",
+      "typedmark:items": "0.1.0",
       "typedmark:systems": "0.1.0"
     },
     "operations": {
@@ -24,9 +25,9 @@
     }
   },
   "summary": {
-    "discovered": 111,
-    "executed": 109,
-    "passed": 109,
+    "discovered": 113,
+    "executed": 111,
+    "passed": 111,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -88,6 +89,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -120,6 +122,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -171,6 +174,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -203,6 +207,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -252,6 +257,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -284,6 +290,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -310,6 +317,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -345,6 +353,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -402,6 +411,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -434,6 +444,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -479,6 +490,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -532,6 +544,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -566,6 +579,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -616,6 +630,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -654,6 +669,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -761,6 +777,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -787,6 +804,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -822,6 +840,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -889,6 +908,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -923,6 +943,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -959,6 +980,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1000,6 +1022,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1026,6 +1049,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1069,6 +1093,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1095,6 +1120,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1144,6 +1170,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1174,6 +1201,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1235,6 +1263,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1273,6 +1302,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1307,6 +1337,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1341,6 +1372,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1367,6 +1399,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1436,6 +1469,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1466,6 +1500,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1504,6 +1539,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1534,6 +1570,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1570,6 +1607,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1600,6 +1638,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1635,6 +1674,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1670,6 +1710,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1696,6 +1737,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1732,7 +1774,8 @@
         "typedmark:expressions": "0.1.0",
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
-        "typedmark:views": "0.1.0"
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0"
       }
     },
     {
@@ -1772,6 +1815,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1845,6 +1889,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1871,6 +1916,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1906,6 +1952,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1932,6 +1979,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2002,6 +2050,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2028,6 +2077,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2062,6 +2112,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2132,6 +2183,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2158,6 +2210,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2192,6 +2245,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2262,6 +2316,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2288,6 +2343,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2322,6 +2378,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2356,6 +2413,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2435,6 +2493,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2485,6 +2544,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2517,6 +2577,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2543,6 +2604,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2748,6 +2810,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2793,6 +2856,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2856,6 +2920,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2882,6 +2947,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2940,6 +3006,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2974,6 +3041,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3023,6 +3091,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3049,6 +3118,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -3105,6 +3175,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -3162,6 +3233,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3198,6 +3270,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3230,6 +3303,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3269,6 +3343,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3310,6 +3385,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3369,6 +3445,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3395,6 +3472,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3446,6 +3524,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3485,6 +3564,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3536,6 +3616,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3562,6 +3643,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3596,6 +3678,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3626,6 +3709,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -3678,6 +3762,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3716,6 +3801,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3756,6 +3842,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3796,6 +3883,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3826,8 +3914,396 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
+    },
+    {
+      "name": "task-items-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:items": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:items": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/energy-board.md",
+            "rule_id": "ITM-18",
+            "message": "ITM-18: A presentation over item rows cannot be writable",
+            "view": "energy-board"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "task-items-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:items": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:items": "0.1.0",
+          "typedmark:queries": "0.1.0",
+          "typedmark:views": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "open-items-in-document-order",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Daily/2026-10-29.md",
+                "line": 5,
+                "text": "Renew the passport",
+                "status": " ",
+                "heading": null,
+                "depth": 0,
+                "parent_line": null
+              },
+              {
+                "path": "Daily/2026-10-30.md",
+                "line": 9,
+                "text": "Call the printer",
+                "status": " ",
+                "heading": "Today",
+                "depth": 0,
+                "parent_line": null
+              },
+              {
+                "path": "Daily/2026-10-30.md",
+                "line": 12,
+                "text": "Ask for a quote",
+                "status": " ",
+                "heading": "Today",
+                "depth": 1,
+                "parent_line": 9
+              },
+              {
+                "path": "Daily/2026-10-30.md",
+                "line": 21,
+                "text": "Quoted item",
+                "status": " ",
+                "heading": "Later",
+                "depth": 0,
+                "parent_line": null
+              },
+              {
+                "path": "Daily/2026-10-30.md",
+                "line": 26,
+                "text": "",
+                "status": " ",
+                "heading": "Later",
+                "depth": 0,
+                "parent_line": null
+              }
+            ],
+            "provenance": [
+              {
+                "path": null,
+                "line": null,
+                "text": null,
+                "status": null,
+                "heading": null,
+                "depth": null,
+                "parent_line": null
+              },
+              {
+                "path": null,
+                "line": null,
+                "text": null,
+                "status": null,
+                "heading": null,
+                "depth": null,
+                "parent_line": null
+              },
+              {
+                "path": null,
+                "line": null,
+                "text": null,
+                "status": null,
+                "heading": null,
+                "depth": null,
+                "parent_line": null
+              },
+              {
+                "path": null,
+                "line": null,
+                "text": null,
+                "status": null,
+                "heading": null,
+                "depth": null,
+                "parent_line": null
+              },
+              {
+                "path": null,
+                "line": null,
+                "text": null,
+                "status": null,
+                "heading": null,
+                "depth": null,
+                "parent_line": null
+              }
+            ]
+          }
+        },
+        {
+          "name": "custom-statuses-and-note-fields",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "type": "daily-note",
+                "path": "Daily/2026-10-29.md",
+                "line": 6,
+                "checked": true,
+                "status": "x",
+                "energy": 2
+              },
+              {
+                "type": "daily-note",
+                "path": "Daily/2026-10-30.md",
+                "line": 13,
+                "checked": true,
+                "status": "/",
+                "energy": 4
+              },
+              {
+                "type": "daily-note",
+                "path": "Daily/2026-10-30.md",
+                "line": 23,
+                "checked": true,
+                "status": "-",
+                "energy": 4
+              },
+              {
+                "type": "daily-note",
+                "path": "Daily/2026-10-29.md",
+                "line": 5,
+                "checked": false,
+                "status": " ",
+                "energy": 2
+              }
+            ],
+            "provenance": [
+              {
+                "type": null,
+                "path": null,
+                "line": null,
+                "checked": null,
+                "status": null,
+                "energy": {
+                  "path": "Daily/2026-10-29.md",
+                  "field": "energy",
+                  "source_backed": true
+                }
+              },
+              {
+                "type": null,
+                "path": null,
+                "line": null,
+                "checked": null,
+                "status": null,
+                "energy": {
+                  "path": "Daily/2026-10-30.md",
+                  "field": "energy",
+                  "source_backed": true
+                }
+              },
+              {
+                "type": null,
+                "path": null,
+                "line": null,
+                "checked": null,
+                "status": null,
+                "energy": {
+                  "path": "Daily/2026-10-30.md",
+                  "field": "energy",
+                  "source_backed": true
+                }
+              },
+              {
+                "type": null,
+                "path": null,
+                "line": null,
+                "checked": null,
+                "status": null,
+                "energy": {
+                  "path": "Daily/2026-10-29.md",
+                  "field": "energy",
+                  "source_backed": true
+                }
+              }
+            ]
+          }
+        },
+        {
+          "name": "items-ordered-limited-and-grouped",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "heading": null,
+                "text": "Book the venue",
+                "path": "Projects/Launch.md",
+                "line": 4
+              },
+              {
+                "heading": null,
+                "text": "Renew the passport",
+                "path": "Daily/2026-10-29.md",
+                "line": 5
+              },
+              {
+                "heading": null,
+                "text": "Pay the rent",
+                "path": "Daily/2026-10-29.md",
+                "line": 6
+              },
+              {
+                "heading": "Today",
+                "text": "Call the printer",
+                "path": "Daily/2026-10-30.md",
+                "line": 9
+              }
+            ],
+            "provenance": [
+              {
+                "heading": null,
+                "text": null,
+                "path": null,
+                "line": null
+              },
+              {
+                "heading": null,
+                "text": null,
+                "path": null,
+                "line": null
+              },
+              {
+                "heading": null,
+                "text": null,
+                "path": null,
+                "line": null
+              },
+              {
+                "heading": null,
+                "text": null,
+                "path": null,
+                "line": null
+              }
+            ],
+            "groups": [
+              {
+                "key": [
+                  null
+                ],
+                "rows": [
+                  {
+                    "heading": null,
+                    "text": "Book the venue",
+                    "path": "Projects/Launch.md",
+                    "line": 4
+                  },
+                  {
+                    "heading": null,
+                    "text": "Renew the passport",
+                    "path": "Daily/2026-10-29.md",
+                    "line": 5
+                  },
+                  {
+                    "heading": null,
+                    "text": "Pay the rent",
+                    "path": "Daily/2026-10-29.md",
+                    "line": 6
+                  }
+                ]
+              },
+              {
+                "key": [
+                  "Today"
+                ],
+                "rows": [
+                  {
+                    "heading": "Today",
+                    "text": "Call the printer",
+                    "path": "Daily/2026-10-30.md",
+                    "line": 9
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "item-predicate-needs-item-rows",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "ITM-14"
+        },
+        {
+          "name": "item-regex-on-integer-property",
+          "status": "passed",
+          "differences": [],
+          "error_rule": "ITM-16"
+        }
+      ]
     },
     {
       "name": "template-placeholders-valid",
@@ -3852,6 +4328,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3887,6 +4364,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3952,6 +4430,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3984,6 +4463,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4035,6 +4515,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4067,6 +4548,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4102,6 +4584,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4163,6 +4646,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4200,6 +4684,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4237,6 +4722,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4285,6 +4771,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4383,6 +4870,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -4417,6 +4905,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -4498,6 +4987,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4530,6 +5020,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4579,6 +5070,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4611,6 +5103,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4647,6 +5140,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4673,6 +5167,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4709,6 +5204,7 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4735,13 +5231,14 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     }
   ],
   "query_summary": {
-    "executed": 19,
-    "passed": 19,
+    "executed": 24,
+    "passed": 24,
     "failed": 0
   }
 }
