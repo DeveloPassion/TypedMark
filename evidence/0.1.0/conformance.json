@@ -1,8 +1,8 @@
 {
   "specification_revision": "a386e1de0d5730845a5f6836f75402bb6f9883df",
-  "adapter_revision": "b3e97e45c131a29604ebd1878543d6b0098a3f4b",
-  "started_at": "2026-10-30T13:44:31.896Z",
-  "finished_at": "2026-10-30T13:45:33.165Z",
+  "adapter_revision": "5f3d3837a9223b324356d7766c4ba66a20e3fa36",
+  "started_at": "2026-10-30T16:30:38.211Z",
+  "finished_at": "2026-10-30T16:31:24.506Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"

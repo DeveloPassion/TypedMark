@@ -565,3 +565,8 @@ golden vectors and five query cases; the corpus reports 113 discovered, 111
 passed and 24 queries passed, with the two precondition skips, and 1,942
 tooling tests pass. See
 [decision 043](../../docs/decisions/043-task-items.md).
+The view-command increment (specification `a386e1d`, adapter `5f3d383`) adds a
+read-only presenter and no golden vectors; the corpus still reports 113
+discovered, 111 passed and 24 queries passed, with the two precondition skips,
+and 1,947 tooling tests pass. See
+[decision 044](../../docs/decisions/044-view-command.md).
