@@ -585,3 +585,8 @@ changes two tree vectors and adds no golden vectors; the corpus reports 113
 discovered, 111 passed and 27 queries passed, with the two precondition skips,
 and 1,953 tooling tests pass. See
 [decision 047](../../docs/decisions/047-mapped-tree-parent.md).
+The view-performance increment (specification `98f3cb4`, adapter `38ca25a`)
+shares the relationship graph per collection model and adds no golden vectors;
+the corpus still reports 113 discovered, 111 passed and 27 queries passed, with
+the two precondition skips, and 1,953 tooling tests pass. See
+[decision 048](../../docs/decisions/048-view-performance.md).

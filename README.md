@@ -201,6 +201,9 @@ out. See the [skip decision](docs/decisions/046-skip-nonconforming-notes.md).
 prints a saved view read-only: tables, lists, cards, boards with lanes and rank,
 trees with context rows and rollups, calendars, timelines and item rows. See the
 [view-command decision](docs/decisions/044-view-command.md).
+Evaluations share one relationship graph per collection model, so a view over
+thousands of notes prints in seconds. See the
+[view performance decision](docs/decisions/048-view-performance.md).
 Writes follow the optional Edits and Renames contract: `edit` and `rename` keep
 untouched frontmatter text, rewrite every link that reached a moved note, and
 re-file notes whose storage reads an edited value. See the
