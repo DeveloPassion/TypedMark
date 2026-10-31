@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { readCollectionModel } from "../src/validator";
 import { SchemaRegistry } from "../src/schema-registry";
 import { validateViews } from "../src/views";
+import { evaluateQueryWithColumns } from "../src/query-engine";
 import { arrangeTree, rollUp, treeListMove, treeMove, viewRollups, viewTree, type RolledNode, type TreeNode } from "../src/tree-views";
 
 const specification = resolve(import.meta.dir, "../../TypedMarkSpecification");
@@ -168,4 +169,21 @@ test("own values win, context rows are not counted, and zero weights fall back t
   expect(rolled(rollUp(forest, rollups("min"), own, () => false))[0]).toBe("ctx score=2*");
   expect(rolled(rollUp(forest, rollups("max"), own, () => false))[0]).toBe("ctx score=6*");
   expect(rolled(rollUp(forest, rollups("count"), own, () => false))).toEqual(["ctx score=2*", "  a score=1", "  b score=1", "owned score=2*", "  c score=1"]);
+});
+
+test("a mapped parent reads each type's own field, for result and context rows (CM-583, CM-591)", () => {
+  const collectionRoot = join(specification, "schema/fixtures/golden/tree-view-valid/collection");
+  const model = readCollectionModel({ collectionRoot, schemaDirectory });
+  const views = validateViews(collectionRoot, ".typedmark", model, new SchemaRegistry(schemaDirectory));
+  const source = views.sources.get("view:goal-breakdown")!;
+  const tasksOnly = { ...source.query!, note_types: ["task"] };
+  const evaluation = evaluateQueryWithColumns(model, tasksOnly);
+  // Launch's own parent is read through the project mapping, so the goal shows above it.
+  expect(outline(viewTree(model, tasksOnly, evaluation, { parent: "parent", context: "ancestors" }))).toEqual([
+    "Goals/Grow.md (context)",
+    "  Projects/Launch.md (context)",
+    "    Tasks/Design.md",
+    "      Tasks/Sketch.md",
+    "    Tasks/Review.md",
+  ]);
 });

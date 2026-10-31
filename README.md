@@ -184,6 +184,9 @@ only (`rollUp`, `viewRollups`). See the
 Trees over a list of parent links are writable too: `treeListMove` moves one
 occurrence by putting the new parent's link in the old parent's slot. See the
 [list-parent moves decision](docs/decisions/041-list-parent-tree-moves.md).
+A tree's parent may also be a `mapped_field`, so each note type reads its own
+parent field, as in goals, projects and tasks. See the
+[mapped tree parent decision](docs/decisions/047-mapped-tree-parent.md).
 Queries may return one read-only row per checklist item with `rows: items`
 (`typedmark:items`): `item` predicates and projections read each item's text,
 status, line, nesting and heading. See the

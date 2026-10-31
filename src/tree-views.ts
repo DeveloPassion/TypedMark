@@ -1,6 +1,7 @@
 import type { CollectionModel } from "./collection-model";
 import { parseNoteLink, resolveNoteLink } from "./note-links";
 import { compareUnicodeCodePoints } from "./order";
+import { matchesNoteType } from "./reuse";
 import type { Descriptor, QueryEvaluation } from "./query-engine";
 
 export interface TreeRow {
@@ -98,7 +99,13 @@ export function viewTree(
 ): TreeNode[] {
   const notes = new Map(model.notes.map((note) => [note.path, note]));
   const column = query.select.find((candidate) => candidate.as === tree.parent);
-  const field = column?.kind === "field" ? column.field : undefined;
+  // A context row reads its parent through the field, or through the mapped source for its type (CM-591).
+  const fieldFor = (noteType: string): string | undefined =>
+    column?.kind === "field"
+      ? column.field
+      : column?.kind === "mapped_field"
+        ? column.sources.find((source) => source.note_types.some((type) => matchesNoteType(model.schemas, noteType, type)))?.field
+        : undefined;
   const resolved = (source: string, value: unknown): string[] =>
     (Array.isArray(value) ? value : [value]).flatMap((item) => {
       const link = typeof item === "string" ? parseNoteLink(item) : undefined;
@@ -118,6 +125,7 @@ export function viewTree(
     contextParents: (path) => {
       const note = notes.get(path);
       if (!note || note.values.deleted === true) return undefined;
+      const field = fieldFor(note.noteType);
       return field ? resolved(path, read(note.values, field)) : [];
     },
   });

@@ -303,12 +303,12 @@ export function validateViews(root: string, metadata: string, model: CollectionM
           fail("CM-601", "The timeline end must project another date or datetime field");
         if (timeline.writable === true && !columns.every(assignable)) fail("CM-605", "A writable timeline endpoint must project an assignable stored field");
       }
-      // Tree parents are projected link fields; writable trees move an assignable link or one item of a list (CM-583, CM-593).
+      // Tree parents are projected link fields, or a mapped link per type; writable trees move an assignable link or one item of a list (CM-583, CM-593).
       if (artifact.data.presentation.layout === "tree") {
         const tree = artifact.data.presentation.tree;
         const definitions = contract.columns.get(tree.parent);
         const linked = (definition: FieldDefinition) => definition.type === "link" || (definition.type === "list" && definition.items?.type === "link");
-        if (projected(tree.parent)?.kind !== "field" || !definitions?.length || !definitions.every(linked))
+        if (!["field", "mapped_field"].includes(projected(tree.parent)?.kind ?? "") || !definitions?.length || !definitions.every(linked))
           fail("CM-583", "The tree parent column must project a link field");
         if (tree.writable === true && !assignable(tree.parent)) fail("CM-593", "A writable tree parent must project an assignable link or list-of-links field");
         // Rollups derive presented number columns from children (CM-609 to CM-611, CM-615).
