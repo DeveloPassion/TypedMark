@@ -147,3 +147,11 @@ test("a view shows the remaining rows and says which notes were left out (CM-621
   expect(table.skipped).toEqual(["Tasks/E.md"]);
   expect(renderPresentation(table)).toContain("1 note left out: Tasks/E.md");
 });
+
+test("a long list of left-out notes names the first five", () => {
+  const presentation = { view: "v", label: "V", layout: "list", timezone: "UTC", fields: [{ column: "path", label: "path" }], rows: [] };
+  const skipped = Array.from({ length: 7 }, (_, index) => `N${index}.md`);
+  expect(renderPresentation({ ...presentation, skipped })).toContain(
+    "7 notes left out: N0.md, N1.md, N2.md, N3.md, N4.md, and 2 more (run validate for the full list)",
+  );
+});

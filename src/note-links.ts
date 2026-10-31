@@ -258,6 +258,55 @@ function inlineLexer(parser: Marked): Lexer {
 }
 
 type Resolution = { kind: "note" | "asset"; path: string } | { kind: "unresolved" };
+
+// Lookups by path, name, id and alias, built once per model instead of scanning every note for every link.
+interface LinkIndex {
+  size: string;
+  paths: Set<string>;
+  documentNames: Map<string, string[]>;
+  noteNames: Map<string, ManagedNote[]>;
+  ids: Map<string, ManagedNote[]>;
+  aliases: Map<string, ManagedNote[]>;
+  assetNames: Map<string, string[]>;
+}
+const linkIndexes = new WeakMap<CollectionModel, LinkIndex>();
+function linkIndex(model: CollectionModel): LinkIndex {
+  const size = `${model.documents.length}/${model.notes.length}/${model.assets.size}`;
+  const cached = linkIndexes.get(model);
+  if (cached?.size === size) return cached;
+  const push = <T>(map: Map<string, T[]>, key: string, value: T) => {
+    const list = map.get(key);
+    if (list) list.push(value);
+    else map.set(key, [value]);
+  };
+  const index: LinkIndex = {
+    size,
+    paths: new Set(),
+    documentNames: new Map(),
+    noteNames: new Map(),
+    ids: new Map(),
+    aliases: new Map(),
+    assetNames: new Map(),
+  };
+  for (const document of model.documents) {
+    index.paths.add(document.path);
+    push(index.documentNames, posix.basename(document.path, ".md"), document.path);
+  }
+  for (const note of model.notes) {
+    push(index.noteNames, posix.basename(note.path, ".md"), note);
+    if (typeof note.stored.id === "string") push(index.ids, note.stored.id.normalize("NFC"), note);
+    if (Array.isArray(note.stored.aliases)) {
+      const aliases = new Set(
+        note.stored.aliases.filter((alias: unknown): alias is string => typeof alias === "string").map((alias) => alias.normalize("NFC")),
+      );
+      for (const alias of aliases) push(index.aliases, alias, note);
+    }
+  }
+  for (const asset of model.assets) push(index.assetNames, posix.basename(asset), asset);
+  linkIndexes.set(model, index);
+  return index;
+}
+
 export function resolveNoteLink(
   link: Pick<ParsedNoteLink, "form" | "target" | "embed">,
   source: string,
@@ -272,10 +321,11 @@ export function resolveNoteLink(
     if (path === ".." || path.startsWith("../") || path.startsWith("/")) throw new NoteLinkError("NL-16", "Link escapes the selected collection root");
     if (!path.endsWith(".md") && model.assets.has(path)) return { kind: "asset", path };
     const notePath = path.endsWith(".md") ? path : `${path}.md`;
-    return model.documents.some((note) => note.path === notePath) ? { kind: "note", path: notePath } : { kind: "unresolved" };
+    return linkIndex(model).paths.has(notePath) ? { kind: "note", path: notePath } : { kind: "unresolved" };
   }
-  const managed = model.notes.filter((note) => !targets || targets(note));
-  const ids = managed.filter((note) => typeof note.stored.id === "string" && note.stored.id.normalize("NFC") === target);
+  const index = linkIndex(model);
+  const managed = (notes: ManagedNote[] = []) => (targets ? notes.filter(targets) : notes);
+  const ids = managed(index.ids.get(target));
   if (ids.length > 1) throw new NoteLinkError("NL-19", "Ambiguous note id");
   if (ids.length === 1) return { kind: "note", path: ids[0]!.path };
   const choose = (paths: string[], kind: "note" | "asset"): Resolution | undefined => {
@@ -287,25 +337,16 @@ export function resolveNoteLink(
     if (closest.length !== 1) throw new NoteLinkError("NL-19", "Ambiguous note or asset name");
     return { kind, path: closest[0]! };
   };
-  const documents = targets ? managed : model.documents;
-  const names = documents.filter((note) => posix.basename(note.path, ".md") === target).map((note) => note.path);
+  const names = targets ? managed(index.noteNames.get(target)).map((note) => note.path) : (index.documentNames.get(target) ?? []);
   const byName = choose(names, "note");
   if (byName) return byName;
-  const aliases = managed.filter(
-    (note) =>
-      Array.isArray(note.stored.aliases) && note.stored.aliases.some((alias: unknown) => typeof alias === "string" && alias.normalize("NFC") === target),
-  );
+  const aliases = managed(index.aliases.get(target));
   return (
     choose(
       aliases.map((note) => note.path),
       "note",
     ) ??
-    (target.includes(".")
-      ? choose(
-          [...model.assets].filter((path) => posix.basename(path) === target),
-          "asset",
-        )
-      : undefined) ?? { kind: "unresolved" }
+    (target.includes(".") ? choose(index.assetNames.get(target) ?? [], "asset") : undefined) ?? { kind: "unresolved" }
   );
 }
 

@@ -315,7 +315,12 @@ export function renderPresentation(presentation: Presentation): string {
       else out.push(...presentation.rows!.map((row) => `- ${line(row)}`));
   }
   // Say how many notes were left out rather than hiding them (CM-621).
-  if (presentation.skipped?.length)
-    out.push("", `${presentation.skipped.length} note${presentation.skipped.length === 1 ? "" : "s"} left out: ${presentation.skipped.join(", ")}`);
+  // Long lists name the first few; `validate` reports every note with its findings.
+  const skipped = presentation.skipped ?? [];
+  if (skipped.length) {
+    const shown = skipped.slice(0, 5).join(", ");
+    const more = skipped.length > 5 ? `, and ${skipped.length - 5} more (run validate for the full list)` : "";
+    out.push("", `${skipped.length} note${skipped.length === 1 ? "" : "s"} left out: ${shown}${more}`);
+  }
   return `${out.join("\n").trimEnd()}\n`;
 }

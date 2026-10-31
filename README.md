@@ -204,6 +204,8 @@ trees with context rows and rollups, calendars, timelines and item rows. See the
 Evaluations share one relationship graph per collection model, so a view over
 thousands of notes prints in seconds. See the
 [view performance decision](docs/decisions/048-view-performance.md).
+Name, id and alias links resolve through an index built once per collection
+model. See the [link name index decision](docs/decisions/049-link-name-index.md).
 Writes follow the optional Edits and Renames contract: `edit` and `rename` keep
 untouched frontmatter text, rewrite every link that reached a moved note, and
 re-file notes whose storage reads an edited value. See the
