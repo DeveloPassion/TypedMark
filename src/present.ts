@@ -109,19 +109,29 @@ function arrange(model: CollectionModel, data: Data, query: Descriptor, evaluati
       const tree = presentation.tree as Data;
       const forest = viewTree(model, query, evaluation, { parent: tree.parent, context: tree.context });
       const rolled = tree.rollups ? viewRollups(model, query, evaluation, forest, tree.rollups) : undefined;
-      // A context row presents the view's projections evaluated on its own note (CM-592).
-      const context = (path: string): Row => {
-        try {
-          const single = evaluateQueryWithColumns(model, {
-            specification_version: query.specification_version,
-            where: { kind: "path", operator: "equals", value: path },
-            select: query.select,
-          } as Descriptor);
-          return presented(single.result.rows[0] ?? {});
-        } catch {
-          return presented({ path });
+      // A context row presents the view's projections evaluated on its own note (CM-592), all in one query.
+      const contextPaths: string[] = [];
+      const collect = (nodes: TreeNode[]) => {
+        for (const node of nodes) {
+          if (node.context && !contextPaths.includes(node.path)) contextPaths.push(node.path);
+          collect(node.children);
         }
       };
+      collect(forest);
+      const contextValues = new Map<string, Row>();
+      if (contextPaths.length) {
+        try {
+          const evaluated = evaluateQueryWithColumns(model, {
+            specification_version: query.specification_version,
+            where: { kind: "any", predicates: contextPaths.map((path) => ({ kind: "path", operator: "equals", value: path })) },
+            select: query.select,
+          } as Descriptor);
+          evaluated.paths.forEach((path, index) => contextValues.set(path, presented(evaluated.result.rows[index]!)));
+        } catch {
+          // Projections that do not apply to a context row's type leave only its path.
+        }
+      }
+      const context = (path: string): Row => contextValues.get(path) ?? presented({ path });
       const node = (tree: TreeNode | RolledNode): PresentedTreeNode => {
         const values = tree.context ? context(tree.path) : { ...byPath.get(tree.path)!.values };
         const derived: string[] = [];

@@ -104,6 +104,9 @@ function fail(rule: string, message: string, unavailable?: QueryUnavailability):
 }
 export const QUERY_VERSION = "0.1.0";
 
+// The graph depends only on the model, which evaluation never changes; one build serves every query over it.
+const graphs = new WeakMap<CollectionModel, ReturnType<typeof buildRelationshipGraph>>();
+
 export function parseQuery(input: unknown, registry: SchemaRegistry): Descriptor {
   const errors = registry.validate("query.schema.json", input);
   if (errors.length) fail("CM-301", errors.map((error) => `${error.instancePath} ${error.message}`).join("; "));
@@ -389,7 +392,8 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     }
   }
 
-  const graph = buildRelationshipGraph(model, matchesType);
+  let graph = graphs.get(model);
+  if (!graph) graphs.set(model, (graph = buildRelationshipGraph(model, matchesType)));
   const graphFailure = (failure: NoteLinkError): never => {
     const issue = failure.schemaIssue;
     fail(
