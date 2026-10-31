@@ -1,8 +1,8 @@
 {
-  "specification_revision": "e151b90c52f88118281114d4e8b68c2cb9f2a13b",
-  "adapter_revision": "c8d50d66cce932cbfb82a7b410dafcc08ace8e23",
-  "started_at": "2026-10-31T06:02:41.310Z",
-  "finished_at": "2026-10-31T06:03:15.542Z",
+  "specification_revision": "98f3cb45c94931e8fa0e30d7ea9912a254bbf30a",
+  "adapter_revision": "3224d49eeaa4de3f23a77e1abf7e0be7dc69b175",
+  "started_at": "2026-10-31T06:10:33.118Z",
+  "finished_at": "2026-10-31T06:11:09.740Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -4541,6 +4541,14 @@
         },
         "valid": false,
         "results": [
+          {
+            "code": "invalid_view",
+            "severity": "error",
+            "path": ".typedmark/views/mapped-text-parent.md",
+            "rule_id": "CM-583",
+            "message": "CM-583: The tree parent column must project a link field",
+            "view": "mapped-text-parent"
+          },
           {
             "code": "invalid_view",
             "severity": "error",

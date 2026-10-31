@@ -580,3 +580,8 @@ query cases from failures into results with a skipped list and adds one case;
 the corpus reports 113 discovered, 111 passed and 27 queries passed, with the
 two precondition skips, and 1,952 tooling tests pass. See
 [decision 046](../../docs/decisions/046-skip-nonconforming-notes.md).
+The mapped-tree-parent increment (specification `98f3cb4`, adapter `3224d49`)
+changes two tree vectors and adds no golden vectors; the corpus reports 113
+discovered, 111 passed and 27 queries passed, with the two precondition skips,
+and 1,953 tooling tests pass. See
+[decision 047](../../docs/decisions/047-mapped-tree-parent.md).
