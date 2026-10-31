@@ -191,6 +191,9 @@ status, line, nesting and heading. See the
 Item rows also expose `links`, the notes an item links to, so a query can list
 the items that mention a project. See the
 [item-links decision](docs/decisions/045-item-links.md).
+A note whose own values or links cannot be resolved no longer fails a query:
+it is left out and listed in `skipped`, and views say how many notes were left
+out. See the [skip decision](docs/decisions/046-skip-nonconforming-notes.md).
 `bun src/cli.ts view <collection> <view-id> --schemas <dir> [--format text|json]`
 prints a saved view read-only: tables, lists, cards, boards with lanes and rank,
 trees with context rows and rollups, calendars, timelines and item rows. See the

@@ -69,6 +69,8 @@ export interface QueryResult {
   rows: Row[];
   provenance: Array<Record<string, Provenance | null>>;
   groups?: Array<{ key: unknown[]; rows: Row[] }>;
+  /** Notes left out because their own model could not be resolved, in path order; absent when none (CM-619, CM-620). */
+  skipped?: string[];
 }
 export interface QueryEvaluation {
   result: QueryResult;
@@ -376,12 +378,14 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const admitted = (type: string, types?: string[]) => !types || types.some((requested) => matchesType(type, requested));
   const usedTypes = new Set(analysis.usedTypes);
   const modeledPaths = new Set(model.notes.map((note) => note.path));
+  // A note that cannot provide its own model is left out and reported, not fatal (CM-619, CM-620).
+  const skipped = new Set<string>();
   for (const document of model.documents) {
     if (
       !modeledPaths.has(document.path) &&
       document.candidates?.some((type) => model.schemas.has(type) && !model.schemas.get(type)!.abstract && admitted(type, query.note_types))
     ) {
-      fail("CM-308", `${document.path} cannot provide an admitted effective model`);
+      skipped.add(document.path);
     }
   }
 
@@ -399,13 +403,21 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     );
   };
   const byPath = new Map(model.notes.map((note) => [note.path, note]));
-  const ensureModel = (note: ManagedNote) => {
+  // An unresolvable schema still fails the query (CM-308); a note's own values or links only leave it out (CM-619).
+  const usable = (note: ManagedNote): boolean => {
     usedTypes.add(note.noteType);
     requireSchemaModel(model, note.noteType);
-    if (graph.failures.has(note.path)) graphFailure(graph.failures.get(note.path)![0]!);
-    if (note.problems.some((problem) => ["invalid_field_value", "missing_required_field", "missing_declared_field"].includes(problem.code))) {
-      fail("CM-308", `${note.path} has no conforming effective field model`);
+    const failures = graph.failures.get(note.path) ?? [];
+    const unavailable = failures.find((failure) => failure.schemaIssue?.kind === "unavailable");
+    if (unavailable) graphFailure(unavailable);
+    if (
+      failures.length ||
+      note.problems.some((problem) => ["invalid_field_value", "missing_required_field", "missing_declared_field"].includes(problem.code))
+    ) {
+      skipped.add(note.path);
+      return false;
     }
+    return true;
   };
   const match = (note: ManagedNote, predicate: Predicate, item?: TaskItem): boolean => {
     if (predicate.kind === "all" || predicate.kind === "any") {
@@ -439,18 +451,17 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     if (predicate.kind === "relationship") {
       let related: ManagedNote[];
       if (predicate.direction === "inbound") {
-        if (graph.failures.size)
-          graphFailure(
-            [...graph.failures.values()].flat().find((failure) => failure.schemaIssue?.kind === "unavailable") ?? graph.failures.values().next().value![0]!,
-          );
+        // Notes whose links cannot be resolved might point here; they are left out of the traversal (CM-619).
+        for (const [path, failures] of graph.failures) {
+          const unavailable = failures.find((failure) => failure.schemaIssue?.kind === "unavailable");
+          if (unavailable) graphFailure(unavailable);
+          skipped.add(path);
+        }
         related = model.notes.filter((source) => graph.targets.get(source.path)?.[predicate.relationship].has(note.path));
       } else related = [...(graph.targets.get(note.path)?.[predicate.relationship] ?? [])].map((path) => byPath.get(path)!);
       if (predicate.context_note === true) related = related.filter((target) => target.path === contextNote);
       related = related.filter((target) => admitted(target.noteType, predicate.note_types));
-      related = related.filter((target) => {
-        ensureModel(target);
-        return !predicate.where || match(target, predicate.where);
-      });
+      related = related.filter((target) => usable(target) && (!predicate.where || match(target, predicate.where)));
       const minimum = predicate.count ? (predicate.count.min ?? 0) : 1;
       return related.length >= minimum && related.length <= (predicate.count?.max ?? Infinity);
     }
@@ -548,7 +559,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const entries = model.notes
     .filter((note) => (query.include_deleted || note.values.deleted !== true) && admitted(note.noteType, query.note_types))
     .flatMap((note): Array<{ note: ManagedNote; item?: TaskItem }> => {
-      ensureModel(note);
+      if (!usable(note)) return [];
       return query.rows === "items"
         ? taskItems(note.body, note.bodyLine).map((item) => ({ note, item: { ...item, links: itemLinks(note.path, item.text) } }))
         : [{ note, item: undefined }];
@@ -586,6 +597,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const rows = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, structuredClone(entry.cells[column.as]!.value)])));
   const provenance = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.source])));
   const result: QueryResult = { evaluation: queryCompleteness(model, query, usedTypes), rows, provenance };
+  if (skipped.size) result.skipped = [...skipped].sort(compareUnicodeCodePoints);
   if (query.group_by) {
     const groups: Array<{ key: unknown[]; rows: Row[]; cells: Cell[] }> = [];
     retained.forEach((entry, index) => {

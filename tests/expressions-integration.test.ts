@@ -57,7 +57,11 @@ test.each([
   write(root, "People/Ada.md", { note_type: "person", full, last });
   const loaded = model(root);
   expect(loaded.report.results).toContainEqual(expect.objectContaining({ code: "invalid_field_value", field: "full", rule_id: rule, path: "People/Ada.md" }));
-  expect(() => evaluateQuery(loaded, { specification_version: "0.1.0", note_types: ["person"], select: [{ kind: "path", as: "path" }] })).toThrow("CM-308");
+  // The invalid note is left out and reported, not fatal (CM-619, CM-620).
+  expect(evaluateQuery(loaded, { specification_version: "0.1.0", note_types: ["person"], select: [{ kind: "path", as: "path" }] })).toMatchObject({
+    rows: [],
+    skipped: ["People/Ada.md"],
+  });
 });
 
 test("reference validation uses the final composition and reports the effective schema", () => {

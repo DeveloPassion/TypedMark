@@ -271,7 +271,7 @@ test("reports malformed body destination spellings as portable NL-6 findings wit
   for (const finding of report.results) expect(finding).not.toHaveProperty("field");
 });
 
-test.each(["warn", "off"])("%s severity cannot unlock a query that depends on invalid body links", (severity) => {
+test.each(["warn", "off"])("%s severity still leaves a note with invalid body links out of dependent queries", (severity) => {
   const root = collection("[invalid](N%GG.md) [invalid fragment](N.md#bad%GG)", {
     validation_defaults: { invalid_note_link: severity },
   });
@@ -293,7 +293,7 @@ test.each(["warn", "off"])("%s severity cannot unlock a query that depends on in
   const before = sourceTree(root);
   try {
     const input = { collectionRoot: root, schemaDirectory, queryVersion: "0.1.0" };
-    expect(() =>
+    expect(
       queryCollection({
         ...input,
         query: {
@@ -303,7 +303,7 @@ test.each(["warn", "off"])("%s severity cannot unlock a query that depends on in
           where: { kind: "relationship", relationship: "related_to", count: { min: 1 } },
         },
       }),
-    ).toThrow("CM-307: NL-6:");
+    ).toMatchObject({ rows: [], skipped: [sourcePath] });
     expect(
       queryCollection({
         ...input,

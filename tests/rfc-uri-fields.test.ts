@@ -196,7 +196,7 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-test("managed URI failures report FDR-140 and block dependent queries without rewriting the note", () => {
+test("managed URI failures report FDR-140 and leave the note out of dependent queries without rewriting it", () => {
   const root = collection({ source: "https://example.test/bad%G0" }, { source: uri });
   const before = readFileSync(join(root, "A.md"));
   const report = validateCollection({ collectionRoot: root, schemaDirectory });
@@ -209,14 +209,14 @@ test("managed URI failures report FDR-140 and block dependent queries without re
       field: "source",
     }),
   );
-  expect(() =>
+  expect(
     queryCollection({
       collectionRoot: root,
       schemaDirectory,
       queryVersion: "0.1.0",
       query: { specification_version: "0.1.0", select: [{ kind: "field", field: "source", as: "source" }] },
     }),
-  ).toThrow("CM-308");
+  ).toMatchObject({ rows: [], skipped: ["A.md"] });
   expect(readFileSync(join(root, "A.md"))).toEqual(before);
 });
 

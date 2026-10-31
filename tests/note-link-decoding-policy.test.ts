@@ -179,9 +179,9 @@ test.each(["error", "warn", "off"])("invalid UTF-8 creates no graph edges or usa
     expect(graph.targets.get(sourcePath)!.related_to.size).toBe(0);
     expect(graph.failures.get(sourcePath)?.map(({ rule_id }) => rule_id)).toEqual(["NL-11", "NL-11"]);
     const input = { collectionRoot: root, schemaDirectory, queryVersion: "0.1.0" };
-    expect(() =>
+    expect(
       queryCollection({ ...input, query: { specification_version: "0.1.0", note_types: ["source"], select: [{ kind: "path", as: "path" }] } }),
-    ).toThrow("CM-307: NL-11:");
+    ).toMatchObject({ rows: [], skipped: [sourcePath] });
     expect(
       queryCollection({ ...input, query: { specification_version: "0.1.0", note_types: ["target"], select: [{ kind: "path", as: "path" }] } }).rows,
     ).toEqual([{ path: "Notes/N.md" }]);

@@ -55,6 +55,8 @@ export interface Presentation {
   days?: Array<{ day: string; entries: Array<PresentedRow & { dimension: string }> }>;
   spans?: Array<PresentedRow & { start: string; end: string }>;
   backlogs?: Record<string, PresentedRow[]>;
+  /** Notes the query left out because their own model could not be resolved (CM-619 to CM-621). */
+  skipped?: string[];
 }
 
 /**
@@ -87,7 +89,14 @@ function arrange(model: CollectionModel, data: Data, query: Descriptor, evaluati
     ...(evaluation.lines ? { line: evaluation.lines[index] } : {}),
     values: presented(values),
   }));
-  const base: Presentation = { view: data.view, label: data.label ?? data.view, layout: presentation.layout, timezone, fields };
+  const base: Presentation = {
+    view: data.view,
+    label: data.label ?? data.view,
+    layout: presentation.layout,
+    timezone,
+    fields,
+    ...(evaluation.result.skipped ? { skipped: evaluation.result.skipped } : {}),
+  };
   // Calendar and timeline placement keys rows by index, so item rows of one note stay distinct.
   const dated = evaluation.result.rows.map((values, index) => ({ path: String(index), values }));
   const byPath = new Map<string, PresentedRow>();
@@ -295,5 +304,8 @@ export function renderPresentation(presentation: Presentation): string {
         for (const row of presentation.rows!) out.push(...presentation.fields.map(({ column, label }) => `${label}: ${show(row.values[column])}`), "");
       else out.push(...presentation.rows!.map((row) => `- ${line(row)}`));
   }
+  // Say how many notes were left out rather than hiding them (CM-621).
+  if (presentation.skipped?.length)
+    out.push("", `${presentation.skipped.length} note${presentation.skipped.length === 1 ? "" : "s"} left out: ${presentation.skipped.join(", ")}`);
   return `${out.join("\n").trimEnd()}\n`;
 }

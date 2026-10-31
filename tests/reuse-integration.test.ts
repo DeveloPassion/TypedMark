@@ -65,7 +65,7 @@ test("inherited conditions preserve explicit null and invalidate query values", 
   expect(loaded.report.results).toContainEqual(
     expect.objectContaining({ code: "missing_required_field", rule_id: "NTS-90", path: "Notes/A.md", field: "reason" }),
   );
-  expect(() => evaluateQuery(loaded, query)).toThrow("CM-308");
+  expect(evaluateQuery(loaded, query)).toMatchObject({ rows: [], skipped: ["Notes/A.md"] });
 });
 
 test("validates condition references after composition, including removed fields", () => {

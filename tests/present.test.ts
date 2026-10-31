@@ -138,3 +138,12 @@ test("an invalid or unknown view is reported, not partly shown", () => {
   expect(() => presentView(golden("task-items-invalid"), schemaDirectory, "energy-board")).toThrow("ITM-18");
   expect(() => presentView(golden("task-items-valid"), schemaDirectory, "missing")).toThrow("CM-409");
 });
+
+test("a view shows the remaining rows and says which notes were left out (CM-621)", () => {
+  const root = collection({ table: { query, presentation: { layout: "table", fields: [{ column: "path" }] } } });
+  writeFileSync(join(root, "Tasks/E.md"), "---\nnote_type: task\nrank: high\n---\n");
+  const table = presentView(root, schemaDirectory, "table");
+  expect(table.rows!.map((row) => row.path)).toEqual(["Tasks/A.md", "Tasks/B.md", "Tasks/C.md", "Tasks/D.md"]);
+  expect(table.skipped).toEqual(["Tasks/E.md"]);
+  expect(renderPresentation(table)).toContain("1 note left out: Tasks/E.md");
+});

@@ -190,7 +190,7 @@ test("a suppressed nested syntax failure does not hide the later sibling's numer
   expect(report.valid).toBe(false);
 });
 
-test("suppressing all note-link findings leaves dependent query evaluation blocked", () => {
+test("suppressing all note-link findings still leaves the note out of dependent queries", () => {
   const root = collection(
     { details: object({ references: list(link()) }) },
     {
@@ -200,7 +200,7 @@ test("suppressing all note-link findings leaves dependent query evaluation block
   );
   const before = sourceTree(root);
   try {
-    expect(() =>
+    expect(
       queryCollection({
         collectionRoot: root,
         schemaDirectory,
@@ -211,7 +211,7 @@ test("suppressing all note-link findings leaves dependent query evaluation block
           select: [{ kind: "path", as: "path" }],
         },
       }),
-    ).toThrow("CM-307: NL-6:");
+    ).toMatchObject({ rows: [], skipped: [sourcePath] });
     expect(validate(root)).toMatchObject({ valid: true, evaluation: "complete", results: [] });
   } finally {
     expect(sourceTree(root)).toEqual(before);

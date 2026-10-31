@@ -187,17 +187,15 @@ test.each(["error", "warn", "off"])("invalid raw fragments stay out of relations
     const report = validateCollection(input);
     const graph = buildRelationshipGraph(readCollectionModel(input), (a, b) => a === b);
     const queryInput = { ...input, queryVersion: "0.1.0" };
-    const dependentError = caught(() =>
-      queryCollection({
-        ...queryInput,
-        query: {
-          specification_version: "0.1.0",
-          note_types: ["source"],
-          select: [{ kind: "path", as: "path" }],
-          where: { kind: "relationship", relationship: "related_to", count: { min: 1 } },
-        },
-      }),
-    );
+    const dependent = queryCollection({
+      ...queryInput,
+      query: {
+        specification_version: "0.1.0",
+        note_types: ["source"],
+        select: [{ kind: "path", as: "path" }],
+        where: { kind: "relationship", relationship: "related_to", count: { min: 1 } },
+      },
+    });
     expect(report).toMatchObject({ valid: severity !== "error", evaluation: "complete" });
     expect(report.results).toHaveLength(severity === "off" ? 0 : 2);
     expect(report.results).toEqual(
@@ -211,8 +209,8 @@ test.each(["error", "warn", "off"])("invalid raw fragments stay out of relations
     expect(report.results.filter((finding) => finding.field === undefined)).toHaveLength(severity === "off" ? 0 : 1);
     expect(graph.targets.get(sourcePath)!.related_to).toEqual(new Set(["Notes/Good.md"]));
     expect(graph.failures.get(sourcePath)?.map(({ rule_id }) => rule_id)).toEqual(["NL-6", "NL-6"]);
-    expect(dependentError).toBeInstanceOf(Error);
-    expect((dependentError as Error).message).toContain("CM-307: NL-6:");
+    // The source with invalid links is left out of the dependent query (CM-619, CM-620).
+    expect(dependent).toMatchObject({ rows: [], skipped: [sourcePath] });
     expect(
       queryCollection({
         ...queryInput,
