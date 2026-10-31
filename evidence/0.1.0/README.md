@@ -575,3 +575,8 @@ query cases to the task-items vector; the corpus reports 113 discovered, 111
 passed and 26 queries passed, with the two precondition skips, and 1,948
 tooling tests pass. See
 [decision 045](../../docs/decisions/045-item-links.md).
+The skip increment (specification `e151b90`, adapter `c8d50d6`) turns five
+query cases from failures into results with a skipped list and adds one case;
+the corpus reports 113 discovered, 111 passed and 27 queries passed, with the
+two precondition skips, and 1,952 tooling tests pass. See
+[decision 046](../../docs/decisions/046-skip-nonconforming-notes.md).

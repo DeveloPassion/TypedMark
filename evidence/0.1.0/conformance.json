@@ -1,8 +1,8 @@
 {
-  "specification_revision": "ba5bf5ce31e02d64ab9edc3b62dfafdeb1b40c8f",
-  "adapter_revision": "06d05a5f232a877bc70375260f98bd0fc2650290",
-  "started_at": "2026-10-30T17:53:03.854Z",
-  "finished_at": "2026-10-30T17:53:39.338Z",
+  "specification_revision": "e151b90c52f88118281114d4e8b68c2cb9f2a13b",
+  "adapter_revision": "c8d50d66cce932cbfb82a7b410dafcc08ace8e23",
+  "started_at": "2026-10-31T06:02:41.310Z",
+  "finished_at": "2026-10-31T06:03:15.542Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -913,10 +913,18 @@
       },
       "query_results": [
         {
-          "name": "invalid-core-fields-block-query-model",
+          "name": "invalid-core-fields-leave-notes-out",
           "status": "passed",
           "differences": [],
-          "error_rule": "CM-308"
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [],
+            "provenance": [],
+            "skipped": [
+              "Bad.md",
+              "Unsafe.md"
+            ]
+          }
         }
       ]
     },
@@ -2082,10 +2090,17 @@
       },
       "query_results": [
         {
-          "name": "suppressed-unencoded-fragments-block-query-model",
+          "name": "suppressed-unencoded-fragments-leave-the-note-out",
           "status": "passed",
           "differences": [],
-          "error_rule": "CM-307"
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [],
+            "provenance": [],
+            "skipped": [
+              "Notes/Source.md"
+            ]
+          }
         }
       ]
     },
@@ -2215,10 +2230,17 @@
       },
       "query_results": [
         {
-          "name": "suppressed-malformed-links-block-query-model",
+          "name": "suppressed-malformed-links-leave-the-note-out",
           "status": "passed",
           "differences": [],
-          "error_rule": "CM-307"
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [],
+            "provenance": [],
+            "skipped": [
+              "Notes/Source.md"
+            ]
+          }
         }
       ]
     },
@@ -2348,10 +2370,17 @@
       },
       "query_results": [
         {
-          "name": "suppressed-non-utf8-links-block-query-model",
+          "name": "suppressed-non-utf8-links-leave-the-note-out",
           "status": "passed",
           "differences": [],
-          "error_rule": "CM-307"
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [],
+            "provenance": [],
+            "skipped": [
+              "Notes/Source.md"
+            ]
+          }
         }
       ]
     },
@@ -4899,10 +4928,39 @@
       },
       "query_results": [
         {
-          "name": "invalid-uri-value-blocks-admitted-note-model",
+          "name": "invalid-uri-value-leaves-the-note-out",
           "status": "passed",
           "differences": [],
-          "error_rule": "CM-308"
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [],
+            "provenance": [],
+            "skipped": [
+              "Notes/URI.md"
+            ]
+          }
+        },
+        {
+          "name": "valid-notes-remain-beside-skipped-ones",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Notes/N [draft].md"
+              }
+            ],
+            "provenance": [
+              {
+                "path": null
+              }
+            ],
+            "skipped": [
+              "Notes/Source.md",
+              "Notes/URI.md"
+            ]
+          }
         }
       ]
     },
@@ -5261,8 +5319,8 @@
     }
   ],
   "query_summary": {
-    "executed": 26,
-    "passed": 26,
+    "executed": 27,
+    "passed": 27,
     "failed": 0
   }
 }
