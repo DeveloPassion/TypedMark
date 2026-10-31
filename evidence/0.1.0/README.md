@@ -590,3 +590,8 @@ shares the relationship graph per collection model and adds no golden vectors;
 the corpus still reports 113 discovered, 111 passed and 27 queries passed, with
 the two precondition skips, and 1,953 tooling tests pass. See
 [decision 048](../../docs/decisions/048-view-performance.md).
+The link-name-index increment (specification `98f3cb4`, adapter `20f4f26`)
+resolves name, id and alias links through a per-model index and adds no golden
+vectors; the corpus still reports 113 discovered, 111 passed and 27 queries
+passed, with the two precondition skips, and 1,954 tooling tests pass. See
+[decision 049](../../docs/decisions/049-link-name-index.md).
