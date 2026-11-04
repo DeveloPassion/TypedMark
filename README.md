@@ -150,6 +150,10 @@ affixes (`namePart`, `titleFallback`). See the
 name part, such as `Projects/Launch/Launch (Project).md`; writers keep an
 optional folder on moves and re-typing. See the
 [note-folder decision](docs/decisions/050-note-folders.md).
+`edit` and `rename` move the rest of a note folder with its note when the note
+moves to another folder of its own, rewriting links to every carried file;
+`--only-note` moves the note alone, and the plan lists files left behind. See
+the [note-folder-move decision](docs/decisions/051-note-folder-moves.md).
 Automation artifacts accept `add_list_item`, `remove_list_item` and
 `set_field.only_if_empty`; list-item targets must be assignable list fields. See
 the [list-item decision](docs/decisions/019-list-item-actions.md).

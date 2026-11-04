@@ -1,10 +1,10 @@
-import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { afterEach, describe, expect, test } from "bun:test";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { stringify } from "yaml";
 import { storageAccepts } from "../src/automation-rules";
-import { planEdit } from "../src/edits";
+import { applyEdit, planEdit } from "../src/edits";
 import { planRetype } from "../src/retype";
 import { checkStoragePath, resolveStoragePath } from "../src/storage";
 import { validateCollection } from "../src/validator";
@@ -93,4 +93,68 @@ test("automation targeting accepts either placement of an optional note folder",
   expect(storageAccepts("Projects/Launch (Project).md", optional)).toBe(true);
   expect(storageAccepts("Areas/Health.md", required)).toBe(false);
   expect(storageAccepts("Areas/Health/Health.md", required)).toBe(true);
+});
+
+describe("note-folder moves (ER-16 to ER-18)", () => {
+  const archived = { ...optional, archive: { folder_pattern: "Archive", note_name_suffix: { pattern: " (Project)" } } };
+  function folderCollection(storage: object = optional) {
+    const root = collection({ project: { storage } }, { "Projects/Launch/Launch (Project).md": { note_type: "project" } });
+    writeFileSync(join(root, "Projects/Launch/Kickoff.md"), "See [the board](Board.canvas) and [[Home]].\n");
+    writeFileSync(join(root, "Projects/Launch/Board.canvas"), '{"nodes":[]}');
+    mkdirSync(join(root, "Projects/Launch/img"));
+    writeFileSync(join(root, "Projects/Launch/img/logo.png"), Buffer.from([0, 255, 1, 254]));
+    writeFileSync(join(root, "Home.md"), "[[Launch (Project)]], [kickoff](Projects/Launch/Kickoff.md), ![logo](Projects/Launch/img/logo.png)\n");
+    return root;
+  }
+
+  test("a rename between note folders carries the folder and keeps every link resolving", () => {
+    const root = folderCollection();
+    const plan = planEdit(root, schemaDirectory, { path: "Projects/Launch/Launch (Project).md", renameTo: "Projects/Go-live/Go-live (Project).md" });
+    expect(plan.unresolved).toEqual([]);
+    expect(plan.moves).toEqual([
+      { from: "Projects/Launch/Launch (Project).md", to: "Projects/Go-live/Go-live (Project).md" },
+      { from: "Projects/Launch/Kickoff.md", to: "Projects/Go-live/Kickoff.md" },
+    ]);
+    expect(plan.carried).toEqual([
+      { from: "Projects/Launch/Board.canvas", to: "Projects/Go-live/Board.canvas" },
+      { from: "Projects/Launch/img/logo.png", to: "Projects/Go-live/img/logo.png" },
+    ]);
+    expect(plan.leftBehind).toEqual([]);
+    applyEdit(root, plan);
+    expect(readFileSync(join(root, "Home.md"), "utf8")).toBe(
+      "[[Go-live (Project)]], [kickoff](Projects/Go-live/Kickoff.md), ![logo](Projects/Go-live/img/logo.png)\n",
+    );
+    expect(readFileSync(join(root, "Projects/Go-live/Kickoff.md"), "utf8")).toBe("See [the board](Board.canvas) and [[Home]].\n");
+    expect([...readFileSync(join(root, "Projects/Go-live/img/logo.png"))]).toEqual([0, 255, 1, 254]);
+    expect(existsSync(join(root, "Projects/Launch"))).toBe(false);
+  });
+
+  test("a caller can move only the note, and the rest is listed (ER-16, ER-18)", () => {
+    const root = folderCollection();
+    const plan = planEdit(root, schemaDirectory, {
+      path: "Projects/Launch/Launch (Project).md",
+      renameTo: "Projects/Go-live/Go-live (Project).md",
+      onlyNote: true,
+    });
+    expect(plan.moves).toEqual([{ from: "Projects/Launch/Launch (Project).md", to: "Projects/Go-live/Go-live (Project).md" }]);
+    expect(plan.carried).toEqual([]);
+    expect(plan.leftBehind).toEqual(["Projects/Launch/Board.canvas", "Projects/Launch/Kickoff.md", "Projects/Launch/img/logo.png"]);
+  });
+
+  test("leaving the note folder for a flat path lists the files left behind (ER-18)", () => {
+    const root = folderCollection(archived);
+    const plan = planEdit(root, schemaDirectory, { path: "Projects/Launch/Launch (Project).md", set: { archived: true } });
+    expect(plan.moves).toEqual([{ from: "Projects/Launch/Launch (Project).md", to: "Archive/Launch (Project).md" }]);
+    expect(plan.leftBehind).toEqual(["Projects/Launch/Board.canvas", "Projects/Launch/Kickoff.md", "Projects/Launch/img/logo.png"]);
+  });
+
+  test("a taken target inside the new folder refuses the whole move (ER-14, ER-17)", () => {
+    const root = folderCollection();
+    mkdirSync(join(root, "Projects/Go-live"));
+    writeFileSync(join(root, "Projects/Go-live/Board.canvas"), "{}");
+    const plan = planEdit(root, schemaDirectory, { path: "Projects/Launch/Launch (Project).md", renameTo: "Projects/Go-live/Go-live (Project).md" });
+    expect(plan.unresolved.map((issue) => issue.rule)).toContain("ER-14");
+    expect(plan.files).toEqual([]);
+    expect(plan.carried).toEqual([]);
+  });
 });

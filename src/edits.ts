@@ -149,6 +149,10 @@ export interface EditPlan {
   rewrites: Array<{ path: string; links: number }>;
   files: Array<{ path: string; content: string }>;
   removed: string[];
+  /** Other files a note-folder move carries, moved byte for byte (ER-16). */
+  carried: Array<{ from: string; to: string }>;
+  /** Files left in a note folder that its note left (ER-18). */
+  leftBehind: string[];
   unresolved: EditIssue[];
 }
 export interface EditRequest {
@@ -156,6 +160,8 @@ export interface EditRequest {
   /** Keys to assign; undefined removes a key. */
   set?: Data;
   renameTo?: string;
+  /** Move only the note, not the rest of its note folder (ER-16). */
+  onlyNote?: boolean;
 }
 
 const stem = (path: string) => path.replace(/\.md$/u, "");
@@ -211,7 +217,8 @@ function candidates(link: ParsedNoteLink, source: string, target: string): strin
 function resolved(link: ParsedNoteLink, source: string, model: CollectionModel): string | undefined {
   try {
     const resolution = resolveNoteLink(link, source, model);
-    return resolution.kind === "note" ? resolution.path : undefined;
+    // Links to other files must keep resolving too (ER-10, ER-17).
+    return resolution.kind === "note" || resolution.kind === "asset" ? resolution.path : undefined;
   } catch {
     return undefined;
   }
@@ -223,7 +230,7 @@ function resolved(link: ParsedNoteLink, source: string, model: CollectionModel):
  */
 export function planEdit(collectionRoot: string, schemaDirectory: string, request: EditRequest): EditPlan {
   const model = readCollectionModel({ collectionRoot, schemaDirectory });
-  const plan: EditPlan = { moves: [], rewrites: [], files: [], removed: [], unresolved: [] };
+  const plan: EditPlan = { moves: [], rewrites: [], files: [], removed: [], carried: [], leftBehind: [], unresolved: [] };
   const unresolved = (rule: string, message: string) => plan.unresolved.push({ rule, message });
   const timezone = model.config.timezone ?? "UTC";
   const note = model.notes.find((candidate) => candidate.path === request.path);
@@ -246,7 +253,8 @@ export function planEdit(collectionRoot: string, schemaDirectory: string, reques
   };
   const moves = new Map<string, string>();
   if (request.renameTo !== undefined && request.renameTo !== request.path) moves.set(request.path, request.renameTo);
-  const mapped = (path: string) => moves.get(path) ?? path;
+  const assetMoves = new Map<string, string>();
+  const mapped = (path: string) => moves.get(path) ?? assetMoves.get(path) ?? path;
   // A linked placeholder reads the parent's new path through its old link (ER-13).
   const refiled = (managed: ManagedNote, values: Data, current: string): string | undefined => {
     const schema = model.schemas.get(managed.noteType);
@@ -275,34 +283,70 @@ export function planEdit(collectionRoot: string, schemaDirectory: string, reques
     const target = refiled(note, valuesOf(note), note.path);
     if (target !== undefined && target !== note.path) moves.set(note.path, target);
   }
-  // Dependents stored through a moved note follow it, until nothing else moves (ER-13).
-  for (let changed = true, rounds = 0; changed && rounds <= model.notes.length; rounds++) {
-    changed = false;
-    for (const managed of model.notes) {
-      if (managed.path === request.path || !conformed.get(managed.path)) continue;
-      const target = refiled(managed, managed.values, mapped(managed.path));
-      if (target !== undefined && target !== mapped(managed.path)) {
-        moves.set(managed.path, target);
+  // Whether a managed note at `path` sits in its own folder under the contract `values` select (NTS-198).
+  const ownFolder = (managed: ManagedNote, values: Data, path: string): boolean => {
+    const schema = model.schemas.get(managed.noteType);
+    const storage = values.archived === true && schema?.storage?.archive ? schema.storage.archive : schema?.storage;
+    if (!storage?.note_folder) return false;
+    return inNoteFolder(path, namePart(storage, path, values, managed.fields, timezone, linkedNotePath(model, managed.path)).name);
+  };
+  const documentPaths = new Set(model.documents.map((candidate) => candidate.path));
+  const everyFile = [...documentPaths, ...model.assets];
+  const leftBehind = new Set<string>();
+  // A note moving between folders of its own carries the rest of its folder (ER-16); otherwise the rest stays (ER-18).
+  const carry = (): boolean => {
+    let changed = false;
+    for (const [from, to] of [...moves]) {
+      const managed = model.notes.find((candidate) => candidate.path === from);
+      const oldFolder = posix.dirname(from),
+        newFolder = posix.dirname(to);
+      if (!managed || oldFolder === newFolder || oldFolder === "." || !ownFolder(managed, managed.values, from)) continue;
+      const carries = !request.onlyNote && ownFolder(managed, from === request.path ? valuesOf(managed) : managed.values, to);
+      for (const path of everyFile) {
+        if (path === from || !path.startsWith(`${oldFolder}/`) || moves.has(path) || assetMoves.has(path)) continue;
+        if (!carries) {
+          leftBehind.add(path);
+          continue;
+        }
+        (documentPaths.has(path) ? moves : assetMoves).set(path, `${newFolder}/${path.slice(oldFolder.length + 1)}`);
         changed = true;
       }
     }
-  }
+    return changed;
+  };
+  // Dependents stored through a moved note follow it, until nothing else moves (ER-13).
+  do {
+    for (let changed = true, rounds = 0; changed && rounds <= model.notes.length; rounds++) {
+      changed = false;
+      for (const managed of model.notes) {
+        if (managed.path === request.path || !conformed.get(managed.path)) continue;
+        const target = refiled(managed, managed.values, mapped(managed.path));
+        if (target !== undefined && target !== mapped(managed.path)) {
+          moves.set(managed.path, target);
+          changed = true;
+        }
+      }
+    }
+  } while (carry());
   plan.moves = [...moves].map(([from, to]) => ({ from, to }));
+  plan.carried = [...assetMoves].map(([from, to]) => ({ from, to }));
+  plan.leftBehind = [...leftBehind].filter((path) => mapped(path) === path).sort();
   // Targets must be free and distinct (ER-14).
   const targets = new Map<string, string>();
-  for (const candidate of model.documents) {
-    const target = mapped(candidate.path).normalize("NFC");
-    if (targets.has(target)) unresolved("ER-14", `${candidate.path} and ${targets.get(target)} would both be at ${target}`);
-    targets.set(target, candidate.path);
+  for (const path of everyFile) {
+    const target = mapped(path).normalize("NFC");
+    if (targets.has(target)) unresolved("ER-14", `${path} and ${targets.get(target)} would both be at ${target}`);
+    targets.set(target, path);
   }
-  // Other files, such as assets, can also occupy a target.
-  const documents = new Set(model.documents.map((candidate) => candidate.path));
-  for (const to of moves.values()) if (!documents.has(to) && existsSync(join(collectionRoot, to))) unresolved("ER-14", `${to} is taken`);
+  // Other files can also occupy a target.
+  for (const to of [...moves.values(), ...assetMoves.values()])
+    if (!documentPaths.has(to) && !model.assets.has(to) && existsSync(join(collectionRoot, to))) unresolved("ER-14", `${to} is taken`);
 
   const after: CollectionModel = {
     ...model,
     documents: model.documents.map((candidate) => ({ ...candidate, path: mapped(candidate.path) })),
     notes: model.notes.map((managed) => ({ ...managed, path: mapped(managed.path) })),
+    assets: new Set([...model.assets].map(mapped)),
   };
   // Rewrite a link that must keep reaching `expected` from its note's new path (ER-7 to ER-10).
   const keep = (link: ParsedNoteLink, raw: string, source: string, expected: string): string | undefined => {
@@ -364,7 +408,10 @@ export function planEdit(collectionRoot: string, schemaDirectory: string, reques
     if (target !== candidate.path) plan.removed.push(candidate.path);
     if (rewrites) plan.rewrites.push({ path: target, links: rewrites });
   }
-  if (plan.unresolved.length) plan.files = [];
+  if (plan.unresolved.length) {
+    plan.files = [];
+    plan.carried = [];
+  }
   return plan;
 }
 
@@ -378,12 +425,24 @@ export function applyEdit(collectionRoot: string, plan: EditPlan): void {
     return target;
   });
   for (const target of staged) renameSync(`${target}.typedmark-edit`, target);
+  // Carried files move as they are, so binary files stay intact (ER-16).
+  for (const { from, to } of plan.carried) {
+    mkdirSync(dirname(join(collectionRoot, to)), { recursive: true });
+    renameSync(join(collectionRoot, from), join(collectionRoot, to));
+  }
   const written = new Set(plan.files.map((file) => file.path));
+  const emptied = plan.carried.map((move) => move.from);
   for (const path of plan.removed) {
     if (written.has(path)) continue;
     rmSync(join(collectionRoot, path));
-    // Folders a move emptied go too, up to the collection root.
-    for (let folder = dirname(path); folder !== "." && !readdirSync(join(collectionRoot, folder)).length; folder = dirname(folder))
-      rmSync(join(collectionRoot, folder), { recursive: true });
+    emptied.push(path);
   }
+  // Folders a move emptied go too, up to the collection root.
+  for (const path of emptied)
+    for (
+      let folder = dirname(path);
+      folder !== "." && existsSync(join(collectionRoot, folder)) && !readdirSync(join(collectionRoot, folder)).length;
+      folder = dirname(folder)
+    )
+      rmSync(join(collectionRoot, folder), { recursive: true });
 }

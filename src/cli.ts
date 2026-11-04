@@ -136,7 +136,7 @@ if (command === "capabilities") {
   const renameTo = command === "rename" ? rest[1] : undefined;
   if (!notePath || !schemaDirectory || (command === "rename" && !renameTo))
     fail(
-      `${command} requires <collection> <note-path>${command === "rename" ? " <new-path>" : " [--set field=yaml]... [--unset field]..."} --schemas <directory> [--write]`,
+      `${command} requires <collection> <note-path>${command === "rename" ? " <new-path>" : " [--set field=yaml]... [--unset field]..."} --schemas <directory> [--only-note] [--write]`,
     );
   const set: Record<string, unknown> = {};
   rest.forEach((argument, index) => {
@@ -147,7 +147,7 @@ if (command === "capabilities") {
     }
     if (argument === "--unset" && value) set[value] = undefined;
   });
-  const plan = planEdit(resolve(target), resolve(schemaDirectory), { path: notePath, set, renameTo });
+  const plan = planEdit(resolve(target), resolve(schemaDirectory), { path: notePath, set, renameTo, onlyNote: rest.includes("--only-note") });
   const write = rest.includes("--write") && !plan.unresolved.length;
   if (write) applyEdit(resolve(target), plan);
   const { files, ...summary } = plan;
@@ -155,7 +155,7 @@ if (command === "capabilities") {
   process.exitCode = plan.unresolved.length ? 1 : 0;
 } else {
   fail(
-    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write] | edit <collection> <note-path> [--set field=yaml]... [--unset field]... --schemas <directory> [--write] | rename <collection> <note-path> <new-path> --schemas <directory> [--write] | view <collection> <view-id> --schemas <directory> [--format text|json] | suggest-types <collection> --schemas <directory> [--write]",
+    "Usage: bun src/cli.ts capabilities | query <collection> --query <descriptor.json> --query-version <exact-version> --schemas <directory> | validate <collection> --schemas <directory> [--mode <mode>] [--scope core|full] | run-vector <vector> --schemas <directory> | instantiate <system> <target> --name <name> --schemas <directory> | migration-readiness <system> --from <version> --schemas <directory> | retype <collection> <note-path> --to <note-type> --schemas <directory> [--write] | edit <collection> <note-path> [--set field=yaml]... [--unset field]... --schemas <directory> [--only-note] [--write] | rename <collection> <note-path> <new-path> --schemas <directory> [--only-note] [--write] | view <collection> <view-id> --schemas <directory> [--format text|json] | suggest-types <collection> --schemas <directory> [--write]",
   );
 }
 
