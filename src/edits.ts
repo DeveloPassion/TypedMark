@@ -3,7 +3,7 @@ import { dirname, join, posix } from "node:path";
 import { parse, parseDocument, stringify } from "yaml";
 import type { CollectionModel, ManagedNote } from "./collection-model";
 import { inspectBodyLinks, linkedNotePath, parseNoteLink, resolveNoteLink, type ParsedNoteLink } from "./note-links";
-import { namePart, resolveStoragePath } from "./storage";
+import { inNoteFolder, namePart, resolveStoragePath } from "./storage";
 import { readCollectionModel } from "./validator";
 
 type Data = Record<string, unknown>;
@@ -258,9 +258,13 @@ export function planEdit(collectionRoot: string, schemaDirectory: string, reques
       return target === undefined ? undefined : mapped(target);
     };
     const source = namePart(storage, current, managed.values, managed.fields, timezone, linked);
+    // The note folder is judged under the contract the note is filed by now, so archiving keeps it (NTS-191).
+    const filedBy = managed.values.archived === true && schema?.storage?.archive ? schema.storage.archive : schema?.storage;
+    const sourcePart = filedBy === storage ? source : namePart(filedBy, current, managed.values, managed.fields, timezone, before);
     const carried = {
       prefix: !!source.prefix && storage.note_name_prefix?.optional === true,
       suffix: !!source.suffix && storage.note_name_suffix?.optional === true,
+      folder: filedBy?.note_folder !== undefined && inNoteFolder(current, sourcePart.name),
     };
     const resolution = resolveStoragePath(storage, values, managed.fields, timezone, source.name, linked, carried);
     return "failure" in resolution ? undefined : resolution.path;

@@ -17,16 +17,20 @@ export interface AutomationFailure extends ValueFailure {
 
 /** Over-approximate whether a path could satisfy a storage contract (placeholders match any safe text). */
 export function storageAccepts(path: string, storage: Data): boolean {
-  // An optional affix may be present or absent (NTS-188).
+  // An optional affix may be present or absent (NTS-188), and so may an optional note folder (NTS-199).
   const options = (affix: Data | undefined): string[] => (affix ? (affix.optional === true ? [affix.pattern, ""] : [affix.pattern]) : [""]);
+  const folders = storage.note_folder === "required" ? [true] : storage.note_folder === "optional" ? [true, false] : [false];
   return options(storage.note_name_prefix).some((prefix) =>
-    options(storage.note_name_suffix).some((suffix) => patternAccepts(path, storage.folder_pattern, prefix, storage.note_name_pattern, suffix)),
+    options(storage.note_name_suffix).some((suffix) =>
+      folders.some((own) => patternAccepts(path, storage.folder_pattern, prefix, storage.note_name_pattern, suffix, own)),
+    ),
   );
 }
 
-function patternAccepts(path: string, folder: string, prefix: string, namePattern: string | undefined, suffix: string): boolean {
-  // A free name is approximated as one unconstrained placeholder.
-  const name = `${prefix}${namePattern ?? "{free_name}"}${suffix}`;
+function patternAccepts(path: string, folder: string, prefix: string, namePattern: string | undefined, suffix: string, own = false): boolean {
+  // A free name is approximated as one unconstrained placeholder; a note folder repeats the name part (NTS-198).
+  const part = namePattern ?? "{free_name}";
+  const name = `${own ? `${part}/` : ""}${prefix}${part}${suffix}`;
   // Decomposition also handles normalization across a literal/placeholder boundary.
   const pattern = `${folder ? `${folder}/` : ""}${name}.md`.normalize("NFD");
   const formats: Record<string, string> = {

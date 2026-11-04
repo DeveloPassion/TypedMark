@@ -7,7 +7,7 @@ import { applyEdit, planEdit, type EditPlan } from "./edits";
 import { classifyConversion, validateFieldValue, type FieldDefinition } from "./field-values";
 import { locateBodyBlocks } from "./markdown-headings";
 import { linkedNotePath } from "./note-links";
-import { namePart, resolveStoragePath } from "./storage";
+import { inNoteFolder, namePart, resolveStoragePath } from "./storage";
 import { readCollectionModel, validateCollection } from "./validator";
 
 type Data = Record<string, unknown>;
@@ -219,6 +219,8 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
   const carried = {
     prefix: source.prefix && sourceStorage?.note_name_prefix?.optional === true,
     suffix: source.suffix && sourceStorage?.note_name_suffix?.optional === true,
+    // A note in its own folder keeps it when the target folder is optional (NTS-191).
+    folder: sourceStorage?.note_folder !== undefined && inNoteFolder(path, source.name),
   };
   const resolved = resolveStoragePath(storage, effective, targetFields, timezone, source.name, linked, carried);
   if ("failure" in resolved) {

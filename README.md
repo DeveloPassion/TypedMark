@@ -146,6 +146,10 @@ A prefix or suffix may be `optional: true`; names carry it or not, writers omit
 it unless asked, and the Core `title` falls back to the name part without the
 affixes (`namePart`, `titleFallback`). See the
 [optional-affix decision](docs/decisions/027-optional-affixes-and-name-part-title.md).
+`note_folder: required | optional` stores a note in a folder named after its
+name part, such as `Projects/Launch/Launch (Project).md`; writers keep an
+optional folder on moves and re-typing. See the
+[note-folder decision](docs/decisions/050-note-folders.md).
 Automation artifacts accept `add_list_item`, `remove_list_item` and
 `set_field.only_if_empty`; list-item targets must be assignable list fields. See
 the [list-item decision](docs/decisions/019-list-item-actions.md).

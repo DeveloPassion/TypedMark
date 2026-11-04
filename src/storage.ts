@@ -8,6 +8,8 @@ export interface StoragePatterns {
   note_name_regex?: string;
   note_name_prefix?: Affix;
   note_name_suffix?: Affix;
+  /** The note sits in a folder named after its name part (NTS-198); `optional` also accepts it outside one (NTS-199). */
+  note_folder?: "required" | "optional";
 }
 /** `optional: true` makes the affix a decoration a conforming name may omit (NTS-188). */
 export interface Affix {
@@ -171,12 +173,27 @@ function resolveParts(
   return { folder, prefix, name, suffix };
 }
 
-/** Which optional affixes a path carries; required affixes always apply (NTS-113, NTS-188). */
+/**
+ * Which optional affixes a path carries, and whether it sits in an optional note
+ * folder; required affixes and folders always apply (NTS-113, NTS-188, NTS-199).
+ */
 export interface AffixPresence {
   prefix: boolean;
   suffix: boolean;
+  folder?: boolean;
 }
 const omitted: AffixPresence = { prefix: false, suffix: false };
+
+/** Whether the contract puts this note in a note folder: always when required, as carried when optional. */
+function foldered(storage: StoragePatterns, present: AffixPresence): boolean {
+  return storage.note_folder === "required" || (storage.note_folder === "optional" && present.folder === true);
+}
+
+/** Whether a path sits in a folder named after the given name part (NTS-198). */
+export function inNoteFolder(path: string, name: string): boolean {
+  const segments = path.normalize("NFC").split("/");
+  return segments.length > 1 && segments[segments.length - 2] === name.normalize("NFC");
+}
 
 // An optional affix absent from the name contributes nothing to it (NTS-113).
 function applied(storage: StoragePatterns, parts: Parts, present: AffixPresence): Parts {
@@ -202,7 +219,7 @@ export function resolveStoragePath(
   present: AffixPresence = omitted,
 ): Resolution {
   const parts = resolveParts(storage, values, fields, timezone, linked);
-  return "failure" in parts ? parts : assemble(storage, applied(storage, parts, present), freeName);
+  return "failure" in parts ? parts : assemble(storage, applied(storage, parts, present), freeName, foldered(storage, present));
 }
 
 /**
@@ -223,17 +240,25 @@ export function checkStoragePath(
   if ("failure" in resolved) return resolved;
   const part = namePart(storage, path, values, fields, timezone, linked);
   const parts = applied(storage, resolved, part);
-  if (storage.note_name_pattern !== undefined) return assemble(storage, parts);
   const actual = path.normalize("NFC"),
     slash = actual.lastIndexOf("/");
   const folder = slash < 0 ? "" : actual.slice(0, slash);
-  if (!actual.endsWith(".md") || folder !== parts.folder.normalize("NFC") || (parts.prefix && !part.prefix) || (parts.suffix && !part.suffix)) {
-    return { path: `${parts.folder ? `${parts.folder}/` : ""}${parts.prefix}<free name>${parts.suffix}.md` };
+  const base = parts.folder.normalize("NFC");
+  // An optional note folder is present exactly when the parent is the resolved folder plus the name part (NTS-199).
+  const name = storage.note_name_pattern === undefined ? part.name : parts.name.normalize("NFC");
+  const inFolder = storage.note_folder !== undefined && folder === `${base ? `${base}/` : ""}${name}`;
+  const own = foldered(storage, { ...part, folder: inFolder });
+  if (storage.note_name_pattern !== undefined) return assemble(storage, parts, undefined, own);
+  // Only the note folder is off: the expected path is exact (NTS-198).
+  const placed = folder === base || inFolder;
+  if (!actual.endsWith(".md") || !placed || (parts.prefix && !part.prefix) || (parts.suffix && !part.suffix)) {
+    const noteFolder = storage.note_folder === "required" ? "<free name>/" : "";
+    return { path: `${base ? `${base}/` : ""}${noteFolder}${parts.prefix}<free name>${parts.suffix}.md` };
   }
-  return assemble(storage, parts, part.name);
+  return assemble(storage, parts, part.name, own);
 }
 
-function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Resolution {
+function assemble(storage: StoragePatterns, parts: Parts, freeName?: string, own = false): Resolution {
   const { folder, prefix, suffix } = parts;
   let name = parts.name;
   if (storage.note_name_pattern === undefined) {
@@ -254,7 +279,12 @@ function assemble(storage: StoragePatterns, parts: Parts, freeName?: string): Re
   const basename = `${prefix}${name}${suffix}`.normalize("NFC");
   if (!basename || basename.startsWith("."))
     return { failure: { rule: "NTS-134", message: "Resolved note basename must be non-empty and must not begin with a dot" } };
-  const path = `${folder ? `${folder}/` : ""}${basename}.md`.normalize("NFC");
+  // The note folder takes the name part, without the affixes (NTS-198).
+  const noteFolder = own ? name.normalize("NFC") : "";
+  if (own && (!noteFolder || noteFolder.startsWith(".")))
+    return { failure: { rule: "NTS-134", message: "A note folder name must be non-empty and must not begin with a dot" } };
+  const container = [folder, noteFolder].filter(Boolean).join("/");
+  const path = `${container ? `${container}/` : ""}${basename}.md`.normalize("NFC");
   if (/[\\\p{Cc}]/u.test(path) || path.split("/").some((part) => part === "" || part === "." || part === "..")) {
     return { failure: { rule: "NTS-180", message: "Resolved note path contains unsafe characters or segments" } };
   }
