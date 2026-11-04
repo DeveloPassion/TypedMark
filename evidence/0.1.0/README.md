@@ -600,3 +600,8 @@ The note-folder increment (specification `db959fa`, adapter `1dd73cb`) adds
 `storage-note-folder-invalid` golden vectors; the corpus reports 115
 discovered, 113 passed and 27 queries passed, with the two precondition skips.
 See [decision 050](../../docs/decisions/050-note-folders.md).
+The note-folder-move increment (specification `d2f0591`, adapter `4e446cc`)
+moves the rest of a note folder with its note and adds no golden vectors; the
+corpus still reports 115 discovered, 113 passed and 27 queries passed, with
+the two precondition skips. See
+[decision 051](../../docs/decisions/051-note-folder-moves.md).
