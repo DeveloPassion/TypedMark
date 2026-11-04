@@ -595,3 +595,8 @@ resolves name, id and alias links through a per-model index and adds no golden
 vectors; the corpus still reports 113 discovered, 111 passed and 27 queries
 passed, with the two precondition skips, and 1,954 tooling tests pass. See
 [decision 049](../../docs/decisions/049-link-name-index.md).
+The note-folder increment (specification `db959fa`, adapter `1dd73cb`) adds
+`note_folder` storage and the `storage-note-folder-valid` and
+`storage-note-folder-invalid` golden vectors; the corpus reports 115
+discovered, 113 passed and 27 queries passed, with the two precondition skips.
+See [decision 050](../../docs/decisions/050-note-folders.md).

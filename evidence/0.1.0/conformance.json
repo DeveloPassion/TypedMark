@@ -1,8 +1,8 @@
 {
-  "specification_revision": "98f3cb45c94931e8fa0e30d7ea9912a254bbf30a",
-  "adapter_revision": "20f4f26c35fa280a4c658177562997c16a896a78",
-  "started_at": "2026-10-31T16:26:33.185Z",
-  "finished_at": "2026-10-31T16:27:07.459Z",
+  "specification_revision": "db959fa31f8959dc09688f4904d7e11da46d7b74",
+  "adapter_revision": "1dd73cbf087bc8fdfb243ed3dbc24d4d2f65cf98",
+  "started_at": "2026-11-04T08:51:52.541Z",
+  "finished_at": "2026-11-04T08:52:52.054Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -25,9 +25,9 @@
     }
   },
   "summary": {
-    "discovered": 113,
-    "executed": 111,
-    "passed": 111,
+    "discovered": 115,
+    "executed": 113,
+    "passed": 113,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -3583,6 +3583,89 @@
             }
           }
         ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-note-folder-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Areas/Health.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Areas/Health/Health.md",
+            "note_type": "area",
+            "fix": {
+              "kind": "move_note",
+              "path": "Areas/Health/Health.md"
+            }
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Projects/Launch (Project)/Launch (Project).md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Projects/<free name> (Project).md",
+            "note_type": "project"
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Projects/Other/Rollout (Project).md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Projects/<free name> (Project).md",
+            "note_type": "project"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "storage-note-folder-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": true,
+        "results": []
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
