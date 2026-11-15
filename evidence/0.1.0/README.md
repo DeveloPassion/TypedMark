@@ -605,3 +605,9 @@ moves the rest of a note folder with its note and adds no golden vectors; the
 corpus still reports 115 discovered, 113 passed and 27 queries passed, with
 the two precondition skips. See
 [decision 051](../../docs/decisions/051-note-folder-moves.md).
+The skipped-reasons increment (specification `06593c7`, adapter `c02588c`)
+reports why a query left a note out (`QRY-3`, `QRY-4`) and adds no golden
+vectors; five query cases now list their reasons. The corpus still reports 115
+discovered, 113 passed and 27 queries passed, with the two precondition skips,
+and 1,970 tooling tests pass. See
+[decision 052](../../docs/decisions/052-skipped-reasons.md).

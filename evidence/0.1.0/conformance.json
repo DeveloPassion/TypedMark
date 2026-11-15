@@ -1,8 +1,8 @@
 {
-  "specification_revision": "d2f05918cf05720743092766a8dd962ad0b4f4ec",
-  "adapter_revision": "4e446cca8d69d88ae0533b9c0f4786dcefbfdc48",
-  "started_at": "2026-11-04T09:52:17.879Z",
-  "finished_at": "2026-11-04T09:53:37.783Z",
+  "specification_revision": "06593c7d59a3f8940d2835d9a6b5260fa07e6dd4",
+  "adapter_revision": "c02588cb33a59a1617091d21188a2154ca5554b1",
+  "started_at": "2026-11-15T21:08:09.301Z",
+  "finished_at": "2026-11-15T21:08:58.397Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -923,6 +923,42 @@
             "skipped": [
               "Bad.md",
               "Unsafe.md"
+            ],
+            "skipped_details": [
+              {
+                "path": "Bad.md",
+                "results": [
+                  {
+                    "code": "missing_required_field",
+                    "rule_id": "MN-99",
+                    "field": "id",
+                    "message": "id is explicitly null but is not nullable"
+                  },
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "MN-35",
+                    "field": "aliases",
+                    "message": "aliases must contain unique non-empty text values"
+                  },
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "MN-128",
+                    "field": "tags",
+                    "message": "tags is missing the effective mandatory tag managed"
+                  }
+                ]
+              },
+              {
+                "path": "Unsafe.md",
+                "results": [
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "MN-82",
+                    "field": "aliases",
+                    "message": "aliases cannot contain path separators, link metacharacters, or line breaks"
+                  }
+                ]
+              }
             ]
           }
         }
@@ -2099,6 +2135,19 @@
             "provenance": [],
             "skipped": [
               "Notes/Source.md"
+            ],
+            "skipped_details": [
+              {
+                "path": "Notes/Source.md",
+                "results": [
+                  {
+                    "code": "invalid_note_link",
+                    "rule_id": "NL-6",
+                    "field": "references",
+                    "message": "Markdown anchor requires RFC 3986 percent encoding"
+                  }
+                ]
+              }
             ]
           }
         }
@@ -2239,6 +2288,19 @@
             "provenance": [],
             "skipped": [
               "Notes/Source.md"
+            ],
+            "skipped_details": [
+              {
+                "path": "Notes/Source.md",
+                "results": [
+                  {
+                    "code": "invalid_note_link",
+                    "rule_id": "NL-6",
+                    "field": "details.references",
+                    "message": "Markdown destination contains a malformed percent escape"
+                  }
+                ]
+              }
             ]
           }
         }
@@ -2379,6 +2441,25 @@
             "provenance": [],
             "skipped": [
               "Notes/Source.md"
+            ],
+            "skipped_details": [
+              {
+                "path": "Notes/Source.md",
+                "results": [
+                  {
+                    "code": "invalid_note_link",
+                    "rule_id": "NL-11",
+                    "field": "references",
+                    "message": "Markdown target contains malformed or non-UTF-8 percent encoding"
+                  },
+                  {
+                    "code": "invalid_note_link",
+                    "rule_id": "NL-11",
+                    "field": "references",
+                    "message": "Markdown anchor contains malformed or non-UTF-8 percent encoding"
+                  }
+                ]
+              }
             ]
           }
         }
@@ -5028,6 +5109,19 @@
             "provenance": [],
             "skipped": [
               "Notes/URI.md"
+            ],
+            "skipped_details": [
+              {
+                "path": "Notes/URI.md",
+                "results": [
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "FDR-140",
+                    "field": "homepage",
+                    "message": "homepage must have a URI scheme and valid RFC 3986 syntax"
+                  }
+                ]
+              }
             ]
           }
         },
@@ -5050,6 +5144,54 @@
             "skipped": [
               "Notes/Source.md",
               "Notes/URI.md"
+            ],
+            "skipped_details": [
+              {
+                "path": "Notes/Source.md",
+                "results": [
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "FDR-140",
+                    "field": "homepage",
+                    "message": "homepage must have a URI scheme and valid RFC 3986 syntax"
+                  },
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "FDR-140",
+                    "field": "authority_uri",
+                    "message": "authority_uri must have a URI scheme and valid RFC 3986 syntax"
+                  },
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "FDR-140",
+                    "field": "raw_uri",
+                    "message": "raw_uri must have a URI scheme and valid RFC 3986 syntax"
+                  },
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "FDR-140",
+                    "field": "relative_uri",
+                    "message": "relative_uri must have a URI scheme and valid RFC 3986 syntax"
+                  },
+                  {
+                    "code": "invalid_note_link",
+                    "rule_id": "NL-6",
+                    "field": "reference",
+                    "message": "Markdown target must use valid RFC 3986 URI-reference syntax; encode reserved or non-ASCII filename characters"
+                  }
+                ]
+              },
+              {
+                "path": "Notes/URI.md",
+                "results": [
+                  {
+                    "code": "invalid_field_value",
+                    "rule_id": "FDR-140",
+                    "field": "homepage",
+                    "message": "homepage must have a URI scheme and valid RFC 3986 syntax"
+                  }
+                ]
+              }
             ]
           }
         }
