@@ -145,7 +145,26 @@ test("a view shows the remaining rows and says which notes were left out (CM-621
   const table = presentView(root, schemaDirectory, "table");
   expect(table.rows!.map((row) => row.path)).toEqual(["Tasks/A.md", "Tasks/B.md", "Tasks/C.md", "Tasks/D.md"]);
   expect(table.skipped).toEqual(["Tasks/E.md"]);
-  expect(renderPresentation(table)).toContain("1 note left out: Tasks/E.md");
+  expect(renderPresentation(table)).toContain("1 note left out: Tasks/E.md (rank: ");
+  expect(table.skipped_details).toEqual([{ path: "Tasks/E.md", results: [expect.objectContaining({ field: "rank" })] }]);
+});
+
+test("the notice names each shown note with its first reason and keeps the tail (QRY-4)", () => {
+  const presentation = { view: "v", label: "V", layout: "list", timezone: "UTC", fields: [{ column: "path", label: "path" }], rows: [] };
+  const skipped = Array.from({ length: 7 }, (_, index) => `N${index}.md`);
+  const skipped_details = skipped.map((path, index) => ({
+    path,
+    results: [
+      index === 1
+        ? { code: "invalid_note_link", rule_id: "NL-6", message: "bad link" }
+        : { code: "invalid_field_value", rule_id: "FDR-1", field: "date_completed", message: "must satisfy the date value contract" },
+      { code: "invalid_field_value", rule_id: "FDR-2", field: "other", message: "second reason" },
+    ],
+  }));
+  const text = renderPresentation({ ...presentation, skipped, skipped_details });
+  expect(text).toContain("N0.md (date_completed: must satisfy the date value contract), N1.md (bad link), N2.md (date_completed:");
+  expect(text).not.toContain("second reason");
+  expect(text).toContain("N4.md (date_completed: must satisfy the date value contract), and 2 more (run validate for the full list)");
 });
 
 test("a long list of left-out notes names the first five", () => {

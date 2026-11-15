@@ -64,6 +64,13 @@ interface Cell {
   definition?: FieldDefinition;
   source: Provenance | null;
 }
+/** Why a note was left out: the code, rule, field and message of a validation-report result (QRY-3). */
+export interface LeftOutReason {
+  code: string;
+  rule_id: string;
+  field?: string;
+  message: string;
+}
 export interface QueryResult {
   evaluation: "complete" | "incomplete";
   rows: Row[];
@@ -71,6 +78,8 @@ export interface QueryResult {
   groups?: Array<{ key: unknown[]; rows: Row[] }>;
   /** Notes left out because their own model could not be resolved, in path order; absent when none (CM-619, CM-620). */
   skipped?: string[];
+  /** At least one reason per skipped path, in the same order; absent when nothing was left out (QRY-3). */
+  skipped_details?: Array<{ path: string; results: LeftOutReason[] }>;
 }
 export interface QueryEvaluation {
   result: QueryResult;
@@ -382,13 +391,42 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const usedTypes = new Set(analysis.usedTypes);
   const modeledPaths = new Set(model.notes.map((note) => note.path));
   // A note that cannot provide its own model is left out and reported, not fatal (CM-619, CM-620).
-  const skipped = new Set<string>();
+  const skipped = new Map<string, LeftOutReason[]>();
+  const leaveOut = (path: string, reason: LeftOutReason | LeftOutReason[]): void => {
+    const known = skipped.get(path) ?? [];
+    for (const candidate of Array.isArray(reason) ? reason : [reason]) {
+      if (!known.some((r) => r.code === candidate.code && r.rule_id === candidate.rule_id && r.field === candidate.field && r.message === candidate.message))
+        known.push(candidate);
+    }
+    skipped.set(path, known);
+  };
+  const reasonOf = (result: { code: string; rule_id: string; field?: string; message: string }): LeftOutReason => ({
+    code: result.code,
+    rule_id: result.rule_id,
+    ...(result.field ? { field: result.field } : {}),
+    message: result.message,
+  });
+  const linkReason = (failure: NoteLinkError): LeftOutReason => ({
+    code: failure.rule_id.startsWith("FDR-") ? "invalid_field_value" : "invalid_note_link",
+    rule_id: failure.rule_id,
+    ...(failure.field ? { field: failure.field } : {}),
+    // The error message starts with its rule ID; the reason carries the rule separately.
+    message: failure.message.replace(`${failure.rule_id}: `, ""),
+  });
   for (const document of model.documents) {
     if (
       !modeledPaths.has(document.path) &&
       document.candidates?.some((type) => model.schemas.has(type) && !model.schemas.get(type)!.abstract && admitted(type, query.note_types))
     ) {
-      skipped.add(document.path);
+      const reported = model.report.results.filter((result) => result.path === document.path && result.severity === "error").map(reasonOf);
+      leaveOut(
+        document.path,
+        reported.length
+          ? reported
+          : document.frontmatterValid === false
+            ? { code: "invalid_note_frontmatter", rule_id: "MN-118", message: "The note's frontmatter could not be resolved" }
+            : { code: "invalid_note_type_mapping", rule_id: "CM-114", message: "The note's type could not be resolved" },
+      );
     }
   }
 
@@ -414,11 +452,9 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     const failures = graph.failures.get(note.path) ?? [];
     const unavailable = failures.find((failure) => failure.schemaIssue?.kind === "unavailable");
     if (unavailable) graphFailure(unavailable);
-    if (
-      failures.length ||
-      note.problems.some((problem) => ["invalid_field_value", "missing_required_field", "missing_declared_field"].includes(problem.code))
-    ) {
-      skipped.add(note.path);
+    const problems = note.problems.filter((problem) => ["invalid_field_value", "missing_required_field", "missing_declared_field"].includes(problem.code));
+    if (failures.length || problems.length) {
+      leaveOut(note.path, [...problems.map(reasonOf), ...failures.map(linkReason)]);
       return false;
     }
     return true;
@@ -459,7 +495,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
         for (const [path, failures] of graph.failures) {
           const unavailable = failures.find((failure) => failure.schemaIssue?.kind === "unavailable");
           if (unavailable) graphFailure(unavailable);
-          skipped.add(path);
+          leaveOut(path, failures.map(linkReason));
         }
         related = model.notes.filter((source) => graph.targets.get(source.path)?.[predicate.relationship].has(note.path));
       } else related = [...(graph.targets.get(note.path)?.[predicate.relationship] ?? [])].map((path) => byPath.get(path)!);
@@ -601,7 +637,15 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
   const rows = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, structuredClone(entry.cells[column.as]!.value)])));
   const provenance = retained.map((entry) => Object.fromEntries(query.select.map((column) => [column.as, entry.cells[column.as]!.source])));
   const result: QueryResult = { evaluation: queryCompleteness(model, query, usedTypes), rows, provenance };
-  if (skipped.size) result.skipped = [...skipped].sort(compareUnicodeCodePoints);
+  if (skipped.size) {
+    result.skipped = [...skipped.keys()].sort(compareUnicodeCodePoints);
+    result.skipped_details = result.skipped.map((path) => {
+      // A link failure is recorded for its field and again for the body; keep the one that names the field.
+      const all = skipped.get(path)!;
+      const results = all.filter((r) => r.field || !all.some((o) => o.field && o.code === r.code && o.rule_id === r.rule_id && o.message === r.message));
+      return { path, results };
+    });
+  }
   if (query.group_by) {
     const groups: Array<{ key: unknown[]; rows: Row[]; cells: Cell[] }> = [];
     retained.forEach((entry, index) => {

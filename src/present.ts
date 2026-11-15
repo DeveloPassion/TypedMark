@@ -5,7 +5,7 @@ import { arrangeCalendar, arrangeTimeline } from "./calendar-views";
 import type { CollectionModel } from "./collection-model";
 import { compareFieldValues, equalFieldValues, type FieldDefinition } from "./field-values";
 import { parseMarkdown } from "./frontmatter";
-import { evaluateQueryWithColumns, type Descriptor, type QueryEvaluation } from "./query-engine";
+import { evaluateQueryWithColumns, type Descriptor, type LeftOutReason, type QueryEvaluation } from "./query-engine";
 import { SchemaRegistry } from "./schema-registry";
 import { viewRollups, viewTree, type RolledNode, type TreeNode } from "./tree-views";
 import { readCollectionModel } from "./validator";
@@ -57,6 +57,8 @@ export interface Presentation {
   backlogs?: Record<string, PresentedRow[]>;
   /** Notes the query left out because their own model could not be resolved (CM-619 to CM-621). */
   skipped?: string[];
+  /** The reasons behind `skipped`, in the same order (QRY-3). */
+  skipped_details?: Array<{ path: string; results: LeftOutReason[] }>;
 }
 
 /**
@@ -96,6 +98,7 @@ function arrange(model: CollectionModel, data: Data, query: Descriptor, evaluati
     timezone,
     fields,
     ...(evaluation.result.skipped ? { skipped: evaluation.result.skipped } : {}),
+    ...(evaluation.result.skipped_details ? { skipped_details: evaluation.result.skipped_details } : {}),
   };
   // Calendar and timeline placement keys rows by index, so item rows of one note stay distinct.
   const dated = evaluation.result.rows.map((values, index) => ({ path: String(index), values }));
@@ -318,7 +321,18 @@ export function renderPresentation(presentation: Presentation): string {
   // Long lists name the first few; `validate` reports every note with its findings.
   const skipped = presentation.skipped ?? [];
   if (skipped.length) {
-    const shown = skipped.slice(0, 5).join(", ");
+    // Name each shown note with its first reason (QRY-4).
+    const reasons = new Map((presentation.skipped_details ?? []).map((detail) => [detail.path, detail.results[0]]));
+    const shown = skipped
+      .slice(0, 5)
+      .map((path) => {
+        const reason = reasons.get(path);
+        if (!reason) return path;
+        // Messages often start with the field name; say it once.
+        const message = reason.field && reason.message.startsWith(`${reason.field} `) ? reason.message.slice(reason.field.length + 1) : reason.message;
+        return `${path} (${reason.field ? `${reason.field}: ` : ""}${message})`;
+      })
+      .join(", ");
     const more = skipped.length > 5 ? `, and ${skipped.length - 5} more (run validate for the full list)` : "";
     out.push("", `${skipped.length} note${skipped.length === 1 ? "" : "s"} left out: ${shown}${more}`);
   }

@@ -205,6 +205,9 @@ the items that mention a project. See the
 A note whose own values or links cannot be resolved no longer fails a query:
 it is left out and listed in `skipped`, and views say how many notes were left
 out. See the [skip decision](docs/decisions/046-skip-nonconforming-notes.md).
+Each left-out note also carries its reasons in `skipped_details`, and the `view`
+notice shows the first one. See the
+[skipped-reasons decision](docs/decisions/052-skipped-reasons.md).
 `bun src/cli.ts view <collection> <view-id> --schemas <dir> [--format text|json]`
 prints a saved view read-only: tables, lists, cards, boards with lanes and rank,
 trees with context rows and rollups, calendars, timelines and item rows. See the

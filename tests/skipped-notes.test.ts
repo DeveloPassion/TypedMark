@@ -59,3 +59,29 @@ test("a result with nothing left out has no skipped list", () => {
   });
   expect(result.skipped).toBeUndefined();
 });
+
+test("each left-out note carries at least one reason, in path order (QRY-3)", () => {
+  const root = collection();
+  writeFileSync(join(root, "Tasks/Unclosed.md"), "---\nnote_type: task\npriority: [\n---\n");
+  const result = run(root, { specification_version: "0.1.0", select: [{ kind: "path", as: "path" }] });
+  expect(result.skipped_details!.map((detail) => detail.path)).toEqual(result.skipped!);
+  for (const detail of result.skipped_details!) expect(detail.results.length).toBeGreaterThan(0);
+  const escaping = result.skipped_details!.find((detail) => detail.path === "Tasks/Escaping.md")!;
+  expect(escaping!.results[0]).toMatchObject({ code: "invalid_note_link", rule_id: "NL-16", field: "project" });
+  expect(escaping!.results[0]!.message).not.toContain("NL-16:");
+});
+
+test("a field problem is reported with its field and rule (QRY-3)", () => {
+  const result = run(collection(), { specification_version: "0.1.0", note_types: ["project"], select: [{ kind: "path", as: "path" }] });
+  expect(result.skipped_details).toEqual([
+    { path: "Projects/Broken.md", results: [expect.objectContaining({ code: "invalid_field_value", field: "status" })] },
+  ]);
+});
+
+test("a result with nothing left out has no reasons either", () => {
+  const result = run(join(specification, "schema/fixtures/golden/query-pilot-valid/collection"), {
+    specification_version: "0.1.0",
+    select: [{ kind: "path", as: "path" }],
+  });
+  expect(result.skipped_details).toBeUndefined();
+});

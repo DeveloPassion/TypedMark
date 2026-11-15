@@ -40,8 +40,10 @@ export function runQueryCases(
     try {
       const actual = queryCollection({ collectionRoot, schemaDirectory, queryVersion: entry.query_version, query: entry.query });
       result.actual_result = actual;
-      const { provenance: _provenance, ...normalized } = actual;
-      if (entry.expected_error || JSON.stringify(canonical(normalized)) !== JSON.stringify(canonical(entry.expected_result))) {
+      const { provenance: _provenance, ...withDetails } = actual;
+      // Reasons are optional (QRY-3): they are compared only when the case lists them, and without the free-text message.
+      const normalized = reasonsAsListed(withDetails, entry.expected_result?.skipped_details);
+      if (entry.expected_error || JSON.stringify(canonical(normalized)) !== JSON.stringify(canonical(withoutReasonMessages(entry.expected_result)))) {
         result.differences.push("Query result differs from the expected normalized result");
       }
       const aliases = entry.query.select.map((column) => column.as);
@@ -56,6 +58,33 @@ export function runQueryCases(
     if (result.differences.length) result.status = "failed";
     return result;
   });
+}
+
+type Reasons = Array<{ path: string; results: Array<{ code: string; rule_id: string; field?: string; message?: string }> }>;
+
+const dropMessage = ({ message: _message, ...reason }: Reasons[number]["results"][number]) => reason;
+
+function withoutReasonMessages<T extends { skipped_details?: Reasons }>(result: T | undefined): T | undefined {
+  if (!result?.skipped_details) return result;
+  return { ...result, skipped_details: result.skipped_details.map((detail) => ({ ...detail, results: detail.results.map(dropMessage) })) };
+}
+
+/**
+ * Reasons are optional (QRY-3): an actual result is compared on them only when the case lists them, only on the
+ * listed reasons (code, rule, field), and without the free-text message.
+ */
+function reasonsAsListed<T extends { skipped_details?: Reasons }>(actual: T, listed: Reasons | undefined): T {
+  const { skipped_details, ...rest } = actual;
+  if (!listed || !skipped_details) return rest as T;
+  const key = (reason: { code: string; rule_id: string; field?: string }) => JSON.stringify([reason.code, reason.rule_id, reason.field ?? null]);
+  const wanted = new Map(listed.map((detail) => [detail.path, new Set(detail.results.map(key))]));
+  const narrowed = skipped_details.map((detail) => {
+    const keep = wanted.get(detail.path);
+    const seen = new Set<string>();
+    const results = detail.results.filter((reason) => keep?.has(key(reason)) && !seen.has(key(reason)) && seen.add(key(reason))).map(dropMessage);
+    return { ...detail, results };
+  });
+  return { ...rest, skipped_details: narrowed } as T;
 }
 
 function canonical(value: unknown): unknown {
