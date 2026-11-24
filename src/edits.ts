@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, w
 import { dirname, join, posix } from "node:path";
 import { parse, parseDocument, stringify } from "yaml";
 import type { CollectionModel, ManagedNote } from "./collection-model";
+import { markerArchived } from "./archive-markers";
 import { inspectBodyLinks, linkedNotePath, parseNoteLink, resolveNoteLink, type ParsedNoteLink } from "./note-links";
 import { inNoteFolder, namePart, resolveStoragePath } from "./storage";
 import { readCollectionModel } from "./validator";
@@ -386,6 +387,16 @@ export function planEdit(collectionRoot: string, schemaDirectory: string, reques
         const next = value.map((item) => (typeof item === "string" ? relink(item) : item));
         if (next.some((item, index) => item !== value[index])) changes[key] = next;
       }
+    }
+    // A note archived only by a marker stays archived when it leaves every marker (ARC-12).
+    const managedNote = model.notes.find((managed) => managed.path === candidate.path);
+    if (managedNote?.values.archived === true && mapped(candidate.path) !== candidate.path && !Object.hasOwn(changes, "archived")) {
+      const storedAfter: Data = { ...managedNote.stored };
+      for (const [key, value] of Object.entries(changes)) {
+        if (value === undefined) delete storedAfter[key];
+        else storedAfter[key] = value;
+      }
+      if (markerArchived(model.config, mapped(candidate.path), storedAfter) === false) changes.archived = true;
     }
     // Body links, replaced through their exact source spans from the end.
     const bodyStart = split ? text.length - split.body.length : text.startsWith("﻿") ? 1 : 0;

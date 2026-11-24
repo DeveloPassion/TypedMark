@@ -17,6 +17,7 @@ import {
   type FieldDefinition,
 } from "./field-values";
 import { aliasValueFailure, noteFieldDefinitions, type CollectionModel, type CollectionNote, type ManagedNote } from "./collection-model";
+import { ARCHIVE_MARKERS, markerArchived } from "./archive-markers";
 import { exclusionPatterns, isExcluded, isSubtreeExcluded } from "./paths";
 import { readStableCollection } from "./snapshot";
 import { validateViews } from "./views";
@@ -164,6 +165,7 @@ export function readCollectionModel(
     delete configShape.default_property_sets;
   if (!requiredExtensions["typedmark:automation"] || supportedExtensions["typedmark:automation"] !== requiredExtensions["typedmark:automation"])
     delete configShape.automation_defaults;
+  if (!requiredExtensions[ARCHIVE_MARKERS] || supportedExtensions[ARCHIVE_MARKERS] !== requiredExtensions[ARCHIVE_MARKERS]) delete configShape.archive_markers;
   const unknownConfigKeys: Array<{ path: string; key: string }> = [];
   const projectConfigKey = (path: string, key: string) => {
     if (removePropertyAt(configShape, path, key)) unknownConfigKeys.push({ path, key });
@@ -259,6 +261,8 @@ export function readCollectionModel(
   if (metadataEntries.length === 1) validateReuseDeclaration(root, metadataDirectory, config, requiredExtensions, results);
   else if (Object.hasOwn(config, "default_property_sets")) requireExtension("typedmark:reuse", "typedmark.md", requiredExtensions, config, results);
   if (Object.hasOwn(config, "automation_defaults")) requireExtension("typedmark:automation", "typedmark.md", requiredExtensions, config, results);
+  // Archive markers apply only under their declared extension (ARC-3).
+  if (Object.hasOwn(config, "archive_markers")) requireExtension(ARCHIVE_MARKERS, "typedmark.md", requiredExtensions, config, results);
   // Reuse consumes collection-controlled names, vocabularies and severities.
   // Invalid shapes are not safe inputs to composition or semantic evaluation.
   if (configurationIssue) return model(report(version, mode, requiredExtensions, evaluatedExtensions, evaluation, results));
@@ -506,8 +510,14 @@ export function readCollectionModel(
     }
   }
 
+  const markerFailures = validateArchiveMarkerPatterns(config);
   const mappingFailures = validateMappingDeclarations(config, schemas);
+  // Markers are read only when their contract is evaluated and their patterns compile (ARC-2, ARC-3).
+  const markersUsable = evaluatedExtensions[ARCHIVE_MARKERS] === "0.1.0" && markerFailures.length === 0;
   for (const failure of mappingFailures) add(results, config, "invalid_note_type_mapping", "typedmark.md", failure.rule, failure.message);
+  for (const failure of markerFailures) add(results, config, "invalid_collection_configuration", "typedmark.md", failure.rule, failure.message);
+  // Without its markers, no note's archived state, and so no storage contract, is known.
+  if (markerFailures.length && !mappingFailures.length) mappingFailures.push(markerFailures[0]!);
   if (mappingFailures.length) {
     associationIssue = mappingFailures[0]!.message;
   }
@@ -568,6 +578,7 @@ export function readCollectionModel(
       config,
       schemaIssues.has(noteType),
       !!requiredExtensions["typedmark:template-tracking"],
+      markersUsable ? markerArchived(config, notePath.normalize("NFC"), document.data, document.hasFrontmatter) : undefined,
     );
     results.push(...validation.results);
     effectiveNotes.push({
@@ -645,6 +656,7 @@ export function readCollectionModel(
       "typedmark:queries",
       "typedmark:views",
       "typedmark:items",
+      "typedmark:archive-markers",
       "typedmark:expansion",
       "typedmark:template-tracking",
     ]) {
@@ -665,6 +677,7 @@ const STANDARD_EXTENSIONS: ExtensionMap = {
   "typedmark:queries": "0.1.0",
   "typedmark:views": "0.1.0",
   "typedmark:items": "0.1.0",
+  "typedmark:archive-markers": "0.1.0",
   "typedmark:systems": "0.1.0",
 };
 
@@ -819,7 +832,17 @@ function validateTemplate(
   }
 }
 
-function validateNote(path: string, stored: Data, body: string, noteType: string, schema: Data, config: Data, partial = false, trackingDeclared = false) {
+function validateNote(
+  path: string,
+  stored: Data,
+  body: string,
+  noteType: string,
+  schema: Data,
+  config: Data,
+  partial = false,
+  trackingDeclared = false,
+  archivedFallback?: boolean,
+) {
   const results: ValidationResult[] = [];
   const fields = noteFieldDefinitions(schema);
   const values: Data = {};
@@ -843,6 +866,8 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
     const present = Object.hasOwn(stored, name);
     let value: unknown;
     if (present) value = stored[name];
+    // An archive marker supplies an unstored archived state (ARC-6, ARC-7).
+    else if (name === "archived" && archivedFallback !== undefined) value = archivedFallback;
     else if (Object.hasOwn(definition, "default_value")) value = definition.default_value;
     else if (name === "note_type") value = noteType;
     else if (name === "title") value = titleFallback(schema.storage, path, values, fields, config.timezone ?? "UTC");
@@ -1067,6 +1092,25 @@ type Association = { matched: false } | { matched: true; candidate: unknown };
 
 function candidateTypes(association: Association): string[] {
   return association.matched && typeof association.candidate === "string" ? [association.candidate] : [];
+}
+
+// Marker patterns use the mapping regex dialect (ARC-2, CM-102).
+function validateArchiveMarkerPatterns(config: Data) {
+  const failures: Array<{ rule: string; message: string }> = [];
+  if (!Array.isArray(config.archive_markers)) return failures;
+  for (const when of config.archive_markers as Data[]) {
+    if (!when || typeof when !== "object") continue;
+    const patterns = [when.path?.regex, ...Object.values(when.frontmatter ?? {}).map((predicate) => (predicate as Data)?.regex)];
+    for (const pattern of patterns)
+      if (pattern !== undefined) {
+        try {
+          fullPattern(pattern);
+        } catch {
+          failures.push({ rule: "FND-31", message: "Invalid archive marker regular expression" });
+        }
+      }
+  }
+  return failures;
 }
 
 function validateMappingDeclarations(config: Data, schemas: Map<string, Data>) {

@@ -3,6 +3,7 @@ import { join, posix } from "node:path";
 import { parseNoteLink } from "./note-links";
 import { parseMarkdownWithNodes } from "./frontmatter";
 import { expandObjectDefaults, isMapping } from "./field-values";
+import { markerArchived } from "./archive-markers";
 import { noteFieldDefinitions } from "./collection-model";
 import { materializeStarters, MaterializationError, type StarterInput } from "./materialization";
 import { readStableCollection } from "./snapshot";
@@ -95,13 +96,15 @@ export function prepareSystem(sourceRoot: string, schemaDirectory: string) {
         for (const [field, definition] of Object.entries(fields)) {
           const value = Object.hasOwn(note.data, field)
             ? note.data[field]
-            : Object.hasOwn(definition, "default_value")
-              ? definition.default_value
-              : field === "note_type"
-                ? note.noteType
-                : definition.nullable
-                  ? null
-                  : undefined;
+            : field === "archived" && markerArchived(model.config, note.path, note.data) !== undefined
+              ? markerArchived(model.config, note.path, note.data)
+              : Object.hasOwn(definition, "default_value")
+                ? definition.default_value
+                : field === "note_type"
+                  ? note.noteType
+                  : definition.nullable
+                    ? null
+                    : undefined;
           if (value !== undefined) effective[field] = expandObjectDefaults(value, definition);
         }
         // The title falls back to the name part once the other values are known (NTS-192).

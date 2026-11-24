@@ -154,6 +154,11 @@ optional folder on moves and re-typing. See the
 moves to another folder of its own, rewriting links to every carried file;
 `--only-note` moves the note alone, and the plan lists files left behind. See
 the [note-folder-move decision](docs/decisions/051-note-folder-moves.md).
+Under `typedmark:archive-markers`, `archive_markers` in `typedmark.md` archive
+a note that stores no `archived` by its folder or stored frontmatter; the
+archive storage still checks its path, and writers store `archived: true` only
+when a move takes the note out of every marker. See the
+[archive-marker decision](docs/decisions/055-archive-markers.md).
 Automation artifacts accept `add_list_item`, `remove_list_item` and
 `set_field.only_if_empty`; list-item targets must be assignable list fields. See
 the [list-item decision](docs/decisions/019-list-item-actions.md).

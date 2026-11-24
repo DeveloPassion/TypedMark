@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { parse, stringify } from "yaml";
 import { noteFieldDefinitions, type ManagedNote } from "./collection-model";
+import { markerArchived } from "./archive-markers";
 import { applyEdit, planEdit, type EditPlan } from "./edits";
 import { classifyConversion, validateFieldValue, type FieldDefinition } from "./field-values";
 import { locateBodyBlocks } from "./markdown-headings";
@@ -204,6 +205,9 @@ export function planRetype(collectionRoot: string, schemaDirectory: string, note
   // Target path (RT-9): a change moves the note and rewrites links through the edit planner.
   const frontmatter: Data = { note_type: to, ...stored };
   const effective: Data = { ...frontmatter };
+  // The current path keeps a marker-archived note archived under the target type (ARC-11).
+  const derivedArchived = markerArchived(model.config, path, frontmatter);
+  if (derivedArchived !== undefined) effective.archived = derivedArchived;
   for (const [name, definition] of Object.entries(targetFields)) {
     if (!Object.hasOwn(effective, name) && Object.hasOwn(definition, "default_value")) effective[name] = definition.default_value;
   }
