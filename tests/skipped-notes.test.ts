@@ -126,3 +126,27 @@ test("a frontmatter finding turned off still leaves the note out, with the gener
   for (const detail of result.skipped_details!.filter((entry) => broken.includes(entry.path)))
     expect(detail.results).toEqual([{ code: "invalid_note_frontmatter", rule_id: "MN-118", message: "The note's frontmatter could not be resolved" }]);
 });
+
+// Tasks typed by tag, a capture typed by folder, and notes whose frontmatter cannot be parsed (QRY-5 to QRY-7).
+const unreadableVector = join(specification, "schema/fixtures/golden/query-unreadable-notes/collection");
+const unreadableQuery = (note_types?: string[]) =>
+  queryCollection({
+    collectionRoot: unreadableVector,
+    schemaDirectory,
+    queryVersion: "0.1.0",
+    query: { specification_version: "0.1.0", ...(note_types ? { note_types } : {}), select: [{ kind: "path", as: "path" }] },
+  });
+
+test("a note whose type cannot be known is reported apart, only where an admitted type stores notes (QRY-5, QRY-7)", () => {
+  const all = unreadableQuery();
+  expect(all.rows).toEqual([{ path: "Tasks/Open.md" }]);
+  expect(all.skipped).toEqual(["Inbox/Broken.md"]);
+  expect(all.unreadable?.map((detail) => detail.path)).toEqual(["Tasks/Duplicate.md", "Tasks/Unclosed.md"]);
+  for (const detail of all.unreadable!) expect(detail.results[0]).toMatchObject({ code: "invalid_note_frontmatter", rule_id: "MN-118" });
+  expect(unreadableQuery(["task"]).unreadable?.map((detail) => detail.path)).toEqual(["Tasks/Duplicate.md", "Tasks/Unclosed.md"]);
+  expect(unreadableQuery(["capture"]).unreadable).toBeUndefined();
+});
+
+test("unreadable notes do not make the evaluation incomplete (QRY-6)", () => {
+  expect(unreadableQuery(["task"]).evaluation).toBe("complete");
+});

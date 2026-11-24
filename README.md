@@ -216,6 +216,10 @@ notice shows the first one. See the
 A note whose frontmatter cannot be parsed keeps its parser finding as the
 reason, also when `validation_defaults` lowers it to `warn` or `info`. See the
 [frontmatter-reasons decision](docs/decisions/053-frontmatter-skip-reasons.md).
+A note whose frontmatter cannot be parsed and whose type therefore cannot be
+known is listed in `unreadable` when it lies in a storage folder of an admitted
+type, and views say how many. See the
+[unreadable-notes decision](docs/decisions/056-unreadable-notes.md).
 A field declared in an `object.fields` mapping may use lower camel case, such
 as the `startTime` and `endTime` keys of TaskNotes time entries; top-level
 names stay snake case. See the

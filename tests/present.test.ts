@@ -174,3 +174,13 @@ test("a long list of left-out notes names the first five", () => {
     "7 notes left out: N0.md, N1.md, N2.md, N3.md, N4.md, and 2 more (run validate for the full list)",
   );
 });
+
+test("the notice names notes that could not be read, with their first reason (QRY-6)", () => {
+  const presentation = { view: "v", label: "V", layout: "list", timezone: "UTC", fields: [{ column: "path", label: "path" }], rows: [] };
+  const unreadable = [
+    { path: "Tasks/A.md", results: [{ code: "invalid_note_frontmatter", rule_id: "MN-118", message: "Map keys must be unique at line 2\n\ndetail" }] },
+  ];
+  expect(renderPresentation({ ...presentation, unreadable })).toContain(
+    "1 note could not be read, so its type is unknown: Tasks/A.md (Map keys must be unique at line 2)",
+  );
+});
