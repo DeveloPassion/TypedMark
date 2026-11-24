@@ -1,8 +1,8 @@
 {
-  "specification_revision": "f90b15d041bfde040578d399b60750976283a550",
-  "adapter_revision": "1668cb690c8b336ccbe18128183983610025bc4a",
-  "started_at": "2026-11-24T08:38:34.614Z",
-  "finished_at": "2026-11-24T08:44:27.269Z",
+  "specification_revision": "bfffd5b47ff2f27c8271178fe763f0c43822af70",
+  "adapter_revision": "412a29d4bcb32ff9efaaaf509a22773fc09b983e",
+  "started_at": "2026-11-24T09:40:10.367Z",
+  "finished_at": "2026-11-24T09:42:54.794Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -17,6 +17,7 @@
       "typedmark:queries": "0.1.0",
       "typedmark:views": "0.1.0",
       "typedmark:items": "0.1.0",
+      "typedmark:archive-markers": "0.1.0",
       "typedmark:systems": "0.1.0"
     },
     "operations": {
@@ -25,14 +26,182 @@
     }
   },
   "summary": {
-    "discovered": 116,
-    "executed": 114,
-    "passed": 114,
+    "discovered": 119,
+    "executed": 117,
+    "passed": 117,
     "failed": 0,
     "skipped": 2,
     "changed": 0
   },
   "vectors": [
+    {
+      "name": "archive-markers-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:archive-markers": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:archive-markers": "0.1.0"
+        },
+        "valid": false,
+        "results": [
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Archives/Projects/2025/Rollout.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Archives/Projects/2026/<free name>.md",
+            "note_type": "project"
+          },
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Archives/Projects/2026/Kept.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Projects/<free name>.md",
+            "note_type": "project"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "archive-markers-undeclared",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "path",
+            "severity": "error",
+            "path": "Archives/Projects/2026/Rollout.md",
+            "rule_id": "NTS-146",
+            "message": "Expected managed-note path Projects/<free name>.md",
+            "note_type": "project"
+          },
+          {
+            "code": "invalid_extension_declaration",
+            "severity": "error",
+            "path": "typedmark.md",
+            "rule_id": "EXT-16",
+            "message": "This construct requires typedmark:archive-markers",
+            "extension": "typedmark:archive-markers"
+          }
+        ]
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "archive-markers-valid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {
+          "typedmark:archive-markers": "0.1.0"
+        },
+        "evaluated_extensions": {
+          "typedmark:archive-markers": "0.1.0"
+        },
+        "valid": true,
+        "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      },
+      "query_results": [
+        {
+          "name": "folder-marker-archives-unstored-note",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Archives/Projects/2026/Rollout.md",
+                "archived": null
+              }
+            ],
+            "provenance": [
+              {
+                "path": null,
+                "archived": null
+              }
+            ]
+          }
+        },
+        {
+          "name": "unmatched-note-stays-active",
+          "status": "passed",
+          "differences": [],
+          "actual_result": {
+            "evaluation": "complete",
+            "rows": [
+              {
+                "path": "Projects/Launch.md",
+                "archived": null
+              }
+            ],
+            "provenance": [
+              {
+                "path": null,
+                "archived": null
+              }
+            ]
+          }
+        }
+      ]
+    },
     {
       "name": "authoring-tracking-invalid",
       "status": "passed",
@@ -90,6 +259,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -123,6 +293,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -175,6 +346,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -208,6 +380,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -258,6 +431,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -291,6 +465,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -318,6 +493,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -354,6 +530,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -412,6 +589,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -445,6 +623,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -491,6 +670,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -545,6 +725,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -580,6 +761,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -631,6 +813,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -670,6 +853,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -778,6 +962,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -805,6 +990,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -841,6 +1027,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -909,6 +1096,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -988,6 +1176,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1025,6 +1214,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1067,6 +1257,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1094,6 +1285,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1138,6 +1330,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1165,6 +1358,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1215,6 +1409,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1246,6 +1441,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1308,6 +1504,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1347,6 +1544,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1382,6 +1580,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1417,6 +1616,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1444,6 +1644,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1514,6 +1715,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1545,6 +1747,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1584,6 +1787,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1615,6 +1819,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1652,6 +1857,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1683,6 +1889,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1719,6 +1926,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1755,6 +1963,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1782,6 +1991,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1819,7 +2029,8 @@
         "typedmark:reuse": "0.1.0",
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
-        "typedmark:items": "0.1.0"
+        "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0"
       }
     },
     {
@@ -1860,6 +2071,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1934,6 +2146,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1961,6 +2174,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -1997,6 +2211,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2024,6 +2239,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2095,6 +2311,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2122,6 +2339,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2177,6 +2395,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2248,6 +2467,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2275,6 +2495,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2330,6 +2551,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2401,6 +2623,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2428,6 +2651,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2489,6 +2713,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2535,6 +2760,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2570,6 +2796,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2650,6 +2877,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2701,6 +2929,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2734,6 +2963,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -2761,6 +2991,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -2967,6 +3198,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3013,6 +3245,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3077,6 +3310,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3104,6 +3338,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -3163,6 +3398,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3198,6 +3434,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3248,6 +3485,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3275,6 +3513,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -3332,6 +3571,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -3390,6 +3630,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3427,6 +3668,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3460,6 +3702,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3500,6 +3743,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3542,6 +3786,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3602,6 +3847,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3629,6 +3875,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3681,6 +3928,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3721,6 +3969,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3777,6 +4026,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3804,6 +4054,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3856,6 +4107,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3883,6 +4135,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3918,6 +4171,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -3949,6 +4203,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -4002,6 +4257,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4041,6 +4297,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4082,6 +4339,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4123,6 +4381,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4154,6 +4413,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4198,6 +4458,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4233,6 +4494,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -4592,6 +4854,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4628,6 +4891,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4694,6 +4958,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4727,6 +4992,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4787,6 +5053,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4820,6 +5087,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4856,6 +5124,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4918,6 +5187,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4956,6 +5226,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -4994,6 +5265,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5043,6 +5315,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5142,6 +5415,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -5267,6 +5541,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       },
       "query_results": [
@@ -5349,6 +5624,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5382,6 +5658,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5432,6 +5709,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5465,6 +5743,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5502,6 +5781,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5529,6 +5809,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5566,6 +5847,7 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     },
@@ -5593,13 +5875,14 @@
         "typedmark:queries": "0.1.0",
         "typedmark:views": "0.1.0",
         "typedmark:items": "0.1.0",
+        "typedmark:archive-markers": "0.1.0",
         "typedmark:systems": "0.1.0"
       }
     }
   ],
   "query_summary": {
-    "executed": 27,
-    "passed": 27,
+    "executed": 29,
+    "passed": 29,
     "failed": 0
   }
 }

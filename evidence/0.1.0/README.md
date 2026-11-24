@@ -616,3 +616,11 @@ allows lower camel case in the names of object children (`MN-322`) and adds
 the `object-child-names-invalid` golden vector. The corpus now reports 116
 discovered, 114 passed and 27 queries passed, with the two precondition skips.
 See [decision 054](../../docs/decisions/054-object-child-names.md).
+The archive-marker increment (specification `bfffd5b`, adapter `412a29d`)
+derives the archived state of notes that store none from `archive_markers`
+(`ARC-1` to `ARC-12`) and adds three golden vectors. The corpus reports 119
+discovered, 117 passed and 29 queries passed, with the two precondition skips.
+On a copy of the 43 archived project notes of the maintainer's vault, which
+store no `archived`, the path check reports no finding with a `path.under`
+marker and 43 without it. See
+[decision 055](../../docs/decisions/055-archive-markers.md).
