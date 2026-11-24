@@ -93,3 +93,13 @@ test.each(["collection", "schema"])("mandatory tag declarations reject NFC dupli
     expect.objectContaining({ code: scope === "collection" ? "invalid_collection_configuration" : "invalid_note_type_schema" }),
   );
 });
+
+test("object children may use lower camel case, top-level names may not (MN-25, MN-322)", () => {
+  const entries = { type: "list", nullable: true, items: { type: "object", fields: { startTime: { type: "datetime" } } } };
+  const root = collection({ time_entries: [{ startTime: "2026-11-24T09:00:00+01:00", pomodoroId: 3 }] }, { time_entries: entries });
+  expect(run(root).results).toEqual([
+    expect.objectContaining({ code: "unknown_field", rule_id: "MN-112", field: "time_entries.pomodoroId", note_type: "note" }),
+  ]);
+  const topLevel = collection({}, { startTime: { type: "datetime", nullable: true } });
+  expect(run(topLevel).results).toContainEqual(expect.objectContaining({ code: "invalid_note_type_schema", path: ".typedmark/schemas/note.md" }));
+});

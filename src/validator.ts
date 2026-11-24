@@ -879,7 +879,10 @@ function validateNote(path: string, stored: Data, body: string, noteType: string
   // Keep their spelling in the message and omit an unrepresentable context.
   const unknownContext = (names: readonly string[]): Partial<ValidationResult> => ({
     note_type: noteType,
-    ...(names.every((name) => /^[a-z][a-z0-9_]*(?![\s\S])/u.test(name)) ? { field: names.join(".") } : {}),
+    // A top-level name follows MN-25; nested object children may use lower camel case (MN-322).
+    ...(names.every((name, index) => (index === 0 ? /^[a-z][a-z0-9_]*(?![\s\S])/u : /^[a-z][a-zA-Z0-9_]*(?![\s\S])/u).test(name))
+      ? { field: names.join(".") }
+      : {}),
   });
   const declared = new Set(Object.keys(fields));
   for (const field of Object.keys(stored)) {

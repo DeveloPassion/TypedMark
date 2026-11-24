@@ -208,6 +208,10 @@ out. See the [skip decision](docs/decisions/046-skip-nonconforming-notes.md).
 Each left-out note also carries its reasons in `skipped_details`, and the `view`
 notice shows the first one. See the
 [skipped-reasons decision](docs/decisions/052-skipped-reasons.md).
+A field declared in an `object.fields` mapping may use lower camel case, such
+as the `startTime` and `endTime` keys of TaskNotes time entries; top-level
+names stay snake case. See the
+[object-child-names decision](docs/decisions/054-object-child-names.md).
 `bun src/cli.ts view <collection> <view-id> --schemas <dir> [--format text|json]`
 prints a saved view read-only: tables, lists, cards, boards with lanes and rank,
 trees with context rows and rollups, calendars, timelines and item rows. See the
