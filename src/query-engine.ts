@@ -80,6 +80,8 @@ export interface QueryResult {
   skipped?: string[];
   /** At least one reason per skipped path, in the same order; absent when nothing was left out (QRY-3). */
   skipped_details?: Array<{ path: string; results: LeftOutReason[] }>;
+  /** Notes whose frontmatter cannot be parsed and whose type cannot be known, with reasons, in path order; absent when none (QRY-5). */
+  unreadable?: Array<{ path: string; results: LeftOutReason[] }>;
 }
 export interface QueryEvaluation {
   result: QueryResult;
@@ -381,6 +383,14 @@ export function usesContextNote(query: Descriptor): boolean {
   return uses(query.where);
 }
 
+/** A storage folder pattern as a regular expression: literal text, and each placeholder matching any non-empty text (QRY-7). */
+function folderRegex(pattern: string): string {
+  return pattern
+    .split(/(\{[^{}]*\})/u)
+    .map((part) => (/^\{[^{}]*\}$/u.test(part) ? ".+" : part.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&")))
+    .join("");
+}
+
 /** `contextNote` is the managed note containing the evaluating expansion; elsewhere there is none (CM-574, CM-575). */
 export function evaluateQueryWithColumns(model: CollectionModel, query: Descriptor, contextNote?: string): QueryEvaluation {
   const analysis = analyzeQuery(model, query);
@@ -413,17 +423,44 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
     // The error message starts with its rule ID; the reason carries the rule separately.
     message: failure.message.replace(`${failure.rule_id}: `, ""),
   });
+  // Error findings first; a severity lowered to warn or info keeps its finding as the reason (QRY-3).
+  const documentReasons = (path: string): LeftOutReason[] => {
+    const atPath = model.report.results.filter((result) => result.path === path);
+    const errors = atPath.filter((result) => result.severity === "error");
+    return (errors.length ? errors : atPath.filter((result) => ["invalid_note_frontmatter", "invalid_note_type_mapping"].includes(result.code))).map(reasonOf);
+  };
+  // Unparseable frontmatter that no mapping types without it: the note has no type, so it is reported apart (QRY-5),
+  // but only where an admitted concrete type stores notes (QRY-7).
+  const storageFolders = [...model.schemas]
+    .filter(([type, schema]) => !schema.abstract && admitted(type, query.note_types))
+    .flatMap(([, schema]) => (schema.storage ? [schema.storage.folder_pattern, schema.storage.archive?.folder_pattern] : [""]))
+    .filter((folder): folder is string => typeof folder === "string")
+    .map((folder) => (folder === "" ? /^/u : new RegExp(`^${folderRegex(folder)}/`, "u")));
+  const unreadable = model.documents
+    .filter(
+      (document) =>
+        !modeledPaths.has(document.path) &&
+        document.frontmatterValid === false &&
+        !document.candidates?.length &&
+        storageFolders.some((folder) => folder.test(document.path)),
+    )
+    .map((document) => document.path)
+    .sort(compareUnicodeCodePoints)
+    .map((path) => {
+      const reported = documentReasons(path);
+      return {
+        path,
+        results: reported.length
+          ? reported
+          : [{ code: "invalid_note_frontmatter", rule_id: "MN-118", message: "The note's frontmatter could not be resolved" }],
+      };
+    });
   for (const document of model.documents) {
     if (
       !modeledPaths.has(document.path) &&
       document.candidates?.some((type) => model.schemas.has(type) && !model.schemas.get(type)!.abstract && admitted(type, query.note_types))
     ) {
-      // Error findings first; a severity lowered to warn or info keeps its finding as the reason (QRY-3).
-      const atPath = model.report.results.filter((result) => result.path === document.path);
-      const errors = atPath.filter((result) => result.severity === "error");
-      const reported = (
-        errors.length ? errors : atPath.filter((result) => ["invalid_note_frontmatter", "invalid_note_type_mapping"].includes(result.code))
-      ).map(reasonOf);
+      const reported = documentReasons(document.path);
       leaveOut(
         document.path,
         reported.length
@@ -651,6 +688,7 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
       return { path, results };
     });
   }
+  if (unreadable.length) result.unreadable = unreadable;
   if (query.group_by) {
     const groups: Array<{ key: unknown[]; rows: Row[]; cells: Cell[] }> = [];
     retained.forEach((entry, index) => {

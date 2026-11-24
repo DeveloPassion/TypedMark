@@ -59,6 +59,8 @@ export interface Presentation {
   skipped?: string[];
   /** The reasons behind `skipped`, in the same order (QRY-3). */
   skipped_details?: Array<{ path: string; results: LeftOutReason[] }>;
+  /** Notes whose frontmatter cannot be parsed and whose type cannot be known (QRY-5, QRY-6). */
+  unreadable?: Array<{ path: string; results: LeftOutReason[] }>;
 }
 
 /**
@@ -99,6 +101,7 @@ function arrange(model: CollectionModel, data: Data, query: Descriptor, evaluati
     fields,
     ...(evaluation.result.skipped ? { skipped: evaluation.result.skipped } : {}),
     ...(evaluation.result.skipped_details ? { skipped_details: evaluation.result.skipped_details } : {}),
+    ...(evaluation.result.unreadable ? { unreadable: evaluation.result.unreadable } : {}),
   };
   // Calendar and timeline placement keys rows by index, so item rows of one note stay distinct.
   const dated = evaluation.result.rows.map((values, index) => ({ path: String(index), values }));
@@ -335,6 +338,19 @@ export function renderPresentation(presentation: Presentation): string {
       .join(", ");
     const more = skipped.length > 5 ? `, and ${skipped.length - 5} more (run validate for the full list)` : "";
     out.push("", `${skipped.length} note${skipped.length === 1 ? "" : "s"} left out: ${shown}${more}`);
+  }
+  // Notes whose type cannot be known could belong here; say so with their first reason (QRY-6).
+  const unreadable = presentation.unreadable ?? [];
+  if (unreadable.length) {
+    const shown = unreadable
+      .slice(0, 5)
+      .map((detail) => `${detail.path} (${detail.results[0]!.message.split("\n")[0]!.trim()})`)
+      .join(", ");
+    const more = unreadable.length > 5 ? `, and ${unreadable.length - 5} more (run validate for the full list)` : "";
+    out.push(
+      "",
+      `${unreadable.length} note${unreadable.length === 1 ? "" : "s"} could not be read, so ${unreadable.length === 1 ? "its type is" : "their types are"} unknown: ${shown}${more}`,
+    );
   }
   return `${out.join("\n").trimEnd()}\n`;
 }

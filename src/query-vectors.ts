@@ -42,7 +42,7 @@ export function runQueryCases(
       result.actual_result = actual;
       const { provenance: _provenance, ...withDetails } = actual;
       // Reasons are optional (QRY-3): they are compared only when the case lists them, and without the free-text message.
-      const normalized = reasonsAsListed(withDetails, entry.expected_result?.skipped_details);
+      const normalized = unreadableAsListed(reasonsAsListed(withDetails, entry.expected_result?.skipped_details), entry.expected_result?.unreadable);
       if (entry.expected_error || JSON.stringify(canonical(normalized)) !== JSON.stringify(canonical(withoutReasonMessages(entry.expected_result)))) {
         result.differences.push("Query result differs from the expected normalized result");
       }
@@ -64,9 +64,32 @@ type Reasons = Array<{ path: string; results: Array<{ code: string; rule_id: str
 
 const dropMessage = ({ message: _message, ...reason }: Reasons[number]["results"][number]) => reason;
 
-function withoutReasonMessages<T extends { skipped_details?: Reasons }>(result: T | undefined): T | undefined {
-  if (!result?.skipped_details) return result;
-  return { ...result, skipped_details: result.skipped_details.map((detail) => ({ ...detail, results: detail.results.map(dropMessage) })) };
+function withoutReasonMessages<T extends { skipped_details?: Reasons; unreadable?: Reasons }>(result: T | undefined): T | undefined {
+  if (!result) return result;
+  const strip = (details: Reasons) => details.map((detail) => ({ ...detail, results: detail.results.map(dropMessage) }));
+  return {
+    ...result,
+    ...(result.skipped_details ? { skipped_details: strip(result.skipped_details) } : {}),
+    ...(result.unreadable ? { unreadable: strip(result.unreadable) } : {}),
+  };
+}
+
+/** Unreadable notes are optional (QRY-5): compared only when the case lists them, on path, code, rule and field. */
+function unreadableAsListed<T extends { unreadable?: Reasons }>(actual: T, listed: Reasons | undefined): T {
+  const { unreadable, ...rest } = actual;
+  if (!listed || !unreadable) return rest as T;
+  return { ...rest, unreadable: narrowReasons(unreadable, listed) } as T;
+}
+
+function narrowReasons(actual: Reasons, listed: Reasons): Reasons {
+  const key = (reason: { code: string; rule_id: string; field?: string }) => JSON.stringify([reason.code, reason.rule_id, reason.field ?? null]);
+  const wanted = new Map(listed.map((detail) => [detail.path, new Set(detail.results.map(key))]));
+  return actual.map((detail) => {
+    const keep = wanted.get(detail.path);
+    const seen = new Set<string>();
+    const results = detail.results.filter((reason) => keep?.has(key(reason)) && !seen.has(key(reason)) && seen.add(key(reason))).map(dropMessage);
+    return { ...detail, results };
+  });
 }
 
 /**
