@@ -418,7 +418,12 @@ export function evaluateQueryWithColumns(model: CollectionModel, query: Descript
       !modeledPaths.has(document.path) &&
       document.candidates?.some((type) => model.schemas.has(type) && !model.schemas.get(type)!.abstract && admitted(type, query.note_types))
     ) {
-      const reported = model.report.results.filter((result) => result.path === document.path && result.severity === "error").map(reasonOf);
+      // Error findings first; a severity lowered to warn or info keeps its finding as the reason (QRY-3).
+      const atPath = model.report.results.filter((result) => result.path === document.path);
+      const errors = atPath.filter((result) => result.severity === "error");
+      const reported = (
+        errors.length ? errors : atPath.filter((result) => ["invalid_note_frontmatter", "invalid_note_type_mapping"].includes(result.code))
+      ).map(reasonOf);
       leaveOut(
         document.path,
         reported.length

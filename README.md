@@ -213,6 +213,9 @@ out. See the [skip decision](docs/decisions/046-skip-nonconforming-notes.md).
 Each left-out note also carries its reasons in `skipped_details`, and the `view`
 notice shows the first one. See the
 [skipped-reasons decision](docs/decisions/052-skipped-reasons.md).
+A note whose frontmatter cannot be parsed keeps its parser finding as the
+reason, also when `validation_defaults` lowers it to `warn` or `info`. See the
+[frontmatter-reasons decision](docs/decisions/053-frontmatter-skip-reasons.md).
 A field declared in an `object.fields` mapping may use lower camel case, such
 as the `startTime` and `endTime` keys of TaskNotes time entries; top-level
 names stay snake case. See the

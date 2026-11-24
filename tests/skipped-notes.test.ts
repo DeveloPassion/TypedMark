@@ -85,3 +85,44 @@ test("a result with nothing left out has no reasons either", () => {
   });
   expect(result.skipped_details).toBeUndefined();
 });
+
+// Frontmatter that cannot be parsed has no type of its own, so a folder mapping makes it a candidate.
+function brokenFrontmatter(severity?: string) {
+  const root = collection();
+  const defaults = severity ? `validation_defaults:\n  invalid_note_frontmatter: ${severity}\n` : "";
+  writeFileSync(
+    join(root, "typedmark.md"),
+    `---\nspecification_version: 0.1.0\nname: broken-frontmatter\ndescription: Folder-mapped tasks.\n${defaults}note_type_mappings:\n  - {kind: frontmatter_field, field: note_type}\n  - {kind: folder, folder: Tasks/, note_type: task}\n---\n`,
+  );
+  writeFileSync(join(root, "Tasks/Unclosed.md"), "---\npriority: [\n---\n");
+  writeFileSync(join(root, "Tasks/Sequence.md"), "---\n- a\n- b\n---\n");
+  writeFileSync(join(root, "Tasks/Duplicate.md"), "---\npriority: 1\npriority: 2\n---\n");
+  return run(root, { specification_version: "0.1.0", note_types: ["task"], select: [{ kind: "path", as: "path" }] });
+}
+const broken = ["Tasks/Duplicate.md", "Tasks/Sequence.md", "Tasks/Unclosed.md"];
+
+test("a note whose frontmatter cannot be parsed is left out with the parser finding (CM-619, QRY-3)", () => {
+  const result = brokenFrontmatter();
+  expect(result.rows.map((row) => row.path)).toEqual(["Tasks/First.md", "Tasks/Second.md", "Tasks/Third.md"]);
+  expect(result.skipped).toEqual(["Tasks/Duplicate.md", "Tasks/Escaping.md", "Tasks/Sequence.md", "Tasks/Unclosed.md"]);
+  for (const detail of result.skipped_details!.filter((entry) => broken.includes(entry.path))) {
+    expect(detail.results).toEqual([{ code: "invalid_note_frontmatter", rule_id: "MN-118", message: expect.any(String) }]);
+    expect(detail.results[0]!.message).not.toBe("The note's frontmatter could not be resolved");
+  }
+  expect(result.skipped_details!.find((entry) => entry.path === "Tasks/Sequence.md")!.results[0]!.message).toContain("mapping");
+});
+
+test("a lowered frontmatter severity keeps the finding as the reason (QRY-3)", () => {
+  for (const severity of ["warn", "info"]) {
+    const result = brokenFrontmatter(severity);
+    const unclosed = result.skipped_details!.find((entry) => entry.path === "Tasks/Unclosed.md")!;
+    expect(unclosed.results).toEqual([{ code: "invalid_note_frontmatter", rule_id: "MN-118", message: expect.stringContaining("Flow sequence") }]);
+  }
+});
+
+test("a frontmatter finding turned off still leaves the note out, with the generic reason (QRY-3)", () => {
+  const result = brokenFrontmatter("off");
+  expect(result.skipped).toContain("Tasks/Unclosed.md");
+  for (const detail of result.skipped_details!.filter((entry) => broken.includes(entry.path)))
+    expect(detail.results).toEqual([{ code: "invalid_note_frontmatter", rule_id: "MN-118", message: "The note's frontmatter could not be resolved" }]);
+});
