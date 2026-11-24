@@ -611,3 +611,8 @@ vectors; five query cases now list their reasons. The corpus still reports 115
 discovered, 113 passed and 27 queries passed, with the two precondition skips,
 and 1,970 tooling tests pass. See
 [decision 052](../../docs/decisions/052-skipped-reasons.md).
+The object-child-names increment (specification `f90b15d`, adapter `1668cb6`)
+allows lower camel case in the names of object children (`MN-322`) and adds
+the `object-child-names-invalid` golden vector. The corpus now reports 116
+discovered, 114 passed and 27 queries passed, with the two precondition skips.
+See [decision 054](../../docs/decisions/054-object-child-names.md).

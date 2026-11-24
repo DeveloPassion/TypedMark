@@ -1,8 +1,8 @@
 {
-  "specification_revision": "06593c7d59a3f8940d2835d9a6b5260fa07e6dd4",
-  "adapter_revision": "c02588cb33a59a1617091d21188a2154ca5554b1",
-  "started_at": "2026-11-15T21:08:09.301Z",
-  "finished_at": "2026-11-15T21:08:58.397Z",
+  "specification_revision": "f90b15d041bfde040578d399b60750976283a550",
+  "adapter_revision": "1668cb690c8b336ccbe18128183983610025bc4a",
+  "started_at": "2026-11-24T08:38:34.614Z",
+  "finished_at": "2026-11-24T08:44:27.269Z",
   "capabilities": {
     "core": {
       "0.1": "0.1.0"
@@ -25,9 +25,9 @@
     }
   },
   "summary": {
-    "discovered": 115,
-    "executed": 113,
-    "passed": 113,
+    "discovered": 116,
+    "executed": 114,
+    "passed": 114,
     "failed": 0,
     "skipped": 2,
     "changed": 0
@@ -2478,6 +2478,52 @@
         "evaluated_extensions": {},
         "valid": true,
         "results": []
+      },
+      "requested_extensions": {
+        "typedmark:template-tracking": "0.1.0",
+        "typedmark:authoring": "0.1.0",
+        "typedmark:automation": "0.1.0",
+        "typedmark:expansion": "0.1.0",
+        "typedmark:expressions": "0.1.0",
+        "typedmark:reuse": "0.1.0",
+        "typedmark:queries": "0.1.0",
+        "typedmark:views": "0.1.0",
+        "typedmark:items": "0.1.0",
+        "typedmark:systems": "0.1.0"
+      }
+    },
+    {
+      "name": "object-child-names-invalid",
+      "status": "passed",
+      "collection_changed": false,
+      "differences": [],
+      "actual_report": {
+        "specification_version": "0.1.0",
+        "mode": "instantiated_collection",
+        "evaluation": "complete",
+        "required_extensions": {},
+        "evaluated_extensions": {},
+        "valid": false,
+        "results": [
+          {
+            "code": "invalid_field_value",
+            "severity": "error",
+            "path": "Tasks/Broken.md",
+            "rule_id": "FDR-15",
+            "message": "time_entries must satisfy the datetime value contract",
+            "note_type": "task",
+            "field": "time_entries"
+          },
+          {
+            "code": "unknown_field",
+            "severity": "warn",
+            "path": "Tasks/Broken.md",
+            "rule_id": "MN-112",
+            "message": "time_entries.0.pomodoroId is not declared",
+            "note_type": "task",
+            "field": "time_entries.pomodoroId"
+          }
+        ]
       },
       "requested_extensions": {
         "typedmark:template-tracking": "0.1.0",
