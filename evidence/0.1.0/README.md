@@ -624,3 +624,9 @@ On a copy of the 43 archived project notes of the maintainer's vault, which
 store no `archived`, the path check reports no finding with a `path.under`
 marker and 43 without it. See
 [decision 055](../../docs/decisions/055-archive-markers.md).
+The frontmatter-reasons increment (specification `bfffd5b`, adapter `34539a7`)
+keeps the parser finding as the reason for a note whose frontmatter cannot be
+parsed, also when its severity is lowered, and adds no golden vectors. The
+corpus still reports 119 discovered, 117 passed and 29 queries passed, with
+the two precondition skips. See
+[decision 053](../../docs/decisions/053-frontmatter-skip-reasons.md).
