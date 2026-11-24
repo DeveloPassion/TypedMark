@@ -630,3 +630,9 @@ parsed, also when its severity is lowered, and adds no golden vectors. The
 corpus still reports 119 discovered, 117 passed and 29 queries passed, with
 the two precondition skips. See
 [decision 053](../../docs/decisions/053-frontmatter-skip-reasons.md).
+The unreadable-notes increment (specification `61fe472`, adapter `c5a1ac4`)
+reports notes whose frontmatter cannot be parsed and whose type cannot be known
+(`QRY-5` to `QRY-7`) and adds the `query-unreadable-notes` golden vector. The
+corpus reports 120 discovered, 118 passed and 32 queries passed, with the two
+precondition skips. See
+[decision 056](../../docs/decisions/056-unreadable-notes.md).
